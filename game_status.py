@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from playwright.sync_api import sync_playwright
 from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary
-
+from voice import speak
 
 def detect_game_status(data):
     """
@@ -133,7 +133,7 @@ def detect_game_status(data):
     
     return "Unknown Status"
 
-def handle_break_period(status, page, browser):
+def handle_break_period(status, page, browser, team=None, runs= None, wickets=None):
     """
     Handle different types of breaks intelligently
     """
@@ -175,14 +175,20 @@ def handle_break_period(status, page, browser):
     
     elif duration:
         print(f"⏸️ {status} detected. Duration: ~{duration} minutes")
-        print(f"   Waiting {duration} minutes for play to resume...")
-        
-        line = generate_break_commentary(new_status)
-        print(line)
+        print(f"   Waiting {duration} minutes for play to resume...")       
+                                    
         for remaining in range(duration * 60, 0, -30):
             mins = remaining // 60
             secs = remaining % 60
             print(f"   ⏳ Resuming in {mins:02d}:{secs:02d}", end='\r')
+            line = generate_break_commentary(status, team, runs, wickets)            
+            if line:
+                    print("🎙 FINAL:", line)
+                    # Save last main event
+                    #write_json(runs, wickets, over, ball, event)
+                    #print(event)
+                    # Speak once (IMPORTANT FIX ✅)
+                    speak("INNINGS_BREAK", line)
             time.sleep(30)
         
         print(f"\n   🔄 Checking if match has resumed...")

@@ -1,4 +1,5 @@
 import random
+import re
 from commentry_dic import COMMENTARY
 # -----------------------------
 # Number → Bangla Words
@@ -71,7 +72,7 @@ def get_match_situation(current_score, target, wickets_left, balls_left, is_batt
         # Defending logic
         return {"type": "DEFENDING_TENSE", "data": {"runs_to_defend": runs_to_defend, "wickets": wickets_left}}
 
-def generate_wicket_commentary(runs, wickets, over, batsman=None):
+def generate_wicket_commentary(runs, wickets, over, batsman=None, wicket_type=None):
     """
     Long, natural Bangla wicket commentary
     - No symbols like '/'
@@ -383,7 +384,7 @@ def generate_toss_commentary(team, decision, is_win=True):
     return generate_event_commentary(events, context)
 
 
-def generate_break_commentary(status):
+def generate_break_commentary(status, team=None, runs=None, wickets=None):
     """
     Generate commentary for toss and team selection
     
@@ -393,22 +394,26 @@ def generate_break_commentary(status):
         is_win: True if team won the toss, False if lost
     """
     events = []
-    context = {'team': team}
+    #context = {'team': team1}
     
     if status == "Drinks Break":
-        line = random.choice(COMMENTARY["DRINKS_BREAK"])
+        template = random.choice(COMMENTARY["DRINKS_BREAK"])
     elif status == "Innings Break":
-        line = random.choice(COMMENTARY["INNINGS_BREAK"])
+        template = random.choice(COMMENTARY["INNINGS_BREAK"])
     elif  status == "Tea Break":
-        line = random.choice(COMMENTARY["TEA_BREAK"])
+        template = random.choice(COMMENTARY["TEA_BREAK"])
     elif   status == "Lunch Break":
-        line = random.choice(COMMENTARY["LUNCH_BREAK"])
+        template = random.choice(COMMENTARY["LUNCH_BREAK"])
     elif status == "Rain Break (Delayed)":
-        line = random.choice(COMMENTARY["RAIN_DELAY"])     
-    else : line = "এই মুহূর্তে ম্যাচ সংক্রান্ত কোনো আপডেট পাওয়া যাচ্ছে না।"
-        
-    return line
-
+        template = random.choice(COMMENTARY["RAIN_DELAY"])     
+    else : template = "এই মুহূর্তে ম্যাচ সংক্রান্ত কোনো আপডেট পাওয়া যাচ্ছে না।"    
+    #line = template.format(team1=team1, team2=team2)
+    return template.format(
+        team=team,
+        runs=runs,
+        wickets=wickets
+    )
+    
 def pre_game_scenario_commentary(text: str) -> str:
     if not text:
         return "এই মুহূর্তে ম্যাচ সংক্রান্ত কোনো আপডেট পাওয়া যাচ্ছে না।"

@@ -551,7 +551,7 @@ def update_score_json(event, filename):
         all_event_fields = [
             "WICKET", "OVER_COMPLETE", "SINGLE", "DOUBLE", 
             "FOUR", "SIX", "WIDE", "NO_BALL", "BYE", 
-            "LEG_BYE", "FIFTY", "HUNDRED", "NEW_BATSMAN"
+            "LEG_BYE", "FIFTY", "HUNDRED", "NEW_BATSMAN", "INNINGS_BREAK", "DRINKS_BREAK","TEA_BREAK"
         ]
         
         # Read existing data or create new
@@ -579,7 +579,7 @@ def update_score_json(event, filename):
         # Update the data
         data["event"] = event          # Store the event type
         data[event] = filename         # Store the filename for this event
-        
+        print("Hello TEST")
         print(f"📝 Updating score.json:")
         print(f"   - event: {event}")
         print(f"   - {event}: {filename}")
