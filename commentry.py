@@ -1,6 +1,6 @@
 import random
 import re
-from commentry_dic import COMMENTARY
+from commentry_dic import COMMENTARY, WINNING_COMMENTARY_TEMPLATES
 # -----------------------------
 # Number → Bangla Words
 # -----------------------------
@@ -539,3 +539,160 @@ def demonstrate_toss_scenarios():
     print(f"   TOSS: {toss_commentary}")
     print(f"   TEAM: {xi_commentary}")
     print("\n   এবং ম্যাচ শুরু হতে যাচ্ছে... উত্তেজনা চরমে!")
+
+import re
+import random
+
+# ================================
+# 🧹 TEXT CLEANER (CREX-PROOF)
+# ================================
+def clean_crex_text(raw_text: str) -> str:
+    text = re.sub(r"[^\w\s\.\-:/]", " ", raw_text)  # keep useful chars
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+# ================================
+# 🏏 TEAM EXTRACTION
+# ================================
+def extract_teams(match_title: str):
+    if not match_title:
+        return None, None
+
+    parts = re.split(r"\s+vs\s+", match_title, flags=re.IGNORECASE)
+    if len(parts) == 2:
+        return parts[0].strip(), parts[1].strip()
+
+    return None, None
+
+
+# ================================
+# 🧠 RESULT PARSER (ROBUST)
+# ================================
+def parse_result(text: str):
+    clean_text = clean_crex_text(text).lower()
+
+    winning_team = None
+    result_type = "UNKNOWN"
+    runs = None
+    wickets = None
+
+    # Winning team
+    win_match = re.search(r"([a-z\s]+?) won by", clean_text)
+    if win_match:
+        winning_team = win_match.group(1).strip().title()
+
+    # Wickets
+    w_match = re.search(r"won by (\d+)\s*wicket", clean_text)
+    if w_match:
+        wickets = int(w_match.group(1))
+        result_type = "WON_BY_WICKETS"
+
+    # Runs
+    r_match = re.search(r"won by (\d+)\s*run", clean_text)
+    if r_match:
+        runs = int(r_match.group(1))
+        result_type = "WON_BY_RUNS"
+
+    # Super Over / Tie
+    if "super over" in clean_text or "tied" in clean_text:
+        result_type = "SUPER_OVER"
+
+    return {
+        "winning_team": winning_team,
+        "result_type": result_type,
+        "runs": runs,
+        "wickets": wickets
+    }
+
+
+# ================================
+# 🎯 LOSING TEAM DETECTOR
+# ================================
+def detect_losing_team(winning_team, match_title):
+    team1, team2 = extract_teams(match_title)
+
+    if not winning_team or not team1 or not team2:
+        return None
+
+    if winning_team.lower() in team1.lower():
+        return team2
+    else:
+        return team1
+
+
+# ================================
+# 🏆 PLAYER EXTRACTION (SMART)
+# ================================
+def extract_key_players(text: str):
+    clean_text = clean_crex_text(text).lower()
+
+    players = []
+
+    # Batting (e.g., "kohli 82")
+    batters = re.findall(r"([a-z]+(?:\s[a-z]+)?)\s(\d{2,3})", clean_text)
+
+    # Bowling (e.g., "rashid 3/25")
+    bowlers = re.findall(r"([a-z]+(?:\s[a-z]+)?)\s(\d{1,2})/(\d{1,3})", clean_text)
+
+    # Add top batters
+    for name, runs in batters[:2]:
+        players.append(f"{name.title()} {runs} রান")
+
+    # Add top bowlers
+    for name, wk, _ in bowlers[:2]:
+        players.append(f"{name.title()} {wk} উইকেট")
+
+    return players[:3]
+
+
+
+
+# ================================
+# 🎙️ COMMENTARY GENERATOR
+# ================================
+def generate_commentary(parsed, losing_team, players):
+
+    winning_team = parsed["winning_team"] or "দল"
+    result_type = parsed["result_type"]
+    runs = parsed["runs"]
+    wickets = parsed["wickets"]
+
+    templates = WINNING_COMMENTARY_TEMPLATES.get(result_type, WINNING_COMMENTARY_TEMPLATES["DEFAULT"])
+    template = random.choice(templates)
+
+    players_line = ""
+    if players:
+        players_line = f"আজকের নায়ক: {', '.join(players)} 💥"
+    else:
+        players_line = "দলগত পারফরম্যান্স ছিল দুর্দান্ত 💥"
+
+    return template.format(
+        winning_team=winning_team,
+        losing_team=losing_team or "প্রতিপক্ষ দল",
+        runs=runs,
+        wickets=wickets,
+        players_line=players_line
+    )
+
+
+# ================================
+# 🚀 FULL PIPELINE FUNCTION
+# ================================
+def generate_full_commentary(raw_text, match_title=None):
+
+    # Step 1: Parse result
+    parsed = parse_result(raw_text)
+
+    # Step 2: Detect losing team
+    losing_team = detect_losing_team(parsed["winning_team"], match_title)
+
+    # Step 3: Extract players
+    players = extract_key_players(raw_text)
+
+    # Step 4: Generate commentary
+    commentary = generate_commentary(parsed, losing_team, players)
+
+    return commentary
+
+

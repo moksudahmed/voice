@@ -12,17 +12,18 @@ import re
 from datetime import datetime
 import threading
 from queue import Queue
-from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary
+from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary, generate_full_commentary
 from voice import speak
 from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 # ---------------------------------------
 # CONFIG
 # ---------------------------------------
-CREX_URL = "https://crex.com/cricket-live-score/isu-vs-lhq-16th-match-pakistan-super-league-2026-match-updates-10X3"
+CREX_URL = "https://crex.com/cricket-live-score/csk-vs-dc-18th-match-indian-premier-league-2026-match-updates-10YG"
 OUTPUT_FILE = "C:/cricket_voices/score.json"
-TEAM1 = "Delhi Capitals"
-TEAM2 = "Gujarat Titans"
+TEAM1 = "চেন্নাই সুপার"
+TEAM2 = "দিল্লি ক্যাপিটালস"
+match_title = "PBKS vs SRH, 15th T20, IPL 2026 summary"
 REFRESH_INTERVAL = 1  # seconds
 
 
@@ -567,14 +568,33 @@ def game_welcome(page):
 
                 # If new update এসেছে (avoid repeat)
                 if current_status and current_status != last_toss_text:
-                    commentary = pre_game_scenario_commentary(current_status)
+                    #commentary = pre_game_scenario_commentary(current_status)
                     
                     # Add natural flow
                     line = generate_welcome_message(
                                 TEAM1,
                                 TEAM2 
                             )
-                    final_line = commentary + " " + line
+                    final_line = """আসসালামু আলাইকুম ক্রিকেট প্রেমীরা! 🏏
+স্বাগতম আপনাদের সবাইকে আজকের দারুণ এক ম্যাচে —
+চেন্নাই সুপার কিংস বনাম দিল্লি ক্যাপিটালস! 🔥
+
+ম্যাচের শুরুতেই বড় আপডেট — টসে জিতে দিল্লি ক্যাপিটালস প্রথমে বোলিং করার সিদ্ধান্ত নিয়েছে!
+
+অর্থাৎ, আজ আগে ব্যাট করতে নামছে চেন্নাই। এখন দেখার বিষয়, তারা কেমন শুরু করে এবং কত বড় স্কোর দাঁড় করাতে পারে! 🤔
+
+পিচ কন্ডিশন আর ম্যাচ পরিস্থিতি দেখে মনে হচ্ছে, শুরুটা খুব গুরুত্বপূর্ণ হতে যাচ্ছে। চেন্নাই যদি ভালো স্টার্ট পায়, তাহলে বড় টার্গেট সেট করতে পারে — আর যদি দিল্লি শুরুতেই উইকেট নিতে পারে, তাহলে ম্যাচটা একদম জমে উঠবে! ⚡
+
+আমাদের সঙ্গে থাকুন, কারণ এখানে থাকছে —
+📊 বল বাই বল লাইভ স্কোর
+🎙️ একদম স্বাভাবিক বাংলা কমেন্ট্রি
+📈 সাথে ম্যাচ বিশ্লেষণ
+
+👉 আপনারা কার সাপোর্ট করছেন আজ?
+CSK 💛 না DC 🔵 — কমেন্টে জানিয়ে দিন!
+
+আর যারা নতুন আছেন, চ্যানেলটি সাবস্ক্রাইব করে নিন, ভিডিওতে লাইক দিতে ভুলবেন না 👍
+চলুন, শুরু করা যাক আজকের এই হাই ভোল্টেজ ম্যাচ!""" #commentary + " " + line
                     
                     speak("TOSS", final_line)
                     last_toss_text = current_status
@@ -599,7 +619,15 @@ def game_welcome(page):
             
 def main():
     global welcome_played
+    speak("WELCOME", """ম্যাচ শেষ! 🎉
+দারুণ লড়াইয়ের পর শেষ পর্যন্ত চেন্নাই সুপার কিংস ২৩ রানে জয়ের দারুণ উদযাপন করলো! 🔥
 
+চেন্নাই শুরু থেকেই ম্যাচটা কন্ট্রোলে রেখেছিল, ব্যাটিং-বোলিং দুই দিকেই ছিল চমৎকার পারফরম্যান্স 👏
+
+দিল্লি চেষ্টা করেছিল শেষ পর্যন্ত লড়াই চালিয়ে যেতে, কিন্তু লক্ষ্যটা পেরোনো আর হয়ে ওঠেনি!
+
+আপনার মতে ম্যাচের টার্নিং পয়েন্ট কোনটা ছিল? 🤔
+কমেন্টে জানাতে ভুলবেন না!""")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
@@ -633,6 +661,9 @@ def main():
         # 3. Completed - Show result and exit
         if "Completed" in status:
             result_text = status.replace("Completed - ", "")
+            match_title = "KKR vs LSG, 15th T20, IPL 2026 summary"
+            result = generate_full_commentary(result_text, match_title)
+            print(result)
             print(f"🏆 MATCH FINISHED! {result_text}")
             print("✅ Exiting...")
             browser.close()
@@ -755,6 +786,10 @@ def main():
                     # Check for completed match with result FIRST
                     if "Completed" in current_status:
                         result_text = current_status.replace("Completed - ", "")
+                        #commentary = get_winning_commentary(**match_data)
+                        
+                        result = generate_full_commentary(result_text, match_title)
+                        print(result)
                         print(f"\n{'='*60}")
                         print(f"🏆 MATCH FINISHED! {result_text}")
                         print(f"{'='*60}")
@@ -847,8 +882,8 @@ def main():
                             runs,
                             wickets,
                             over,
-                            "Sri Lanka",
-                            "New Zealand",
+                            TEAM1,
+                            TEAM2,
                             last_status_message
                         )
                         event = events[0]
