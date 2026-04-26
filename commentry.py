@@ -1,6 +1,7 @@
 import random
 import re
 from commentry_dic import COMMENTARY, WINNING_COMMENTARY_TEMPLATES
+from utill import number_to_bangla_words
 # -----------------------------
 # Number → Bangla Words
 # -----------------------------
@@ -80,8 +81,8 @@ def generate_wicket_commentary(runs, wickets, over, batsman=None, wicket_type=No
     - Context-aware (normal / pressure / collapse)
     """
 
-    runs_bn = num_to_bn(runs)
-    wickets_bn = num_to_bn(wickets)
+    runs_bn = number_to_bangla_words(runs)
+    wickets_bn = number_to_bangla_words(wickets)
     over_bn = str(over)
 
     name_part = f"{batsman} ফিরে যাচ্ছেন। " if batsman else ""
@@ -386,34 +387,46 @@ def generate_toss_commentary(team, decision, is_win=True):
 
 def generate_break_commentary(status, team=None, runs=None, wickets=None):
     """
-    Generate commentary for toss and team selection
-    
-    Args:
-        team: Team name (e.g., "LSG", "MI", "CSK")
-        decision: "bat" or "bowl"
-        is_win: True if team won the toss, False if lost
+    Generate commentary for match breaks safely with error handling
     """
-    events = []
-    #context = {'team': team1}
-    
-    if status == "Drinks Break":
-        template = random.choice(COMMENTARY["DRINKS_BREAK"])
-    elif status == "Innings Break":
-        template = random.choice(COMMENTARY["INNINGS_BREAK"])
-    elif  status == "Tea Break":
-        template = random.choice(COMMENTARY["TEA_BREAK"])
-    elif   status == "Lunch Break":
-        template = random.choice(COMMENTARY["LUNCH_BREAK"])
-    elif status == "Rain Break (Delayed)":
-        template = random.choice(COMMENTARY["RAIN_DELAY"])     
-    else : template = "এই মুহূর্তে ম্যাচ সংক্রান্ত কোনো আপডেট পাওয়া যাচ্ছে না।"    
-    #line = template.format(team1=team1, team2=team2)
-    return template.format(
-        team=team,
-        runs=runs,
-        wickets=wickets
-    )
-    
+
+    try:
+        
+        if status == "Drinks Break":
+            templates = COMMENTARY.get("DRINKS_BREAK", [])
+        elif status == "Innings Break":
+            templates = COMMENTARY.get("INNINGS_BREAK", [])
+        elif status == "Tea Break":
+            templates = COMMENTARY.get("TEA_BREAK", [])
+        elif status == "Lunch Break":
+            templates = COMMENTARY.get("LUNCH_BREAK", [])
+        elif status == "Rain Break (Delayed)":
+            templates = COMMENTARY.get("RAIN_DELAY", [])
+        else:
+            return "এই মুহূর্তে ম্যাচ সংক্রান্ত কোনো আপডেট পাওয়া যাচ্ছে না।"
+       
+        # Safe random selection
+        if not templates:
+            return "এই মুহূর্তে ম্যাচে বিরতি চলছে। আমাদের সাথেই থাকুন, লাইক ও কমেন্ট করে আপনার মতামত জানাতে ভুলবেন না!"
+
+        template = random.choice(templates)
+
+        # Safe formatting (avoid crash if missing placeholders)
+        return template.format(
+            team=team or "",
+            runs=runs or "",
+            wickets=wickets or ""
+        )
+
+    except KeyError as e:
+        return f"কমেন্টারি ডেটা অনুপস্থিত: {str(e)}"
+
+    except IndexError:
+        return "কমেন্টারি লিস্ট খালি আছে।"
+
+    except Exception as e:
+        return f"কমেন্টারি জেনারেট করতে সমস্যা হয়েছে: {str(e)}"
+        
 def pre_game_scenario_commentary(text: str) -> str:
     if not text:
         return "এই মুহূর্তে ম্যাচ সংক্রান্ত কোনো আপডেট পাওয়া যাচ্ছে না।"

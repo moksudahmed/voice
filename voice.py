@@ -551,7 +551,7 @@ def update_score_json(event, filename):
         all_event_fields = [
             "WICKET", "OVER_COMPLETE", "SINGLE", "DOUBLE", 
             "FOUR", "SIX", "WIDE", "NO_BALL", "BYE", 
-            "LEG_BYE", "FIFTY", "HUNDRED", "NEW_BATSMAN", "INNINGS_BREAK", "DRINKS_BREAK","TEA_BREAK"
+            "LEG_BYE", "FIFTY", "HUNDRED", "NEW_BATSMAN", "INNINGS_BREAK", "DRINKS_BREAK","TEA_BREAK","BOWLER_RUNUP"
         ]
         
         # Read existing data or create new

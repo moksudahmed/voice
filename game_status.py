@@ -161,7 +161,7 @@ def handle_break_period(status, page, browser, team=None, runs= None, wickets=No
             text = page.inner_text("body")
             lines = text.splitlines()
             new_status = detect_game_status(lines)
-            
+            print(new_status)
             check_count += 1
             print(f"   [{check_count * 2} min] Checking status: {new_status}")
             
@@ -181,14 +181,15 @@ def handle_break_period(status, page, browser, team=None, runs= None, wickets=No
             mins = remaining // 60
             secs = remaining % 60
             print(f"   ⏳ Resuming in {mins:02d}:{secs:02d}", end='\r')
-            line = generate_break_commentary(status, team, runs, wickets)            
+            line = generate_break_commentary(status, team, runs, wickets)  
+            
             if line:
                     print("🎙 FINAL:", line)
                     # Save last main event
                     #write_json(runs, wickets, over, ball, event)
                     #print(event)
                     # Speak once (IMPORTANT FIX ✅)
-                    speak("INNINGS_BREAK", line)
+                    speak("TEA_BREAK", line)
             time.sleep(30)
         
         print(f"\n   🔄 Checking if match has resumed...")

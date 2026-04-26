@@ -1,0 +1,63 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+import time
+
+# सेटআপ Chrome options
+options = Options()
+options.add_argument("--headless")  # browser UI ছাড়া চালাতে চাইলে
+options.add_argument("--disable-blink-features=AutomationControlled")
+
+# driver চালু
+driver = webdriver.Chrome(options=options)
+
+url = "https://crex.com/cricket-live-score/mi-vs-rcb-20th-match-indian-premier-league-2026-match-updates-10YI"
+driver.get(url)
+
+# পেজ লোডের জন্য অপেক্ষা
+time.sleep(5)
+
+# #topDiv সেকশন খুঁজে বের করা
+top_div = driver.find_element(By.ID, "topDiv")
+
+# সব কমেন্টারি ব্লক সংগ্রহ
+commentary_blocks = top_div.find_elements(By.CLASS_NAME, "cm-b-roundcard")
+
+data = []
+
+for block in commentary_blocks:
+    try:
+        over = block.find_element(By.CLASS_NAME, "cm-b-over").text.strip()
+    except:
+        over = ""
+
+    try:
+        bowler_batsman = block.find_element(By.CLASS_NAME, "cm-b-comment-c1").text.strip()
+    except:
+        bowler_batsman = ""
+
+    try:
+        runs = block.find_element(By.CLASS_NAME, "cm-b-ballupdate").text.strip()
+    except:
+        runs = ""
+
+    try:
+        commentary = block.find_element(By.CLASS_NAME, "cm-b-comment-c2").text.strip()
+    except:
+        commentary = ""
+
+    # শুধুমাত্র meaningful data রাখো
+    if commentary:
+        data.append({
+            "over": over,
+            "players": bowler_batsman,
+            "runs": runs,
+            "commentary": commentary
+        })
+
+# print output
+for item in data:
+    print(item)
+    print("-" * 50)
+
+driver.quit()

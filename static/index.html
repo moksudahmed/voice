@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cricket Broadcast Control Room</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0b1220;
+            color: #fff;
+        }
+
+        .header {
+            padding: 12px 16px;
+            background: #111c33;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .live {
+            color: #ff3b3b;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: calc(100vh - 50px);
+        }
+
+        .panel {
+            background: #0f172a;
+            padding: 15px;
+            border-right: 1px solid #1e293b;
+            overflow-y: auto;
+        }
+
+        .screen {
+            padding: 15px;
+        }
+
+        h3 {
+            margin-top: 0;
+        }
+
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+        .danger { background: #dc2626; }
+        .green { background: #16a34a; }
+
+        #feed {
+            height: 85vh;
+            overflow-y: auto;
+            background: #000;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #1f2937;
+        }
+
+        .msg {
+            padding: 6px;
+            border-bottom: 1px solid #222;
+            font-size: 13px;
+        }
+
+        .small {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div>🎥 Cricket Broadcast Control Room</div>
+    <div class="live">● LIVE SYSTEM</div>
+</div>
+
+<div class="container">
+
+    <!-- CONTROL PANEL -->
+    <div class="panel">
+
+        <h3>🏏 Live Matches</h3>
+
+        <select id="match"></select>
+        <button onclick="startSelected()">▶ Start Selected Match</button>
+
+        <hr>
+
+        <h3>⚡ Force Match</h3>
+        <input id="url" placeholder="Paste match URL here">
+        <button onclick="forceMatch()">🚀 Force Start</button>
+
+        <hr>
+
+        <h3>🎛 Controls</h3>
+
+        <button class="green" onclick="send('start')">START</button>
+        <button class="danger" onclick="send('stop')">STOP</button>
+
+        <button onclick="send('mute')">MUTE VOICE</button>
+        <button onclick="send('unmute')">UNMUTE VOICE</button>
+
+        <hr>
+
+        <div class="small">
+            🔄 Match list auto loads from backend<br>
+            🎙 Live commentary streaming enabled
+        </div>
+
+    </div>
+
+    <!-- LIVE FEED -->
+    <div class="screen">
+
+        <h3>📡 Live Commentary Feed</h3>
+
+        <div id="feed"></div>
+
+    </div>
+
+</div>
+
+<script>
+let ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+ws.onopen = () => {
+    add("🟢 Connected to server");
+};
+
+ws.onmessage = (e) => {
+    add("🎙 " + e.data);
+};
+
+function send(msg) {
+    ws.send(msg);
+}
+
+// =========================
+// MATCH ACTIONS
+// =========================
+
+function startSelected() {
+    let url = document.getElementById("match").value;
+    ws.send("force:" + url);
+}
+
+function forceMatch() {
+    let url = document.getElementById("url").value;
+    ws.send("force:" + url);
+}
+
+// =========================
+// FEED UI
+// =========================
+
+function add(text) {
+    let div = document.createElement("div");
+    div.className = "msg";
+    div.innerText = text;
+
+    let feed = document.getElementById("feed");
+    feed.appendChild(div);
+    feed.scrollTop = feed.scrollHeight;
+}
+
+// =========================
+// LOAD MATCHES FROM BACKEND
+// =========================
+
+async function loadMatches() {
+    try {
+        let res = await fetch("/matches");
+        let data = await res.json();
+
+        let select = document.getElementById("match");
+        select.innerHTML = "";
+
+        if (!data.length) {
+            let opt = document.createElement("option");
+            opt.textContent = "No live matches found";
+            select.appendChild(opt);
+            return;
+        }
+
+        data.forEach(m => {
+            let opt = document.createElement("option");
+            opt.value = m.url;
+            opt.textContent = m.title + " | " + m.comment;
+            select.appendChild(opt);
+        });
+
+        add("📡 Matches loaded: " + data.length);
+
+    } catch (err) {
+        add("❌ Failed to load matches");
+    }
+}
+
+// AUTO LOAD
+loadMatches();
+
+</script>
+
+</body>
+</html>
