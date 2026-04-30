@@ -488,7 +488,14 @@ EXTRA_EVENT_MAP = {
     "Bye": "BYE"
 }
 
-
+BREAK_EVENT_MAP = {
+    "Innings Break": "INNINGS_BREAK",
+    "Drinks Break": "DRINKS_BREAK",
+    "Tea Break": "TEA_BREAK",
+    "Lunch Break": "LUNCH_BREAK",
+    "Rain Break": "RAIN_BREAK",
+    "Rain Break (Delayed)": "RAIN_DELAY"
+}
 # =====================================================
 # 🎯 MILESTONE
 # =====================================================
@@ -512,14 +519,25 @@ def generate_continuous_commentary(
     event,
     batsmen,
     bowler,
-    runs,
-    wickets,
-    over,
+    runs=None,
+    wickets=None,
+    over=None,
     team1=None,
     team2=None,
     context=None
 ):
     parts = []
+    
+    if event in BREAK_EVENT_MAP:
+        templates = COMMENTARY.get(BREAK_EVENT_MAP[event], [])
+        template = random.choice(templates)
+
+        # Safe formatting (avoid crash if missing placeholders)
+        return template.format(
+            team=team1 or "",
+            runs=runs or "",
+            wickets=wickets or ""
+        )
 
     # =====================================================
     # 🟢 1. BALL START (Bowler run-up)
@@ -596,140 +614,6 @@ def generate_continuous_commentary(
     # =====================================================
     return " ".join(filter(None, parts))
     
-def generate_continuous_commentary2(events, batsmen, bowler, runs, wickets, over, team1=None, team2=None, context=None):
-    """
-    Generate a smooth, human-like cricket commentary for a sequence of events
-    - events: list of strings (SIX, FOUR, WICKET, DOUBLE, SINGLE, DOT, WIDE, NO_BALL, OVER_COMPLETE)
-    - batsmen: list of dicts [{'name':str,'runs':int}, ...]
-    - runs: total runs
-    - wickets: total wickets
-    - over: current over (float)
-    - team1, team2: optional team names for updates
-    """
-    #has_alpha = any(c.isalpha() for c in context)
-    #has_digit = any(c.isdigit() for c in context)
-    
-    """status = None
-    if has_alpha:
-        status = context
-        print("Context", context)"""
-    
-        
-    parts = []
-    if events =="Ball":
-        commentary = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler=remove_first_part(clean_name(bowler["name"])))                                                       
-        parts.append(commentary)           
-        return " ".join(parts)
-        
-    # 1️⃣ WICKET has highest priority
-    if "WICKET" in events:
-        parts.append(generate_wicket_commentary(runs, wickets, over, batsmen[0]['name'] if batsmen else None, context))
-
-    # 2️⃣ Scoring events (SIX, FOUR, DOUBLE, SINGLE, DOT)
-    event = detect_run_event(events)    
-    if event:
-        print(events)
-        parts.append(generate_event_commentary([event]))            
-    
-    
-    # 3️⃣ Extras
-    extra = detect_extra(events)
-    if extra:
-            parts.append(generate_event_commentary([extra]))
-    
-    if batsmen and len(batsmen) >= 2:
-        b1 = batsmen[0]
-        b2 = batsmen[1]
-
-        # Basic score update commentary
-        parts.append(
-            f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
-            f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
-        )
-
-        # Check milestones for both batsmen
-        for b in [b1, b2]:
-            milestone_comment = get_milestone_comment(b["name"], b["runs"])
-            if milestone_comment:
-                parts.append(milestone_comment)
-    elif batsmen and len(batsmen) == 1:
-        b1 = batsmen[0]
-        parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
-    
-    
-    if "Over" in events:
-        over_comment = ""        
-        over_comment = f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
-        parts.append(over_comment)
-        
-        # 6️⃣ Welcome message and quick update for new viewers
-        if team1 and team2:
-            welcome_msg = (
-                f"যারা নতুন যুক্ত হয়েছেন, স্বাগতম! "
-                f"এই সময় {team1} বনাম {team2} ম্যাচে স্কোর {number_to_bangla_words(runs)} রানে {number_to_bangla_words(wickets)} উইকেট। "
-                f"{number_to_bangla_words(over)} ওভার শেষ হয়েছে, দলের সংগ্রহ ভালোভাবে এগুচ্ছে। ম্যাচে উত্তেজনা অব্যাহত!"
-            )
-            parts.append(welcome_msg) 
-            
-    if "Maiden Over" in events:
-            over_comment = ""        
-            commentary_text = random.choice(COMMENTARY["MAIDEN_OVER"])
-            over_comment = commentary_text + f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"    
-            # 6️⃣ Welcome message and quick update for new viewers
-            if team1 and team2:
-                welcome_msg = (
-                    f"যারা নতুন যুক্ত হয়েছেন, স্বাগতম! "
-                    f"এই সময় {team1} বনাম {team2} ম্যাচে স্কোর {number_to_bangla_words(runs)} রানে {number_to_bangla_words(wickets)} উইকেট। "
-                    f"{number_to_bangla_words(over)} ওভার শেষ হয়েছে, দলের সংগ্রহ ভালোভাবে এগুচ্ছে। ম্যাচে উত্তেজনা অব্যাহত!"
-                )
-                parts.append(welcome_msg) 
-    return " ".join(parts)
-    """"for extra in ["WIDE", "NO_BALL"]:
-        if extra in events:
-            parts.append(generate_event_commentary([extra]))
-
-    # 4️⃣ Batsman status
-    if batsmen and len(batsmen) >= 2:
-        b1 = batsmen[0]
-        b2 = batsmen[1]
-
-        # Basic score update commentary
-        parts.append(
-            f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
-            f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
-        )
-
-        # Check milestones for both batsmen
-        for b in [b1, b2]:
-            milestone_comment = get_milestone_comment(b["name"], b["runs"])
-            if milestone_comment:
-                parts.append(milestone_comment)
-    elif batsmen and len(batsmen) == 1:
-        b1 = batsmen[0]
-        parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
-
-    # 5️⃣ Over complete summary
-    if "OVER_COMPLETE" in events:
-        over_comment = ""
-        if context == "MAIDEN OVER":
-            commentary_text = random.choice(COMMENTARY["MAIDEN_OVER"])
-            over_comment = commentary_text + f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
-        else:
-            over_comment = f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
-        parts.append(over_comment)
-        
-        # 6️⃣ Welcome message and quick update for new viewers
-        if team1 and team2:
-            welcome_msg = (
-                f"যারা নতুন যুক্ত হয়েছেন, স্বাগতম! "
-                f"এই সময় {team1} বনাম {team2} ম্যাচে স্কোর {number_to_bangla_words(runs)} রানে {number_to_bangla_words(wickets)} উইকেট। "
-                f"{number_to_bangla_words(over)} ওভার শেষ হয়েছে, দলের সংগ্রহ ভালোভাবে এগুচ্ছে। ম্যাচে উত্তেজনা অব্যাহত!"
-            )
-            parts.append(welcome_msg)     """
-
-    # Combine all commentary parts naturally
-    
-    #return " ".join(parts)
   
 async def scraper_loop_old_2():
     
@@ -781,8 +665,88 @@ async def scraper_loop_old_2():
         # ⚡ FASTER BUT SAFE POLLING
         # =====================================================
         await asyncio.sleep(0.7)
-        
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
 def parse_players(driver):
+    try:
+        # ✅ Wait for element (max 3 sec)
+        WebDriverWait(driver, 3).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".playing-batsmen-wrapper"))
+        )
+
+    except:
+        # ⚠️ Not available (very normal case)
+        return None
+
+    try:
+        wrapper = driver.find_element(By.CSS_SELECTOR, ".playing-batsmen-wrapper")
+    except:
+        return None
+
+    batsmen = []
+    bowler = None
+
+    try:
+        cards = wrapper.find_elements(By.CSS_SELECTOR, ".batsmen-partnership")
+
+        for card in cards:
+            try:
+                name = card.find_element(By.CSS_SELECTOR, ".batsmen-name p").text.strip()
+                score_parts = card.find_elements(By.CSS_SELECTOR, ".batsmen-score p")
+
+                if len(score_parts) >= 2:
+                    runs = score_parts[0].text.strip()
+                    balls = score_parts[1].text.strip()
+
+                    batsmen.append({
+                        "name": name,
+                        "runs": runs,
+                        "balls": balls
+                    })
+
+            except:
+                continue
+
+    except Exception as e:
+        print("BATSMAN PARSE ERROR:", e)
+
+    # =====================================================
+    # 🎯 BOWLER
+    # =====================================================
+    try:
+        bowler_section = wrapper.find_element(By.CSS_SELECTOR, ".batsmen-partnership .bowler")
+
+        bowler_name = wrapper.find_element(
+            By.CSS_SELECTOR,
+            ".batsmen-info-wrapper .batsmen-name p"
+        ).text.strip()
+
+        bowler_score = wrapper.find_element(
+            By.CSS_SELECTOR,
+            ".batsmen-score.bowler p"
+        ).text.strip()
+
+        bowler_overs = wrapper.find_element(
+            By.CSS_SELECTOR,
+            ".batsmen-score.bowler p:nth-child(2)"
+        ).text.strip()
+
+        bowler = {
+            "name": bowler_name,
+            "figures": bowler_score,
+            "overs": bowler_overs
+        }
+
+    except:
+        bowler = None
+
+    return {
+        "batsmen": batsmen,
+        "bowler": bowler
+    }        
+def parse_players2(driver):
     data = {
         "batsmen": [],
         "bowler": {}
