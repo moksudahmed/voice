@@ -21,11 +21,11 @@ from utill import number_to_bangla_words
 # ---------------------------------------
 # CONFIG
 # ---------------------------------------
-CREX_URL = "https://crex.com/cricket-live-score/ban-vs-nz-1st-t20-new-zealand-tour-of-bangladesh-2026-match-updates-10Z3"
+CREX_URL = "https://crex.com/cricket-live-score/mi-vs-srh-41st-match-indian-premier-league-2026-match-updates-118M"
 OUTPUT_FILE = "C:/cricket_voices/score.json"
-TEAM1 = "নিউজিল্যান্ড" 
-TEAM2 = "বাংলাদেশ"
-match_title = "BAN vs NZ, 1st T20, NZ vs BAN 2026 live"
+TEAM1 = "মুম্বাই ইন্ডিয়ান্স" 
+TEAM2 = "সানরাইজার্স হায়দরাবাদ"
+match_title = "MI vs SRH, 41st T20, IPL 2026 live"
 REFRESH_INTERVAL = 1  # seconds
 
 
@@ -37,33 +37,7 @@ last_wickets = None
 last_over = None
 last_ball = None
 welcome_played = False
-welcome_msg = """স🔴 স্বাগতম সবাইকে!
-
-আপনারা দেখছেন **বাংলাদেশ বনাম নিউজিল্যান্ড ১ম টি-২০ ২০২৬** ম্যাচের লাইভ স্কোর আপডেট ও বল বাই বল বাংলা কমেন্ট্রি।
-
-📢 **টস আপডেট:**
-বাংলাদেশ টসে জিতে প্রথমে **ফিল্ডিং করার সিদ্ধান্ত নিয়েছে**।
-
-🗣️ **লিটন দাস (বাংলাদেশ অধিনায়ক) বলেছেন:**
-“আমরা আগে বল করবো।”
-
-অর্থাৎ শুরুতেই বল হাতে আক্রমণে নামছে বাংলাদেশ, আর ব্যাটিংয়ে নামবে নিউজিল্যান্ড দল।
-
-🚨 **গুরুত্বপূর্ণ আপডেট:**
-নিউজিল্যান্ড শিবির থেকে দেরিতে পাওয়া খবর—অধিনায়ক **টম ল্যাথাম** এই ম্যাচে খেলতে পারছেন না।
-
-🔥 ফলে নিউজিল্যান্ড দলে কিছু পরিবর্তন দেখা যেতে পারে, যা ম্যাচের ওপর বড় প্রভাব ফেলতে পারে!
-
-🎙️ এই স্ট্রিমে আপনি পাবেন:
-✅ লাইভ স্কোর আপডেট
-✅ বল বাই বল কমেন্ট্রি
-✅ ম্যাচ বিশ্লেষণ
-✅ গুরুত্বপূর্ণ মুহূর্তের আপডেট
-
-⚠️ মনে রাখবেন: এটি কোনো লাইভ ভিডিও স্ট্রিম নয়—এখানে শুধুমাত্র স্কোর আপডেট ও আমাদের নিজস্ব কমেন্ট্রি প্রদান করা হচ্ছে।
-
-🔥 আমাদের সাথে থাকুন এবং উপভোগ করুন ম্যাচের প্রতিটি মুহূর্ত! 🏏
-
+welcome_msg = """
 """
  
 def parse_winning_info(text):
@@ -677,6 +651,43 @@ def game_welcome(page):
         except Exception as e:
             print("Error in game_welcome:", e)
             time.sleep(2)
+# =====================================================
+# 🎯 EVENT MAPS (FAST LOOKUP)
+# =====================================================
+RUN_EVENT_MAP = {
+    "0": "DOT",
+    "1": "SINGLE",
+    "2": "DOUBLE",
+    "3": "TRIPLE",
+    "4": "FOUR",
+    "6": "SIX",
+    "Wide": "WIDE",
+    "No Ball": "NO_BALL",
+    "Bye": "BYE",
+    "Wicket": "WICKET",
+    "Over": "OVER_COMPLETE"
+}
+
+EXTRA_EVENT_MAP = {
+    "Wide": "WIDE",
+    "No Ball": "NO_BALL",
+    "Bye": "BYE"
+}
+
+BREAK_EVENT_MAP = {
+    "Innings Break": "INNINGS_BREAK",
+    "Drinks Break": "DRINKS_BREAK",
+    "Tea Break": "TEA_BREAK",
+    "Lunch Break": "LUNCH_BREAK",
+    "Rain Break": "RAIN_BREAK",
+    "Rain Break (Delayed)": "RAIN_DELAY"
+}
+# =====================================================
+# 🎯 EVENT DETECTION (FAST)
+# =====================================================
+def detect_event(event):
+    return RUN_EVENT_MAP.get(event) or EXTRA_EVENT_MAP.get(event)
+
 # ---------------------------------------
 # ---------------------------------------
 # MAIN LOOP
@@ -924,14 +935,16 @@ def main():
                         # ---------------------------------------
                         batsmen = parse_batsmen(text)
                         bowler = parse_bowler(text)
-                        i = 0
+                        
                         status = detect_game_status(last_status_message)
-                        if status and status != last_status_message:
+                        message = ""
+                        if last_status_message and message != last_status_message:
+                            
                             if last_status_message == "Ball":  
                                 commentary = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler=remove_first_part(clean_name(bowler['bowler'])))                            
-                                print(commentary, i)
+                                print(commentary)
                                 speak("BOWLER_RUNUP",commentary)
-                                i  =+1
+                                
                             elif last_status_message == "Time Out":  
                                 commentary = random.choice(COMMENTARY["TIME_OUT"])                            
                                 print(commentary)
@@ -945,53 +958,53 @@ def main():
                                 print(commentary)
                                 speak("RUN_OUT_CHECK",commentary)"""
                                 
-                                
+                            message = last_status_message   
                            
                             
-                        # ---------------------------------------
-                        # DETECT EVENTS
-                        # ---------------------------------------
-                        events = detect_event(runs, wickets, over, ball, last_status_message) 
-                        
-                        if not events:
-                            #time.sleep(REFRESH_INTERVAL)
-                            continue
+                            # ---------------------------------------
+                            # DETECT EVENTS
+                            # ---------------------------------------
+                            #events = detect_event(runs, wickets, over, ball, last_status_message) 
+                            events = detect_event(last_status_message)
+                            if not events:
+                                #time.sleep(REFRESH_INTERVAL)
+                                continue
 
-                        print("EVENTS:", events)
+                            print("EVENTS:", events)
 
-                        # ---------------------------------------
-                        # GENERATE NATURAL COMMENTARY
-                        # ---------------------------------------
-                        line = generate_continuous_commentary(
-                            events,
-                            batsmen,
-                            runs,
-                            wickets,
-                            over,
-                            TEAM1,
-                            TEAM2,
-                            last_status_message
-                        )
-                        event = events[0]
-                        print(event)
-                        print("🎙 FINAL:", line)
-                        # ---------------------------------------
-                        # OUTPUT
-                        # ---------------------------------------
-                        if line:
-                            print("🎙 FINAL:", line)
-
-                            # Save last main event
-                            write_json(runs, wickets, over, ball, event)
+                            # ---------------------------------------
+                            # GENERATE NATURAL COMMENTARY
+                            # ---------------------------------------
+                            line = generate_continuous_commentary(
+                                events,
+                                batsmen,
+                                runs,
+                                wickets,
+                                over,
+                                TEAM1,
+                                TEAM2,
+                                last_status_message
+                            )
+                            event = events
                             print(event)
-                            # Speak once (IMPORTANT FIX ✅)
-                            speak(event, line)
-                        import hashlib
-                        data_hash = hashlib.md5(str(score_data).encode()).hexdigest()
-                        if data_hash != last_data_hash:
-                            prefix = "🏏"
-                            print(f"{prefix} [{datetime.now().strftime('%H:%M:%S')}] {score_data}")
-                            last_data_hash = data_hash
+                            print("🎙 FINAL:", line)
+                            # ---------------------------------------
+                            # OUTPUT
+                            # ---------------------------------------
+                            if line:
+                                print("🎙 FINAL:", line)
+
+                                # Save last main event
+                                write_json(runs, wickets, over, ball, event)
+                                print(event)
+                                # Speak once (IMPORTANT FIX ✅)
+                                speak(event, line)
+                            import hashlib
+                            data_hash = hashlib.md5(str(score_data).encode()).hexdigest()
+                            if data_hash != last_data_hash:
+                                prefix = "🏏"
+                                print(f"{prefix} [{datetime.now().strftime('%H:%M:%S')}] {score_data}")
+                                last_data_hash = data_hash
                         
                     time.sleep(refresh_interval)
                     
