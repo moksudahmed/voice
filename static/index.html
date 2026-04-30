@@ -1,222 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Cricket Broadcast Control Room</title>
+<meta charset="UTF-8">
+<title>ICC Master Control Room - Global Feed</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0b1220;
-            color: #fff;
-        }
+<style>
+/* =========================
+   GLOBAL THEME
+========================= */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #050814;
+    color: #ffffff;
+    overflow: hidden;
+}
 
-        .header {
-            padding: 12px 16px;
-            background: #111c33;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-        }
+/* =========================
+   HEADER BAR
+========================= */
+.header {
+    height: 50px;
+    background: #0b1220;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-weight: bold;
+    border-bottom: 1px solid #1f2a44;
+}
 
-        .live {
-            color: #ff3b3b;
-        }
+.live {
+    color: #ff3b3b;
+    animation: blink 1s infinite;
+}
 
-        .container {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            height: calc(100vh - 50px);
-        }
+@keyframes blink {
+    50% { opacity: 0.3; }
+}
 
-        .panel {
-            background: #0f172a;
-            padding: 15px;
-            border-right: 1px solid #1e293b;
-            overflow-y: auto;
-        }
+/* =========================
+   MAIN LAYOUT
+========================= */
+.container {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: calc(100vh - 50px);
+}
 
-        .screen {
-            padding: 15px;
-        }
+/* =========================
+   MATCH LIST PANEL
+========================= */
+.panel {
+    background: #0c1426;
+    border-right: 1px solid #1e2b45;
+    overflow-y: auto;
+    padding: 10px;
+}
 
-        h3 {
-            margin-top: 0;
-        }
+.match {
+    background: rgba(255,255,255,0.05);
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    font-size: 14px;
+}
 
-        select, input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 6px 0;
-            border-radius: 6px;
-            border: none;
-            font-size: 14px;
-        }
+.match:hover {
+    background: rgba(255,255,255,0.12);
+}
 
-        button {
-            cursor: pointer;
-            background: #2563eb;
-            color: white;
-            font-weight: bold;
-        }
+.match.active {
+    border-left: 4px solid #00ff99;
+    background: rgba(0,255,153,0.08);
+}
 
-        .danger { background: #dc2626; }
-        .green { background: #16a34a; }
+/* =========================
+   BROADCAST SCREEN
+========================= */
+.screen {
+    position: relative;
+    background: radial-gradient(circle at bottom, #020817, #000);
+    overflow: hidden;
+}
 
-        #feed {
-            height: 85vh;
-            overflow-y: auto;
-            background: #000;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid #1f2937;
-        }
+/* =========================
+   SCORE BUG (TV STYLE)
+========================= */
+.scorebug {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.85);
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid #1f2a44;
+    min-width: 180px;
+}
 
-        .msg {
-            padding: 6px;
-            border-bottom: 1px solid #222;
-            font-size: 13px;
-        }
+#matchTitle {
+    font-size: 14px;
+    opacity: 0.9;
+}
 
-        .small {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-    </style>
+.score {
+    font-size: 28px;
+    font-weight: bold;
+    color: gold;
+    margin-top: 5px;
+}
+
+/* =========================
+   COMMENTARY BOX
+========================= */
+.commentary {
+    position: absolute;
+    bottom: 120px;
+    left: 20px;
+    background: rgba(0,0,0,0.75);
+    padding: 14px 16px;
+    border-left: 4px solid #ff3b3b;
+    border-radius: 6px;
+    max-width: 60%;
+    font-size: 14px;
+}
+
+/* =========================
+   LIVE TICKER
+========================= */
+.ticker {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: #000;
+    color: #00ff99;
+    padding: 10px;
+    overflow: hidden;
+    border-top: 1px solid #1f2a44;
+}
+
+.ticker span {
+    display: inline-block;
+    padding-left: 100%;
+    white-space: nowrap;
+    animation: scroll 14s linear infinite;
+}
+
+@keyframes scroll {
+    100% { transform: translateX(-100%); }
+}
+
+/* =========================
+   LOADING STATE
+========================= */
+.loading {
+    padding: 12px;
+    opacity: 0.7;
+    font-size: 13px;
+}
+
+/* =========================
+   EMPTY STATE
+========================= */
+.empty {
+    padding: 12px;
+    opacity: 0.5;
+    font-size: 13px;
+}
+</style>
 </head>
 
 <body>
 
+<!-- HEADER -->
 <div class="header">
-    <div>🎥 Cricket Broadcast Control Room</div>
+    <div>🌍 ICC MASTER CONTROL ROOM (GLOBAL FEED)</div>
     <div class="live">● LIVE SYSTEM</div>
 </div>
 
+<!-- MAIN -->
 <div class="container">
 
-    <!-- CONTROL PANEL -->
-    <div class="panel">
+    <!-- MATCH PANEL -->
+    <div class="panel" id="matchList">
+        <div class="loading">Loading CREX matches...</div>
+    </div>
 
-        <h3>🏏 Live Matches</h3>
+    <!-- BROADCAST SCREEN -->
+    <div class="screen">
 
-        <select id="match"></select>
-        <button onclick="startSelected()">▶ Start Selected Match</button>
+        <!-- SCOREBUG -->
+        <div class="scorebug">
+            <div id="matchTitle">No Match Selected</div>
+            <div class="score" id="score">0/0</div>
+        </div>
 
-        <hr>
+        <!-- COMMENTARY -->
+        <div class="commentary" id="commentary">
+            Waiting for live match feed...
+        </div>
 
-        <h3>⚡ Force Match</h3>
-        <input id="url" placeholder="Paste match URL here">
-        <button onclick="forceMatch()">🚀 Force Start</button>
-
-        <hr>
-
-        <h3>🎛 Controls</h3>
-
-        <button class="green" onclick="send('start')">START</button>
-        <button class="danger" onclick="send('stop')">STOP</button>
-
-        <button onclick="send('mute')">MUTE VOICE</button>
-        <button onclick="send('unmute')">UNMUTE VOICE</button>
-
-        <hr>
-
-        <div class="small">
-            🔄 Match list auto loads from backend<br>
-            🎙 Live commentary streaming enabled
+        <!-- TICKER -->
+        <div class="ticker">
+            <span id="ticker">
+                ICC GLOBAL CONTROL ROOM ACTIVE • LOADING LIVE DATA •
+            </span>
         </div>
 
     </div>
-
-    <!-- LIVE FEED -->
-    <div class="screen">
-
-        <h3>📡 Live Commentary Feed</h3>
-
-        <div id="feed"></div>
-
-    </div>
-
 </div>
 
 <script>
-let ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
-ws.onopen = () => {
-    add("🟢 Connected to server");
-};
+/* =========================
+   STATE
+========================= */
+let matchesCache = [];
 
-ws.onmessage = (e) => {
-    add("🎙 " + e.data);
-};
-
-function send(msg) {
-    ws.send(msg);
-}
-
-// =========================
-// MATCH ACTIONS
-// =========================
-
-function startSelected() {
-    let url = document.getElementById("match").value;
-    ws.send("force:" + url);
-}
-
-function forceMatch() {
-    let url = document.getElementById("url").value;
-    ws.send("force:" + url);
-}
-
-// =========================
-// FEED UI
-// =========================
-
-function add(text) {
-    let div = document.createElement("div");
-    div.className = "msg";
-    div.innerText = text;
-
-    let feed = document.getElementById("feed");
-    feed.appendChild(div);
-    feed.scrollTop = feed.scrollHeight;
-}
-
-// =========================
-// LOAD MATCHES FROM BACKEND
-// =========================
-
+/* =========================
+   LOAD MATCHES (BACKEND READY)
+========================= */
 async function loadMatches() {
+    const panel = document.getElementById("matchList");
+
     try {
-        let res = await fetch("/matches");
-        let data = await res.json();
+        // IMPORTANT: should be your backend endpoint
+        const res = await fetch("/matches");
+        const data = await res.json();
 
-        let select = document.getElementById("match");
-        select.innerHTML = "";
+        matchesCache = data || [];
 
-        if (!data.length) {
-            let opt = document.createElement("option");
-            opt.textContent = "No live matches found";
-            select.appendChild(opt);
+        if (!matchesCache.length) {
+            panel.innerHTML = `<div class="empty">No live matches found</div>`;
             return;
         }
 
-        data.forEach(m => {
-            let opt = document.createElement("option");
-            opt.value = m.url;
-            opt.textContent = m.title + " | " + m.comment;
-            select.appendChild(opt);
-        });
-
-        add("📡 Matches loaded: " + data.length);
+        renderMatches(matchesCache);
 
     } catch (err) {
-        add("❌ Failed to load matches");
+        panel.innerHTML = `
+            <div class="empty">
+                ❌ Failed to load matches<br>
+                (Backend /matches API required)
+            </div>
+        `;
     }
 }
 
-// AUTO LOAD
+/* =========================
+   RENDER MATCHES
+========================= */
+function renderMatches(list) {
+    const panel = document.getElementById("matchList");
+    panel.innerHTML = "";
+
+    list.forEach(match => {
+        const div = document.createElement("div");
+        div.className = "match";
+        div.innerText = match.title || match;
+
+        div.onclick = () => selectMatch(match, div);
+
+        panel.appendChild(div);
+    });
+}
+
+/* =========================
+   SELECT MATCH (DIRECTOR MODE)
+========================= */
+function selectMatch(match, el) {
+
+    document.querySelectorAll(".match")
+        .forEach(m => m.classList.remove("active"));
+
+    el.classList.add("active");
+
+    const title = match.title || match;
+
+    document.getElementById("matchTitle").innerText = title;
+    document.getElementById("commentary").innerText =
+        "LIVE FEED: " + title;
+
+    document.getElementById("ticker").innerText =
+        "🔥 " + title + " • " +
+        document.getElementById("ticker").innerText;
+}
+
+/* =========================
+   INIT SYSTEM
+========================= */
 loadMatches();
 
 </script>

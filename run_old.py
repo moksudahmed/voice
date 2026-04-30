@@ -21,7 +21,7 @@ from utill import number_to_bangla_words
 # ---------------------------------------
 # CONFIG
 # ---------------------------------------
-CREX_URL = "https://crex.com/cricket-live-score/mi-vs-srh-41st-match-indian-premier-league-2026-match-updates-118M"
+#CREX_URL = "https://crex.com/cricket-live-score/mi-vs-srh-41st-match-indian-premier-league-2026-match-updates-118M"
 OUTPUT_FILE = "C:/cricket_voices/score.json"
 TEAM1 = "মুম্বাই ইন্ডিয়ান্স" 
 TEAM2 = "সানরাইজার্স হায়দরাবাদ"
@@ -693,14 +693,40 @@ def detect_event(event):
 # MAIN LOOP
 # ---------------------------------------     
 
-def main():
+def extract_match_data(lines):
+    """
+    Extract relevant match data from page lines.
+    """
+    score_info = []
+    
+    for i, line in enumerate(lines):
+        if isinstance(line, str):
+            # Check for score like "189/8" or "127-4"
+            if re.search(r'\d{1,3}/\d{1,2}', line) or re.search(r'\d{1,3}-\d{1,2}', line):
+                score_info.append(line)
+            
+            # Check for overs
+            if re.search(r'\d{1,2}\.\d{1,2}\s*overs?', line.lower()):
+                score_info.append(line)
+            
+            # Check for run rate
+            if "run rate" in line.lower():
+                score_info.append(line)
+    
+    if score_info:
+        return ' | '.join(score_info[:3])
+    
+    return "Match in progress..."
+
+
+def ai_commentry(CREX_URL):
     global welcome_played
     speak("WELCOME",welcome_msg)
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        
+        print(CREX_URL)
         #page.goto(CREX_URL)
         page.goto(CREX_URL, timeout=60000)
         page.wait_for_load_state("networkidle")  # VERY IMPORTANT
@@ -1019,31 +1045,6 @@ def main():
         
         browser.close()
 
-def extract_match_data(lines):
-    """
-    Extract relevant match data from page lines.
-    """
-    score_info = []
-    
-    for i, line in enumerate(lines):
-        if isinstance(line, str):
-            # Check for score like "189/8" or "127-4"
-            if re.search(r'\d{1,3}/\d{1,2}', line) or re.search(r'\d{1,3}-\d{1,2}', line):
-                score_info.append(line)
-            
-            # Check for overs
-            if re.search(r'\d{1,2}\.\d{1,2}\s*overs?', line.lower()):
-                score_info.append(line)
-            
-            # Check for run rate
-            if "run rate" in line.lower():
-                score_info.append(line)
-    
-    if score_info:
-        return ' | '.join(score_info[:3])
-    
-    return "Match in progress..."
-
-if __name__ == "__main__":
-    main()
+"""if __name__ == "__main__":
+    main()"""
     
