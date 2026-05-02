@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body {
+    margin: 0;
+    background: transparent;
+    font-family: Arial;
+}
+
+#scoreboard {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    padding: 20px 40px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border-radius: 10px;
+    font-size: 24px;
+}
+
+#event {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 60px;
+    color: yellow;
+    display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="scoreboard">
+    <div id="team1"></div>
+    <div id="team2"></div>
+    <div id="current"></div>
+    <div id="rr"></div>
+</div>
+
+<div id="event"></div>
+
+<script>
+const ws = new WebSocket("ws://localhost:8000/ws");
+
+ws.onmessage = (msg) => {
+    const data = JSON.parse(msg.data);
+
+    document.getElementById("team1").innerText = data.score.team1;
+    document.getElementById("team2").innerText = data.score.team2;
+    document.getElementById("current").innerText = "Current: " + data.score.score;
+    document.getElementById("rr").innerText = "RR: " + data.score.rr;
+
+    if (data.event) {
+        const el = document.getElementById("event");
+        el.innerText = data.event;
+        el.style.display = "block";
+
+        setTimeout(() => {
+            el.style.display = "none";
+        }, 2000);
+    }
+};
+</script>
+
+</body>
+</html>

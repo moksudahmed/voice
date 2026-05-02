@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>TV Scorecard | Premium Palette | Punjab Kings vs LSG</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Teko', 'Poppins', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      background: #0a0a0a;
+    }
+
+    /* MAIN WRAPPER: full screen with LOCAL background image - CLEAR AND VISIBLE */
+    .broadcast-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      /* LOCAL IMAGE - place your image in the same folder as 'stadium.jpg' */
+      background-image: url('stadium.jpg');
+      background-size: cover;
+      background-position: center 25%;
+      background-repeat: no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* TOP SCORE BAR — Primary color #DB1A1A (bold red) */
+    .top-scorebar {
+      position: relative;
+      z-index: 20;
+      background: linear-gradient(135deg, #DB1A1A, #B81515);
+      backdrop-filter: blur(4px);
+      border-bottom: 3px solid #FFD700;
+      padding: 14px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    /* team branding */
+    .team-block {
+      display: flex;
+      align-items: baseline;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+
+    .team-name {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #FFF6F6;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .score-large {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #FFD700;
+      font-family: 'Courier New', monospace;
+      line-height: 1;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      letter-spacing: 1px;
+    }
+
+    .meta-info {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+      padding: 5px 22px;
+      border-radius: 60px;
+    }
+
+    .meta-info span {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #FFF6F6;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+    }
+
+    .live-badge {
+      background: #DB1A1A;
+      padding: 6px 18px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #FFF6F6;
+      box-shadow: 0 0 12px rgba(219, 26, 26, 0.6);
+      animation: pulse-red 1.2s infinite;
+      border: 1px solid rgba(255,215,0,0.5);
+    }
+
+    @keyframes pulse-red {
+      0% { opacity: 1; background: #DB1A1A; box-shadow: 0 0 2px #DB1A1A;}
+      100% { opacity: 0.85; background: #C41515; box-shadow: 0 0 12px #DB1A1A;}
+    }
+
+    /* BOTTOM SCOREBOARD PANEL — Color #2C687B (deep teal) + #8CC7C4 accents */
+    .bottom-panel {
+      position: relative;
+      z-index: 20;
+      background: linear-gradient(0deg, rgba(44, 104, 123, 0.92), rgba(44, 104, 123, 0.88));
+      backdrop-filter: blur(12px);
+      border-top: 3px solid #8CC7C4;
+      padding: 20px 32px 24px 32px;
+      width: 100%;
+      box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Main stats row */
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 14px;
+    }
+
+    .crr-partner {
+      display: flex;
+      gap: 28px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
+      padding: 8px 22px;
+      border-radius: 48px;
+    }
+
+    .crr-partner div {
+      font-weight: 600;
+      color: #FFF6F6;
+      font-size: 1.1rem;
+    }
+
+    .crr-partner strong {
+      color: #8CC7C4;
+      margin-right: 6px;
+      font-weight: 800;
+    }
+
+    /* batters compact */
+    .batters-compact {
+      display: flex;
+      gap: 32px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
+      padding: 6px 24px;
+      border-radius: 60px;
+      flex-wrap: wrap;
+    }
+
+    .batter-item {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .batter-name {
+      font-weight: 800;
+      color: #FFF6F6;
+      font-size: 1.1rem;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+    }
+
+    .batter-runs {
+      font-family: monospace;
+      font-weight: bold;
+      color: #8CC7C4;
+    }
+
+    .batter-sr {
+      font-size: 0.7rem;
+      color: #FFF6F6;
+      opacity: 0.9;
+    }
+
+    .bowler-mini-card {
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(4px);
+      padding: 5px 24px;
+      border-radius: 60px;
+      display: flex;
+      gap: 22px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .fast-tag {
+      background: #DB1A1A;
+      border-radius: 40px;
+      padding: 2px 12px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      color: #FFF6F6;
+    }
+
+    .bowler-name-detail {
+      font-weight: 800;
+      color: #8CC7C4;
+    }
+
+    /* middle details row */
+    .middle-details {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(140, 199, 196, 0.4);
+    }
+
+    .over-visual {
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(4px);
+      padding: 5px 20px;
+      border-radius: 48px;
+      font-family: 'Courier New', monospace;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #8CC7C4;
+    }
+
+    .last-wicket {
+      background: rgba(219, 26, 26, 0.7);
+      padding: 4px 20px;
+      border-radius: 40px;
+      font-weight: 500;
+      color: #FFF6F6;
+    }
+
+    .yet-to-bat {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px 20px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #8CC7C4;
+    }
+
+    /* extra stats footer */
+    .extra-stats-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 14px;
+      font-size: 0.7rem;
+      color: #FFF6F6;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
+      padding: 8px 16px;
+      border-radius: 40px;
+      flex-wrap: wrap;
+      opacity: 0.95;
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .top-scorebar {
+        padding: 8px 18px;
+      }
+      .team-name {
+        font-size: 1.2rem;
+      }
+      .score-large {
+        font-size: 1.9rem;
+      }
+      .bottom-panel {
+        padding: 14px 18px;
+      }
+      .batters-compact {
+        gap: 14px;
+        padding: 4px 14px;
+      }
+      .bowler-mini-card {
+        gap: 10px;
+      }
+      .stats-row {
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="broadcast-container" id="stadiumBgContainer">
+  <!-- TOP BAR — #DB1A1A Primary Red -->
+  <div class="top-scorebar">
+    <div class="team-block">
+      <div class="team-name">🏏 PUNJAB KINGS</div>
+      <div class="score-large">110/1</div>
+      <div class="meta-info">
+        <span>⚡ LSG</span>
+        <span>🎯 BOWL • 10.0</span>
+      </div>
+    </div>
+    <div class="live-badge">🔴 LIVE</div>
+  </div>
+
+  <!-- BOTTOM SCORE PANEL — #2C687B / #8CC7C4 / #FFF6F6 combination -->
+  <div class="bottom-panel">
+    <!-- row 1: key stats -->
+    <div class="stats-row">
+      <div class="crr-partner">
+        <div><strong>📈 CRR</strong> 11.00</div>
+        <div><strong>🤝 P'SHIP</strong> 107 (57)</div>
+      </div>
+      <div class="batters-compact">
+        <div class="batter-item">
+          <span class="batter-name">PRIYANSH ARYA</span>
+          <span class="batter-runs">65 (27)</span>
+          <span class="batter-sr">SR:240.7</span>
+          <span style="font-size:0.7rem; color:#8CC7C4;">🔥 4s:4 6s:5</span>
+        </div>
+        <div class="batter-item">
+          <span class="batter-name">COOPER CONNOLLY</span>
+          <span class="batter-runs">41 (32)</span>
+          <span class="batter-sr">SR:128.1</span>
+          <span style="font-size:0.7rem; color:#8CC7C4;">✨ 4s:5 6s:2</span>
+        </div>
+      </div>
+      <div class="bowler-mini-card">
+        <span class="fast-tag">⚡ FAST BOWLER</span>
+        <span><span class="bowler-name-detail">PRINCE YADAV</span> 0-13 (2.0)</span>
+        <span style="color:#8CC7C4;">Econ 6.50</span>
+      </div>
+    </div>
+
+    <!-- row 2: Over details + last wicket + yet to bat -->
+    <div class="middle-details">
+      <div class="over-visual">
+        🏏 OVER 9: 2 🟢 4 =10 &nbsp;|&nbsp; OVER 10: 6 💥
+      </div>
+      <div class="last-wicket">
+        ⚡ Last Wicket: P Singh 0 (1)
+      </div>
+      <div class="yet-to-bat">
+        🧢 YET TO BAT: S Iyer (Avg 35.13) • N Wadhera (Avg 24.87)
+      </div>
+    </div>
+
+    <!-- row 3: extra stats -->
+    <div class="extra-stats-footer">
+      <span>🏏 Priyansh S/R: 240.74 | Connolly S/R: 128.13</span>
+      <span>🎯 Prince Yadav Econ: 6.50 • 2 overs 13 runs</span>
+      <span>📊 Last 5 overs: 56/0 | RR 11.2</span>
+      <span>🏟️ PCA Stadium • Mohali</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // LOCAL IMAGE CONFIGURATION - CLEAR STADIUM BACKGROUND
+  // IMPORTANT: Place your stadium image inside the same folder as this HTML file.
+  // Change the filename below to match your local image (e.g., 'stadium.jpg', 'cricket-bg.png', etc.)
+  
+  const localImagePaths = [
+    'stadium.jpg',        // CHANGE THIS to your actual local image filename
+    'cricket-stadium.jpg',
+    'stadium.png',
+    'background.jpg',
+    './assets/stadium.jpg',
+    './images/stadium.jpg'
+  ];
+  
+  const container = document.getElementById('stadiumBgContainer');
+  
+  function setLocalBackground(imageUrl) {
+    container.style.backgroundImage = `url('${imageUrl}')`;
+    container.style.backgroundSize = "cover";
+    container.style.backgroundPosition = "center 25%";
+    container.style.backgroundRepeat = "no-repeat";
+    console.log(`✅ Stadium background set to: ${imageUrl}`);
+  }
+  
+  // Try to load local image
+  let attemptIndex = 0;
+  
+  function tryNextImage() {
+    if (attemptIndex >= localImagePaths.length) {
+      // Fallback: high-quality stadium image from CDN (clear view)
+      const fallbackUrl = "https://images.pexels.com/photos/1264080/cricket-stadium-sports-match-1264080.jpeg?auto=compress&cs=tinysrgb&w=1600&h=900&dpr=2";
+      container.style.backgroundImage = `url('${fallbackUrl}')`;
+      container.style.backgroundSize = "cover";
+      container.style.backgroundPosition = "center 25%";
+      console.warn("⚠️ No local stadium image found. Using online stadium image as fallback.");
+      return;
+    }
+    
+    const imgPath = localImagePaths[attemptIndex];
+    const testImg = new Image();
+    testImg.onload = function() {
+      setLocalBackground(imgPath);
+    };
+    testImg.onerror = function() {
+      attemptIndex++;
+      tryNextImage();
+    };
+    testImg.src = imgPath;
+  }
+  
+  tryNextImage();
+</script>
+
+<!-- Additional styles for perfect color harmony -->
+<style>
+  /* Ensuring all text uses the color palette perfectly */
+  .team-name, .live-badge, .meta-info span, .crr-partner div, .batter-name {
+    color: #FFF6F6;
+  }
+  
+  .score-large {
+    color: #FFD700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  
+  .crr-partner strong, .batter-runs, .bowler-name-detail, .over-visual, .yet-to-bat {
+    color: #8CC7C4;
+  }
+  
+  .last-wicket {
+    background: #DB1A1A;
+    color: #FFF6F6;
+  }
+  
+  .fast-tag {
+    background: #DB1A1A;
+    color: #FFF6F6;
+  }
+  
+  .bottom-panel {
+    background: linear-gradient(0deg, rgba(44, 104, 123, 0.92), rgba(44, 104, 123, 0.88));
+  }
+  
+  .top-scorebar {
+    background: linear-gradient(135deg, #DB1A1A, #B81515);
+  }
+  
+  /* No overlays on background - stadium remains crystal clear */
+  .broadcast-container::before,
+  .broadcast-container::after {
+    display: none;
+  }
+  
+  /* subtle hover effects */
+  .batter-item:hover, .bowler-mini-card:hover {
+    transform: scale(1.01);
+    transition: transform 0.2s ease;
+  }
+</style>
+</body>
+</html>

@@ -2,22 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ICC Master Control Room - Global Feed</title>
+<title>ESPN Auto Broadcast System</title>
 
 <style>
-/* =========================
-   GLOBAL THEME
-========================= */
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #050814;
-    color: #ffffff;
+    font-family: Arial;
+    background: #020713;
+    color: white;
     overflow: hidden;
 }
 
 /* =========================
-   HEADER BAR
+   HEADER
 ========================= */
 .header {
     height: 50px;
@@ -31,7 +28,7 @@ body {
 }
 
 .live {
-    color: #ff3b3b;
+    color: red;
     animation: blink 1s infinite;
 }
 
@@ -40,32 +37,31 @@ body {
 }
 
 /* =========================
-   MAIN LAYOUT
+   LAYOUT
 ========================= */
 .container {
     display: grid;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: 320px 1fr;
     height: calc(100vh - 50px);
 }
 
 /* =========================
-   MATCH LIST PANEL
+   MATCH LIST
 ========================= */
-.panel {
+.sidebar {
     background: #0c1426;
-    border-right: 1px solid #1e2b45;
     overflow-y: auto;
+    border-right: 1px solid #1e2b45;
     padding: 10px;
 }
 
 .match {
     background: rgba(255,255,255,0.05);
-    padding: 12px;
+    padding: 10px;
     margin-bottom: 10px;
     border-radius: 8px;
     cursor: pointer;
-    transition: 0.2s ease;
-    font-size: 14px;
+    transition: 0.2s;
 }
 
 .match:hover {
@@ -74,7 +70,6 @@ body {
 
 .match.active {
     border-left: 4px solid #00ff99;
-    background: rgba(0,255,153,0.08);
 }
 
 /* =========================
@@ -87,65 +82,67 @@ body {
 }
 
 /* =========================
-   SCORE BUG (TV STYLE)
+   ESPN SCORE BUG
 ========================= */
 .scorebug {
     position: absolute;
     top: 20px;
     left: 20px;
     background: rgba(0,0,0,0.85);
-    padding: 14px 18px;
+    padding: 14px;
     border-radius: 10px;
+    min-width: 200px;
     border: 1px solid #1f2a44;
-    min-width: 180px;
 }
 
-#matchTitle {
-    font-size: 14px;
-    opacity: 0.9;
+.team {
+    font-size: 12px;
+    opacity: 0.8;
 }
 
 .score {
     font-size: 28px;
     font-weight: bold;
     color: gold;
-    margin-top: 5px;
 }
 
 /* =========================
-   COMMENTARY BOX
+   LOWER THIRD GRAPHICS
 ========================= */
-.commentary {
+.lower-third {
     position: absolute;
     bottom: 120px;
-    left: 20px;
-    background: rgba(0,0,0,0.75);
-    padding: 14px 16px;
-    border-left: 4px solid #ff3b3b;
-    border-radius: 6px;
+    left: -500px;
+    background: rgba(0,0,0,0.8);
+    padding: 14px;
+    border-left: 4px solid red;
+    border-radius: 8px;
+    transition: 0.5s;
     max-width: 60%;
-    font-size: 14px;
+}
+
+.lower-third.show {
+    left: 20px;
 }
 
 /* =========================
-   LIVE TICKER
+   TICKER
 ========================= */
 .ticker {
     position: absolute;
     bottom: 0;
     width: 100%;
-    background: #000;
+    background: black;
     color: #00ff99;
     padding: 10px;
     overflow: hidden;
-    border-top: 1px solid #1f2a44;
 }
 
 .ticker span {
     display: inline-block;
     padding-left: 100%;
     white-space: nowrap;
-    animation: scroll 14s linear infinite;
+    animation: scroll 12s linear infinite;
 }
 
 @keyframes scroll {
@@ -153,21 +150,33 @@ body {
 }
 
 /* =========================
-   LOADING STATE
+   REPLAY
 ========================= */
-.loading {
-    padding: 12px;
-    opacity: 0.7;
-    font-size: 13px;
+.replay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 40px;
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.replay.show {
+    opacity: 1;
 }
 
 /* =========================
-   EMPTY STATE
+   FLASH EFFECT
 ========================= */
-.empty {
-    padding: 12px;
-    opacity: 0.5;
-    font-size: 13px;
+.flash {
+    animation: flash 0.4s;
+}
+
+@keyframes flash {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(2); }
+    100% { filter: brightness(1); }
 }
 </style>
 </head>
@@ -176,99 +185,93 @@ body {
 
 <!-- HEADER -->
 <div class="header">
-    <div>🌍 ICC MASTER CONTROL ROOM (GLOBAL FEED)</div>
-    <div class="live">● LIVE SYSTEM</div>
+    <div>🏆 ESPN AUTO BROADCAST ENGINE</div>
+    <div class="live">● LIVE WORLD FEED</div>
 </div>
 
-<!-- MAIN -->
 <div class="container">
 
-    <!-- MATCH PANEL -->
-    <div class="panel" id="matchList">
-        <div class="loading">Loading CREX matches...</div>
+    <!-- MATCH LIST -->
+    <div class="sidebar" id="matchList">
+        Loading matches...
     </div>
 
     <!-- BROADCAST SCREEN -->
     <div class="screen">
 
-        <!-- SCOREBUG -->
+        <!-- SCORE BUG -->
         <div class="scorebug">
-            <div id="matchTitle">No Match Selected</div>
+            <div class="team" id="matchTitle">NO MATCH</div>
             <div class="score" id="score">0/0</div>
         </div>
 
-        <!-- COMMENTARY -->
-        <div class="commentary" id="commentary">
-            Waiting for live match feed...
+        <!-- LOWER THIRD -->
+        <div class="lower-third" id="lower">
+            Waiting for AI director...
         </div>
+
+        <!-- REPLAY -->
+        <div class="replay" id="replay">REPLAY</div>
 
         <!-- TICKER -->
         <div class="ticker">
             <span id="ticker">
-                ICC GLOBAL CONTROL ROOM ACTIVE • LOADING LIVE DATA •
+                ESPN AUTO BROADCAST SYSTEM ACTIVE • AI DIRECTOR ENABLED •
             </span>
         </div>
 
     </div>
+
 </div>
 
 <script>
 
 /* =========================
-   STATE
+   STATE ENGINE
 ========================= */
-let matchesCache = [];
+let currentMatch = null;
 
 /* =========================
-   LOAD MATCHES (BACKEND READY)
+   LOAD MATCHES (FROM BACKEND)
 ========================= */
 async function loadMatches() {
-    const panel = document.getElementById("matchList");
-
     try {
-        // IMPORTANT: should be your backend endpoint
         const res = await fetch("/matches");
         const data = await res.json();
 
-        matchesCache = data || [];
+        renderMatches(data);
 
-        if (!matchesCache.length) {
-            panel.innerHTML = `<div class="empty">No live matches found</div>`;
-            return;
+        // AUTO SELECT FIRST MATCH (ESPN FEATURE)
+        if (data.length > 0) {
+            selectMatch(data[0], document.querySelector(".match"));
         }
 
-        renderMatches(matchesCache);
-
     } catch (err) {
-        panel.innerHTML = `
-            <div class="empty">
-                ❌ Failed to load matches<br>
-                (Backend /matches API required)
-            </div>
-        `;
+        document.getElementById("matchList").innerHTML =
+            "❌ Backend /matches not found";
     }
 }
 
 /* =========================
    RENDER MATCHES
 ========================= */
-function renderMatches(list) {
-    const panel = document.getElementById("matchList");
-    panel.innerHTML = "";
+function renderMatches(matches) {
+    const box = document.getElementById("matchList");
+    box.innerHTML = "";
 
-    list.forEach(match => {
+    matches.forEach((m, i) => {
         const div = document.createElement("div");
         div.className = "match";
-        div.innerText = match.title || match;
+        div.innerText = m.title || m;
 
-        div.onclick = () => selectMatch(match, div);
+        div.onclick = () => selectMatch(m, div);
 
-        panel.appendChild(div);
+        box.appendChild(div);
     });
 }
 
 /* =========================
-   SELECT MATCH (DIRECTOR MODE)
+   ESPN DIRECTOR ENGINE
 ========================= */
 function selectMatch(match, el) {
 
@@ -277,19 +280,106 @@ function selectMatch(match, el) {
 
     el.classList.add("active");
 
-    const title = match.title || match;
+    currentMatch = match;
+
+    let title = match.title || match;
 
     document.getElementById("matchTitle").innerText = title;
-    document.getElementById("commentary").innerText =
-        "LIVE FEED: " + title;
 
+    triggerLowerThird("LIVE: " + title);
+    updateTicker(title);
+}
+
+/* =========================
+   AI BROADCAST DIRECTOR
+========================= */
+function aiDirector(event) {
+
+    let lower = document.getElementById("lower");
+
+    if (event.includes("six")) {
+        triggerFlash();
+        showReplay("SIX HIT");
+        triggerLowerThird("BIG SIX!");
+    }
+
+    if (event.includes("wicket")) {
+        triggerFlash();
+        showReplay("WICKET");
+        triggerLowerThird("WICKET FALLEN!");
+    }
+
+    if (event.includes("four")) {
+        triggerFlash();
+    }
+}
+
+/* =========================
+   GRAPHICS ENGINE
+========================= */
+function triggerLowerThird(text) {
+    let lt = document.getElementById("lower");
+    lt.innerText = text;
+    lt.classList.add("show");
+
+    setTimeout(() => lt.classList.remove("show"), 2500);
+}
+
+/* =========================
+   TICKER ENGINE
+========================= */
+function updateTicker(text) {
     document.getElementById("ticker").innerText =
-        "🔥 " + title + " • " +
+        "🔥 " + text + " • " +
         document.getElementById("ticker").innerText;
 }
 
 /* =========================
-   INIT SYSTEM
+   SCORE ENGINE (SIMULATION HOOK)
+========================= */
+function updateScore(score) {
+    document.getElementById("score").innerText = score;
+}
+
+/* =========================
+   VISUAL FX
+========================= */
+function triggerFlash() {
+    document.querySelector(".screen").classList.add("flash");
+    setTimeout(() => {
+        document.querySelector(".screen").classList.remove("flash");
+    }, 300);
+}
+
+/* =========================
+   REPLAY ENGINE
+========================= */
+function showReplay(text) {
+    let r = document.getElementById("replay");
+    r.innerText = text;
+    r.classList.add("show");
+
+    setTimeout(() => r.classList.remove("show"), 1200);
+}
+
+/* =========================
+   SIMULATED LIVE FEED (REMOVE IN PRODUCTION)
+========================= */
+setInterval(() => {
+    const events = [
+        "SIX massive hit",
+        "FOUR through cover",
+        "WICKET bowled!",
+        "DOT ball pressure building"
+    ];
+
+    let event = events[Math.floor(Math.random() * events.length)];
+    aiDirector(event);
+
+}, 4000);
+
+/* =========================
+   INIT
 ========================= */
 loadMatches();
 

@@ -1,296 +1,392 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>IPL Broadcast Pro</title>
+<title>CRICKET BROADCAST PRO ENGINE</title>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 
 <style>
-/* =========================
-   STADIUM BACKGROUND
-========================= */
 body {
-    margin: 0;
+    margin:0;
+    overflow:hidden;
     font-family: 'Segoe UI', sans-serif;
-    color: white;
-    overflow: hidden;
-    background: radial-gradient(circle at center, #0f172a 0%, #000 80%);
+    background:black;
 }
 
-/* moving light effect */
+/* SKY GLOW */
 body::before {
-    content: "";
-    position: fixed;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(0,255,150,0.05), transparent);
-    animation: stadiumLight 8s infinite linear;
+    content:"";
+    position:absolute;
+    width:100%;
+    height:100%;
+    background: radial-gradient(circle at center, #0a1a2f, #000);
+    z-index:-1;
 }
 
-@keyframes stadiumLight {
-    0% { transform: translate(-30%, -30%); }
-    50% { transform: translate(10%, 10%); }
-    100% { transform: translate(-30%, -30%); }
+/* SCOREBOARD */
+#scoreboard {
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:14px 40px;
+    border-radius:16px;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    color:white;
+    font-weight:bold;
+    display:flex;
+    gap:20px;
+    box-shadow:0 0 25px rgba(0,0,0,0.9);
 }
 
-/* =========================
-   HEADER
-========================= */
-.header {
-    height: 55px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+#score {
+    color:#00ffcc;
+    font-size:22px;
 }
 
-.live {
-    color: #ff2d2d;
-    font-weight: bold;
+/* COMMENTARY */
+#commentary {
+    position:absolute;
+    bottom:20px;
+    width:100%;
+    text-align:center;
+    font-size:20px;
+    color:#00ffcc;
+    background:rgba(0,0,0,0.7);
+    padding:10px;
 }
 
-/* =========================
-   SCOREBOARD (TV STYLE)
-========================= */
-.scoreboard {
-    position: fixed;
-    top: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 600px;
-
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(14px);
-
-    border-radius: 16px;
-    padding: 14px;
-    border: 1px solid rgba(255,255,255,0.1);
-
-    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+/* REPLAY */
+#replay {
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:50px;
+    color:red;
+    display:none;
 }
 
-.score-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* PANEL */
+#panel {
+    position:absolute;
+    right:10px;
+    top:10px;
+    width:260px;
+    background:rgba(15,23,42,0.9);
+    padding:10px;
+    border-radius:10px;
+    color:white;
 }
 
-.team {
-    font-weight: bold;
-    font-size: 16px;
+button {
+    width:100%;
+    padding:8px;
+    margin:5px 0;
+    border:none;
+    cursor:pointer;
+    background:#2563eb;
+    color:white;
 }
 
-.score {
-    font-size: 34px;
-    font-weight: bold;
-    text-align: center;
-    color: #22c55e;
-}
+.green {background:#16a34a;}
+.red {background:#dc2626;}
 
-.sub {
-    font-size: 12px;
-    opacity: 0.8;
-}
-
-/* =========================
-   LOWER THIRD (COMMENTARY)
-========================= */
-.lower-third {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 70%;
-
-    background: linear-gradient(90deg, #111827, #1f2937);
-    padding: 10px 20px;
-    border-radius: 10px;
-
-    font-size: 14px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.6);
-
-    animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translate(-50%, 20px); }
-    to { opacity: 1; transform: translate(-50%, 0); }
-}
-
-/* =========================
-   TICKER (LIVE NEWS STYLE)
-========================= */
-.ticker {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: #111827;
-    padding: 6px;
-    overflow: hidden;
-}
-
-.ticker span {
-    display: inline-block;
-    padding-left: 100%;
-    animation: ticker 15s linear infinite;
-}
-
-@keyframes ticker {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-}
-
-/* =========================
-   BOUNDARY CINEMATIC EFFECT
-========================= */
-.boundary {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 70px;
-    font-weight: bold;
-    opacity: 0;
-    text-shadow: 0 0 40px gold;
-    animation: explode 2s ease;
-}
-
-@keyframes explode {
-    0% { transform: scale(0.5); opacity: 0; }
-    40% { transform: scale(1.3); opacity: 1; }
-    100% { transform: scale(1); opacity: 0; }
-}
-
-/* =========================
-   PLAYER CARD
-========================= */
-.player-card {
-    position: fixed;
-    right: 20px;
-    top: 120px;
-    width: 200px;
-    background: rgba(0,0,0,0.7);
-    padding: 10px;
-    border-radius: 10px;
-}
-
-.player-card h4 {
-    margin: 0;
-}
-
-/* =========================
-   CONTROL PANEL
-========================= */
-.panel {
-    position: fixed;
-    left: 0;
-    top: 55px;
-    width: 280px;
-    height: calc(100% - 55px);
-    background: rgba(0,0,0,0.85);
-    padding: 10px;
-}
-
-button, input {
-    width: 100%;
-    margin: 6px 0;
-    padding: 10px;
-    border-radius: 6px;
-    border: none;
-}
 </style>
 </head>
 
 <body>
 
-<div class="header">
-    <div>🏏 IPL BROADCAST PRO</div>
-    <div class="live">● LIVE</div>
+<div id="scoreboard">
+🏏 <span id="teams">MI vs SRH</span>
+<span id="score">0/0</span>
+<span id="overs">0.0</span>
 </div>
 
-<!-- SCOREBOARD -->
-<div class="scoreboard">
-    <div class="score-row">
-        <div class="team" id="teamA">MI</div>
-        <div class="sub" id="overs">10.2 OV</div>
-        <div class="team" id="teamB">SRH</div>
-    </div>
+<div id="commentary">🎙 Welcome to Live Broadcast</div>
+<div id="replay">⏪ REPLAY</div>
 
-    <div class="score" id="score">102/2</div>
+<div id="panel">
+<h3>🎥 Control</h3>
 
-    <div class="score-row">
-        <div class="sub">CRR 9.8</div>
-        <div class="sub" id="event">Waiting...</div>
-    </div>
-</div>
+<button onclick="setCam(0)">Main Cam</button>
+<button onclick="setCam(1)">Pitch Cam</button>
+<button onclick="setCam(2)">Drone Cam</button>
 
-<!-- LOWER THIRD -->
-<div class="lower-third" id="commentary">
-🎙 Welcome to IPL Live Broadcast
-</div>
+<hr>
 
-<!-- TICKER -->
-<div class="ticker">
-    <span id="ticker">Live IPL action • Real-time commentary • Stadium experience</span>
-</div>
+<button onclick="triggerReplay()">▶ Replay</button>
 
-<!-- PLAYER CARD -->
-<div class="player-card">
-    <h4 id="playerName">Rohit Sharma</h4>
-    <div id="playerRuns">45 (28)</div>
-</div>
+<hr>
 
-<!-- CONTROL PANEL -->
-<div class="panel">
-    <input id="url" placeholder="Match URL">
-    <button onclick="start()">Start Match</button>
-    <button onclick="force()">Force Start</button>
+<input id="url" placeholder="Match URL">
+<button class="green" onclick="start()">START</button>
+<button class="red" onclick="stop()">STOP</button>
 </div>
 
 <script>
+
+/* =============================
+   THREE SCENE
+============================= */
+let scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000, 20, 250);
+
+let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* GROUND */
+let ground = new THREE.Mesh(
+    new THREE.CircleGeometry(60,64),
+    new THREE.MeshStandardMaterial({color:0x0a5c2f})
+);
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
+
+/* LIGHT */
+let light = new THREE.PointLight(0xffffff, 2);
+light.position.set(0,50,0);
+scene.add(light);
+
+/* MOVING LIGHT */
+let glow = new THREE.PointLight(0x00ffff, 1, 200);
+scene.add(glow);
+
+/* CROWD */
+let crowd = [];
+for(let i=0;i<200;i++){
+    let cube = new THREE.Mesh(
+        new THREE.BoxGeometry(1,2,1),
+        new THREE.MeshBasicMaterial({color:Math.random()*0xffffff})
+    );
+
+    let angle = Math.random()*Math.PI*2;
+    let r = 70;
+
+    cube.position.set(
+        Math.cos(angle)*r,
+        Math.random()*5,
+        Math.sin(angle)*r
+    );
+
+    scene.add(cube);
+    crowd.push(cube);
+}
+
+/* CROWD ANIMATION */
+function animateCrowd(){
+    let t = Date.now()*0.002;
+    crowd.forEach((c,i)=>{
+        c.scale.y = 1 + Math.sin(t+i)*0.5;
+    });
+}
+
+/* CAMERA */
+let cams = [
+    {x:0,y:30,z:80},
+    {x:0,y:10,z:30},
+    {x:50,y:40,z:0}
+];
+
+let currentCam = 0;
+
+function setCam(i){ currentCam=i; }
+
+function updateCam(){
+    let t = cams[currentCam];
+    camera.position.x += (t.x-camera.position.x)*0.05;
+    camera.position.y += (t.y-camera.position.y)*0.05;
+    camera.position.z += (t.z-camera.position.z)*0.05;
+    camera.lookAt(0,0,0);
+}
+
+/* BALL */
+let ball;
+function createBall(){
+    ball = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5),
+        new THREE.MeshStandardMaterial({color:0xff0000})
+    );
+    scene.add(ball);
+}
+createBall();
+
+function hitShot(type="normal"){
+    let t=0;
+
+    let int = setInterval(()=>{
+        t+=0.02;
+
+        ball.position.x = -10 + t*20;
+        ball.position.y = Math.sin(t*Math.PI)*(type==="six"?15:8);
+
+        if(t>=1){
+            clearInterval(int);
+
+            if(type==="six") fireworks();
+        }
+
+    },16);
+}
+
+/* FIREWORKS */
+function fireworks(){
+    for(let i=0;i<25;i++){
+        let p = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2),
+            new THREE.MeshBasicMaterial({color:Math.random()*0xffffff})
+        );
+
+        p.position.set(0,15,0);
+        scene.add(p);
+
+        let vx=(Math.random()-0.5)*2;
+        let vy=Math.random()*2;
+        let vz=(Math.random()-0.5)*2;
+
+        let life=60;
+
+        let anim=setInterval(()=>{
+            p.position.x+=vx;
+            p.position.y+=vy;
+            p.position.z+=vz;
+            vy-=0.05;
+
+            if(--life<=0){
+                scene.remove(p);
+                clearInterval(anim);
+            }
+        },16);
+    }
+}
+
+/* WICKET EFFECT */
+function wicketEffect(){
+    let ring = new THREE.Mesh(
+        new THREE.RingGeometry(1,2,32),
+        new THREE.MeshBasicMaterial({color:0xff0000, side:THREE.DoubleSide})
+    );
+
+    ring.rotation.x=-Math.PI/2;
+    scene.add(ring);
+
+    let s=1;
+    let anim=setInterval(()=>{
+        s+=0.3;
+        ring.scale.set(s,s,s);
+
+        if(s>20){
+            scene.remove(ring);
+            clearInterval(anim);
+        }
+    },16);
+}
+
+/* CAMERA SHAKE */
+function cameraShake(){
+    let i=1;
+    let anim=setInterval(()=>{
+        camera.position.x+=(Math.random()-0.5)*i;
+        camera.position.y+=(Math.random()-0.5)*i;
+        i*=0.9;
+
+        if(i<0.05) clearInterval(anim);
+    },16);
+}
+
+/* LOOP */
+function animate(){
+    requestAnimationFrame(animate);
+
+    glow.position.x=Math.sin(Date.now()*0.002)*40;
+    glow.position.z=Math.cos(Date.now()*0.002)*40;
+    glow.position.y=30;
+
+    animateCrowd();
+    updateCam();
+
+    renderer.render(scene,camera);
+}
+animate();
+
+/* REPLAY */
+let replayBuffer=[];
+function triggerReplay(){
+    let r=document.getElementById("replay");
+    r.style.display="block";
+
+    let i=replayBuffer.length-1;
+
+    let int=setInterval(()=>{
+        if(i<0){
+            clearInterval(int);
+            r.style.display="none";
+            return;
+        }
+        showCommentary(replayBuffer[i--]);
+    },400);
+}
+
+/* COMMENTARY */
+function showCommentary(t){
+    document.getElementById("commentary").innerText=t;
+}
+
+/* SCORE ANIMATION */
+function animateScore(){
+    let el=document.getElementById("score");
+    el.style.transform="scale(1.3)";
+    setTimeout(()=>el.style.transform="scale(1)",300);
+}
+
+/* WS */
 let ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
-ws.onmessage = (e) => {
-    updateUI(e.data);
+ws.onmessage = (e)=>{
+    let data;
+    try{ data=JSON.parse(e.data); }catch{return;}
+
+    if(data.type==="commentary"){
+        showCommentary(data.data);
+        replayBuffer.push(data.data);
+
+        if(data.data.includes("SIX")){
+            hitShot("six");
+            cameraShake();
+        }
+
+        if(data.data.includes("FOUR")){
+            hitShot("four");
+        }
+
+        if(data.data.includes("WICKET")){
+            wicketEffect();
+            cameraShake();
+        }
+    }
+
+    if(data.type==="score"){
+        document.getElementById("score").innerText=data.data.score;
+        document.getElementById("overs").innerText=data.data.overs;
+    }
 };
 
-/* =========================
-   UPDATE UI
-========================= */
-function updateUI(msg){
-    document.getElementById("commentary").innerText = msg;
-    document.getElementById("event").innerText = msg;
-    document.getElementById("ticker").innerText = msg;
-
-    if(msg.includes("SIX")) showBoundary("🔥 SIX");
-    if(msg.includes("FOUR")) showBoundary("⚡ FOUR");
-}
-
-/* =========================
-   BOUNDARY EFFECT
-========================= */
-function showBoundary(text){
-    let el = document.createElement("div");
-    el.className = "boundary";
-    el.innerText = text;
-
-    document.body.appendChild(el);
-
-    setTimeout(()=>el.remove(),2000);
-}
-
-/* =========================
-   ACTIONS
-========================= */
+/* CONTROL */
 function start(){
-    ws.send("start:"+document.getElementById("url").value);
+    ws.send(JSON.stringify({
+        type:"start",
+        data:document.getElementById("url").value
+    }));
 }
 
-function force(){
-    ws.send("force:"+document.getElementById("url").value);
+function stop(){
+    ws.send(JSON.stringify({type:"stop"}));
 }
+
 </script>
 
 </body>

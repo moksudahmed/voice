@@ -1,15 +1,14 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from playwright.sync_api import sync_playwright
+from fastapi.responses import HTMLResponse, FileResponse
 import asyncio
 import random
 import requests
+import time
 from bs4 import BeautifulSoup
 import asyncio
 import re
-import requests
-from bs4 import BeautifulSoup
-
-
+#from run_old import load
 app = FastAPI()
 
 # =========================
@@ -40,7 +39,7 @@ def init_obs():
         return
 
     try:
-        obs = ReqClient(host="localhost", port=4455, password="123456")
+        obs = ReqClient(host="localhost", port=4455, password="jbuDLaKfxUZc6c7m")
         print("✅ OBS CONNECTED")
     except Exception as e:
         print("❌ OBS ERROR:", e)
@@ -179,6 +178,7 @@ async def push(data):
 # GAME ENGINE (ONLY LOOP)
 # =========================
 
+
 def scrape_match_data(url: str):
     try:
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
@@ -213,114 +213,292 @@ def scrape_match_data(url: str):
     except Exception as e:
         print("SCRAPE ERROR:", e)
         return None
-        
-def scrape_match_data2(url: str):
-    import requests
-    from bs4 import BeautifulSoup
-    import re
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+def parse_score(text):
+    """
+    CREX format: '47-05.1'
+    Means: runs=47, wickets=0, over=5, ball=1
+    Pattern: {runs}-{wickets}{over}.{ball}
+    """
+    match = re.search(r'(\d+)-(\d)(\d+)\.([0-5])', text)
+    if not match:
+        return None
+
+    runs    = int(match.group(1))
+    wickets = int(match.group(2))  # single digit: 0-9
+    over    = int(match.group(3))  # remaining digits after wicket
+    ball    = int(match.group(4))  # decimal part, always 0-5
+
+    return runs, wickets, over, ball
+
+
+def clean_name(name):
+    """
+    Remove unwanted text before actual player name
+    """
+    # Keep only last 2–3 words (typical cricket name)
+    words = name.strip().split()
+    return " ".join(words[-2:])
+
+def remove_first_part(name):
+    parts = name.split(" ", 1)
+    return parts[1] if len(parts) > 1 else name
+
+
+def parse_bowler(text):
+    """
+    Extract bowler name, wickets, runs conceded, and overs from text.
+    """
 
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
+        
 
-        # =========================
-        # TITLE
-        # =========================
-        title = soup.title.text.strip() if soup.title else "LIVE MATCH"
+        pattern = r'([A-Z][A-Za-z\.]*(?:\s[A-Z][A-Za-z]+)+|\b[A-Z]\s?[A-Za-z]+)\s+(\d+)-(\d+)\s*\(([\d\.]+)\)'
+        match = re.search(pattern, text)
 
-        # =========================
-        # SCORE (fallback text scan)
-        # =========================
-        text = soup.get_text(" ", strip=True)
+        if not match:
+            print("❌ No match found")
+            return None
 
-        score = "0/0"
-        match = re.search(r"\d{1,3}[/\-]\d{1,2}", text)
-        if match:
-            score = match.group(0).replace("-", "/")
+        bowler = match.group(1).strip()
+        wickets = int(match.group(2))
+        runs = int(match.group(3))
+        overs = match.group(4)
 
-        # =========================
-        # OVERS
-        # =========================
-        overs = "0.0"
-        over_match = re.search(r"\d{1,2}\.\d", text)
-        if over_match:
-            overs = over_match.group(0)
+        print("✅ MATCH FOUND")
 
-        # =========================
-        # 🎯 BALL RESULT (THIS IS YOUR TARGET)
-        # =========================
-        ball_result = None
-
-        result_boxes = soup.find_all("div", class_="result-box")
-
-        if result_boxes:
-            # take LAST result (latest ball)
-            last_box = result_boxes[-1]
-
-            span = last_box.find("span", class_="font1")
-            if span:
-                ball_result = span.get_text(strip=True)
-
-        # fallback if not found
-        if not ball_result:
-            ball_result = "•"
-
-        # =========================
-        # COMMENTARY (based on result)
-        # =========================
-        commentary_map = {
-            "0": "Dot ball",
-            "1": "Single taken",
-            "2": "Two runs",
-            "3": "Three runs",
-            "4": "FOUR!",
-            "6": "SIX!",
-            "W": "WICKET!"
-        }
-
-        commentary = commentary_map.get(ball_result, "Live play...")
-
-        # =========================
-        # RETURN FULL DATA
-        # =========================
         return {
-            "title": title,
-            "score": score,
-            "overs": overs,
-            "ball": ball_result,
-            "commentary": commentary
+            "bowler": bowler,
+            "runs_conceded": runs,
+            "wickets": wickets,
+            "overs": overs
         }
 
     except Exception as e:
-        print("SCRAPER ERROR:", e)
-
-        return {
-            "title": "LIVE MATCH",
-            "score": "0/0",
-            "overs": "0.0",
-            "ball": "-",
-            "commentary": "No data"
-        }
+        return {"error": str(e)}
         
+def parse_batsmen(text):
+    """
+    Extract exactly 2 batsmen (clean & accurate)
+    """
+
+    # Normalize
+    text = text.replace("\r", "").strip()
+
+    # 🔥 Remove unwanted UI text before parsing
+    remove_words = [
+        "Match info", "Live", "Scorecard",
+        "Commentary", "Over", "Projected Score"
+    ]
+
+    for word in remove_words:
+        text = text.replace(word, "")
+
+    # 👉 Core pattern (with + separator)
+    pattern = r'''
+        ([A-Z][a-zA-Z\s\.]+?)\s+
+        (\d+)\s+\((\d+)\)\s*
+        \+\s*
+        ([A-Z][a-zA-Z\s\.]+?)\s+
+        (\d+)\s+\((\d+)\)
+    '''
+
+    match = re.search(pattern, text, re.VERBOSE)
+
+    if match:
+        return [
+            {
+                "name": remove_first_part(clean_name(match.group(1))),
+                "runs": int(match.group(2)),
+                "balls": int(match.group(3)),
+            },
+            {
+                "name": remove_first_part(clean_name(match.group(4))),
+                "runs": int(match.group(5)),
+                "balls": int(match.group(6)),
+            }
+        ]
+
+    return []
+
+import asyncio
+from playwright.async_api import async_playwright
+
+async def load(url):
+    global welcome_played
+
+    print("🚀 SYSTEM STARTED...")
+    print("URL:", url)
+
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-dev-shm-usage"]
+            )
+
+            page = await browser.new_page()
+
+            await page.goto(url, timeout=60000)
+            await page.wait_for_load_state("networkidle")
+            await page.wait_for_timeout(3000)
+
+            while True:
+                try:
+                    # 🔁 refresh page
+                    await page.reload()
+                    await page.wait_for_timeout(2000)
+
+                    text = await page.inner_text("body")
+                    lines = text.splitlines()
+
+                    # =========================
+                    # PARSE DATA
+                    # =========================
+                    score_data = parse_score(text)
+                    print("PARSED:", score_data)
+
+                    runs, wickets, over, ball = score_data
+
+                    # =========================
+                    # STATUS MESSAGE SAFE
+                    # =========================
+                    last_status_message = ""
+
+                    if len(lines) > 17:
+                        if "CRR" in lines[17]:
+                            last_status_message = lines[16] if len(lines) > 16 else ""
+                        else:
+                            last_status_message = lines[17]
+
+                    print("STATUS:", last_status_message)
+
+                    batsmen = parse_batsmen(text)
+                    bowler = parse_bowler(text)
+
+                    print("BATSMEN:", batsmen)
+                    print("BOWLER:", bowler)
+
+                    # =========================
+                    # BUILD PAYLOAD
+                    # =========================
+                    payload = {
+                        "runs": runs,
+                        "wickets": wickets,
+                        "over": over,
+                        "ball": ball,
+                        "status": last_status_message,
+                        "batsmen": batsmen,
+                        "bowler": bowler,
+                        "scene": "LIVE"  # you can enhance with logic
+                    }
+
+                    # =========================
+                    # SEND + OBS
+                    # =========================
+                    await push(payload)
+                    switch_scene(payload["scene"])
+
+                except Exception as e:
+                    print("⚠ LOOP ERROR:", e)
+
+                # ⏱ NON-BLOCKING DELAY
+                await asyncio.sleep(10)
+
+    except Exception as e:
+        print("❌ PLAYWRIGHT FAILED:", e)
+
+    finally:
+        try:
+            await browser.close()
+        except:
+            pass
+async def load_once(url):
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+
+            await page.goto(url)
+            await page.wait_for_timeout(2000)
+
+            text = await page.inner_text("body")
+
+            await browser.close()
+
+            return text
+
+    except Exception as e:
+        print("ERROR:", e)
+        return None
+    
 async def engine():
     while True:
         if not MATCH["running"]:
             await asyncio.sleep(1)
             continue
 
-        data = await asyncio.to_thread(scrape_match_data, MATCH["url"]) if MATCH["url"] else None
+        data = await load_once(MATCH["url"])
+        #print(data)
+        lines = data.splitlines()
 
+                    # =========================
+                    # PARSE DATA
+                    # =========================
+        score_data = parse_score(data)
+        print("PARSED:", score_data)
+
+        runs, wickets, over, ball = score_data
+        # =========================
+                    # STATUS MESSAGE SAFE
+                    # =========================
+        last_status_message = ""
+
+        if len(lines) > 17:
+            if "CRR" in lines[17]:
+                last_status_message = lines[16] if len(lines) > 16 else ""
+            else:
+                last_status_message = lines[17]
+
+        print("STATUS:", last_status_message)
+
+        batsmen = parse_batsmen(data)
+        bowler = parse_bowler(data)
+
+        print("BATSMEN:", batsmen)
+        print("BOWLER:", bowler)
+        payload = {
+                        "runs": runs,
+                        "wickets": wickets,
+                        "over": over,
+                        "ball": ball,
+                        "status": last_status_message,
+                        "batsmen": batsmen,
+                        "bowler": bowler,
+                        "scene": "LIVE"  # you can enhance with logic
+                    }
+        await push(payload)
+
+        # OBS SWITCH
+        switch_scene(payload["scene"])
+        await asyncio.sleep(5)    
+
+async def engine2():
+    while True:
+        if not MATCH["running"]:
+            await asyncio.sleep(1)
+            continue
+        print("Hello")
+        data = await asyncio.to_thread(load, MATCH["url"]) if MATCH["url"] else None
+        print(data)
+        #load(MATCH["url"])
         if data:
             ball = data["ball"]
             MATCH["score"] = data["score"]
             MATCH["overs"] = data["overs"]
         else:
             ball = play_ball()
-            update(ball)
+            #update(ball)
             MATCH["score"] = f"{MATCH['score']}/{MATCH['wickets']}"
             MATCH["overs"] = f"{MATCH['over']}.{MATCH['ball']}"
 
@@ -404,65 +582,6 @@ async def engine():
 
         await asyncio.sleep(1.2)
         
-async def engine2():
-    while True:
-
-        if not MATCH["running"]:
-            await asyncio.sleep(1)
-            continue
-
-        # =========================
-        # SAFE SCRAPER CALL
-        # =========================
-        match_data = await asyncio.to_thread(
-            scrape_match_data,
-            MATCH["url"]
-        ) if MATCH["url"] else None
-        print(match_data)
-        if not match_data:
-            ball = play_ball()
-            update(ball)
-
-            match_data = {
-                "title": MATCH["title"],
-                "score": f"{MATCH['score']}/{MATCH['wickets']}",
-                "overs": f"{MATCH['over']}.{MATCH['ball']}",
-                "commentary": COMMENTARY[ball],
-                "scene": scene_logic(ball)
-            }
-        else:
-            match_data["scene"] = scene_logic(match_data["commentary"])
-
-        #print("📡", match_data["title"], match_data["score"])
-
-        await push(match_data)
-        switch_scene(match_data["scene"])
-
-        await asyncio.sleep(1.2)
-async def engine2():
-    while True:
-        if not MATCH["running"]:
-            await asyncio.sleep(1)
-            continue
-
-        ball = play_ball()
-        update(ball)
-
-        payload = {
-            "title": MATCH["title"],
-            "score": f"{MATCH['score']}/{MATCH['wickets']}",
-            "overs": f"{MATCH['over']}.{MATCH['ball']}",
-            "commentary": COMMENTARY[ball],
-            "scene": scene_logic(ball)
-        }
-        print(payload["title"])
-        # SEND TO OVERLAY
-        await push(payload)
-
-        # OBS SCENE SWITCH (FIXED)
-        switch_scene(payload["scene"])
-
-        await asyncio.sleep(1.5)
 
 
 # =========================
@@ -563,8 +682,13 @@ fetch("/start-url?url=" + encodeURIComponent(document.getElementById("url").valu
 # =========================
 # TV OVERLAY (PRO SCOREBOARD)
 # =========================
+
 @app.get("/overlay")
 def overlay():
+    return HTMLResponse(open("templates/overlay.html").read())
+
+@app.get("/overlay2")
+def overlay2():
     return HTMLResponse("""
 <!DOCTYPE html>
 <html>
@@ -773,7 +897,7 @@ ws.onmessage = (e)=>{
     document.getElementById("team1").innerText = d.team1 || "TEAM A";
     document.getElementById("team2").innerText = d.team2 || "TEAM B";
 
-    document.getElementById("score").innerText = d.score || "0/0";
+    document.getElementById("runs").innerText = d.runs || "20/30";
     document.getElementById("overs").innerText = d.overs || "0.0";
 
     document.getElementById("crr").innerText = d.crr || "0.00";

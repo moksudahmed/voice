@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>TV Style Cricket Scorecard | Punjab Kings vs LSG | Live From Stadium</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none; /* gives TV overlay feel */
+    }
+
+    body {
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-family: 'Teko', 'Poppins', 'Segoe UI', 'Roboto Condensed', system-ui, sans-serif;
+      background: #000;
+    }
+
+    /* Stadium Background Layer */
+    .stadium-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(125deg, #0b3f2f 0%, #1b4d2a 40%, #1d4e1f 100%);
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* Stadium elements: crowd, pitch visualization, lights */
+    .pitch-texture {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 55%;
+      background: radial-gradient(circle at 30% 20%, #2a7a3a, #0c4f1a);
+      clip-path: polygon(0% 30%, 15% 20%, 30% 15%, 50% 10%, 70% 15%, 85% 20%, 100% 30%, 100% 100%, 0% 100%);
+      opacity: 0.9;
+    }
+
+    .pitch-texture::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 10%;
+      width: 80%;
+      height: 100%;
+      background: repeating-linear-gradient(90deg, rgba(210, 210, 120, 0.15) 0px, rgba(210, 210, 120, 0.15) 2px, transparent 2px, transparent 20px);
+      pointer-events: none;
+    }
+
+    .crowd-left {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 35%;
+      height: 100%;
+      background: radial-gradient(ellipse at 20% 30%, rgba(30, 30, 50, 0.4), rgba(0,0,0,0.5));
+      background-image: repeating-linear-gradient(45deg, rgba(255,180,40,0.08) 0px, rgba(255,180,40,0.08) 2px, transparent 2px, transparent 40px);
+      pointer-events: none;
+    }
+
+    .crowd-right {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 35%;
+      height: 100%;
+      background: radial-gradient(ellipse at 80% 30%, rgba(255,160,30,0.08), rgba(0,0,0,0.5));
+      background-image: repeating-linear-gradient(-45deg, rgba(255,215,0,0.05) 0px, rgba(255,215,0,0.05) 3px, transparent 3px, transparent 45px);
+      pointer-events: none;
+    }
+
+    /* stadium floodlight effect */
+    .floodlights {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 15%, rgba(255, 240, 150, 0.12), transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* MAIN SCORECARD OVERLAY (TV GRAPHIC) */
+    .tv-scorecard {
+      position: relative;
+      z-index: 20;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px 30px 40px 30px;
+      pointer-events: none; /* allows clicks to pass, but we want only visual */
+    }
+
+    /* broadcast top bar (channel / match info) */
+    .broadcast-bar {
+      position: absolute;
+      top: 20px;
+      left: 30px;
+      right: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 6px 24px;
+      border-left: 4px solid #ffcc33;
+      border-right: 1px solid rgba(255,215,0,0.4);
+      font-family: 'Poppins', monospace;
+      pointer-events: auto;
+      z-index: 25;
+    }
+
+    .live-tag {
+      background: #e31e24;
+      padding: 4px 14px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      color: white;
+      box-shadow: 0 0 6px red;
+    }
+
+    .match-status {
+      font-weight: 600;
+      color: #ffde9c;
+      background: #000000aa;
+      padding: 4px 18px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+    }
+
+    .sponsor-text {
+      font-size: 0.7rem;
+      color: #bbb;
+      font-weight: 500;
+    }
+
+    /* MAIN SCORE PANEL (bottom center / tv style) */
+    .score-panel {
+      background: linear-gradient(165deg, rgba(8, 18, 28, 0.92), rgba(0, 10, 18, 0.96));
+      backdrop-filter: blur(18px);
+      border-radius: 32px;
+      width: 100%;
+      margin-top: auto;
+      border: 1px solid rgba(255, 204, 0, 0.45);
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(0, 0, 0, 0.2) inset;
+      overflow: hidden;
+    }
+
+    /* top of panel: team row */
+    .team-primary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px 8px 28px;
+      background: rgba(0, 0, 0, 0.55);
+      border-bottom: 1px solid #f4b64250;
+    }
+
+    .team-badge {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .team-name-logo {
+      font-size: 2.1rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #fff, #ffd966);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .innings-score {
+      font-size: 2.7rem;
+      font-weight: 800;
+      color: #ffcf4a;
+      letter-spacing: 1px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .bowl-ovr {
+      background: #000000aa;
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      font-family: monospace;
+      color: #ffbc6e;
+    }
+
+    /* secondary stats: CRR & partnership */
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 28px;
+      background: #05141ecc;
+      gap: 24px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #ffbe5e30;
+    }
+
+    .stat-item {
+      font-weight: 600;
+      font-size: 1rem;
+      background: black;
+      padding: 4px 18px;
+      border-radius: 28px;
+      color: #cbe7fe;
+    }
+
+    .stat-item strong {
+      color: #ffb347;
+      margin-right: 6px;
+    }
+
+    /* bowler snippet + over visualization (tv graphic) */
+    .bowler-overlay {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #031016aa;
+      padding: 12px 28px;
+      border-bottom: 1px solid #31665060;
+      flex-wrap: wrap;
+    }
+
+    .fast-bowler-chip {
+      background: #ff8024;
+      padding: 5px 16px;
+      border-radius: 40px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      color: #0f0f1f;
+      box-shadow: 0 0 4px orange;
+    }
+
+    .over-detail-tv {
+      font-family: 'Courier New', monospace;
+      font-weight: 800;
+      font-size: 1.2rem;
+      background: #010d14;
+      padding: 5px 22px;
+      border-radius: 60px;
+      display: flex;
+      gap: 25px;
+    }
+
+    .viz-ball-icon {
+      display: flex;
+      gap: 8px;
+      background: #09232e;
+      padding: 4px 18px;
+      border-radius: 50px;
+    }
+
+    /* main grid: batters + bowler card (TV enhanced) */
+    .stats-grid-tv {
+      display: grid;
+      grid-template-columns: 1fr 0.85fr;
+      gap: 0px;
+      background: #010f18cc;
+    }
+
+    /* left batters section */
+    .batters-panel-tv {
+      padding: 12px 0;
+    }
+
+    .batter-row-tv {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid #2f6b5e40;
+      transition: 0.1s;
+    }
+
+    .batter-name-tv {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fcf3da;
+    }
+
+    .batter-meta {
+      font-size: 0.7rem;
+      color: #99d6ff;
+      margin-top: 4px;
+    }
+
+    .batter-stats-tv {
+      text-align: right;
+    }
+
+    .runs-ball-tv {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #ffcf89;
+      font-family: monospace;
+    }
+
+    .sr-tv {
+      background: #1e3f46;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 5px;
+    }
+
+    .fours-sixes-tv {
+      font-size: 0.75rem;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* wicket card styling */
+    .wicket-row {
+      background: #041d26;
+      border-left: 4px solid #ffaa33;
+    }
+
+    /* right panel: bowler card tv style */
+    .bowler-panel-tv {
+      background: #05161ee0;
+      border-left: 1px solid #ffbb5540;
+      padding: 20px 24px;
+    }
+
+    .bowler-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid #ffbb55;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+
+    .bowler-name-tv {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffdd99, #ffb347);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .bowler-fig {
+      font-size: 1.3rem;
+      font-family: monospace;
+      background: black;
+      padding: 2px 12px;
+      border-radius: 32px;
+    }
+
+    .econ-line {
+      font-size: 0.9rem;
+      margin: 10px 0 12px;
+      color: #bfd9ff;
+    }
+
+    .last-wicket-tv {
+      background: #002a2f;
+      border-radius: 28px;
+      padding: 12px 18px;
+      margin: 18px 0 14px;
+      border-left: 5px solid #ff9933;
+    }
+
+    .yet-to-bat-tv {
+      background: #001c24;
+      border-radius: 28px;
+      padding: 12px 18px;
+      font-size: 0.8rem;
+    }
+
+    .highlight-name {
+      font-weight: bold;
+      color: #ffbc6e;
+    }
+
+    /* bottom live ticker */
+    .news-ticker {
+      background: #000000bb;
+      backdrop-filter: blur(10px);
+      padding: 8px 24px;
+      font-size: 0.75rem;
+      color: #e2e8f0;
+      display: flex;
+      gap: 24px;
+      border-top: 1px solid #ffc857;
+      font-family: monospace;
+    }
+
+    @media (max-width: 850px) {
+      .tv-scorecard {
+        padding: 15px 15px 25px 15px;
+      }
+      .team-name-logo {
+        font-size: 1.2rem;
+      }
+      .innings-score {
+        font-size: 1.7rem;
+      }
+      .batter-name-tv {
+        font-size: 1rem;
+      }
+      .runs-ball-tv {
+        font-size: 1.3rem;
+      }
+      .bowler-name-tv {
+        font-size: 1.2rem;
+      }
+      .stats-grid-tv {
+        grid-template-columns: 1fr;
+      }
+      .bowler-panel-tv {
+        border-left: none;
+        border-top: 1px solid #ffbb5540;
+      }
+      .over-detail-tv {
+        font-size: 0.8rem;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="stadium-bg">
+  <div class="pitch-texture"></div>
+  <div class="crowd-left"></div>
+  <div class="crowd-right"></div>
+  <div class="floodlights"></div>
+  <!-- stadium light spots -->
+  <div style="position: absolute; top: 5%; left: 15%; width: 80px; height: 80px; background: radial-gradient(circle, #fffc9e, transparent); opacity: 0.2; border-radius: 50%;"></div>
+  <div style="position: absolute; top: 8%; right: 20%; width: 100px; height: 100px; background: radial-gradient(circle, #fff3b0, transparent); opacity: 0.15; border-radius: 50%;"></div>
+</div>
+
+<div class="tv-scorecard">
+  <!-- Top broadcast bar -->
+  <div class="broadcast-bar">
+    <div class="live-tag">● LIVE</div>
+    <div class="match-status">TATA IPL 2025 • Match 42 • Punjab Cricket Stadium</div>
+    <div class="sponsor-text">DREAM11 • CRED</div>
+  </div>
+
+  <!-- Main Score Panel (TV graphic) -->
+  <div class="score-panel">
+    <div class="team-primary">
+      <div class="team-badge">
+        <span class="team-name-logo">🟡 PUNJAB KINGS</span>
+        <span class="innings-score">110/1</span>
+      </div>
+      <div class="bowl-ovr">🐯 LSG • BOWL 10.0</div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item"><strong>CRR:</strong> 11.00</div>
+      <div class="stat-item"><strong>PARTNERSHIP:</strong> 107 (57)</div>
+      <div class="stat-item"><strong>REQUIRED:</strong> — (innings end)</div>
+    </div>
+
+    <div class="bowler-overlay">
+      <div class="fast-bowler-chip">⚡ FAST BOWLER • PRINCE YADAV</div>
+      <div class="over-detail-tv">
+        <span>OVER 9: 2 • 4 =10</span>
+        <span>OVER 10: 6</span>
+      </div>
+      <div class="viz-ball-icon">
+        🏟️ 9.2 | 9.4 | 10.0 (6 runs)
+      </div>
+    </div>
+
+    <!-- stats grid: Batters + Bowler -->
+    <div class="stats-grid-tv">
+      <!-- Left: batters panel -->
+      <div class="batters-panel-tv">
+        <!-- Priyansh Arya -->
+        <div class="batter-row-tv">
+          <div>
+            <div class="batter-name-tv">🏏 PRIYANSH ARYA</div>
+            <div class="batter-meta">● on fire</div>
+            <div class="fours-sixes-tv">4s: 4 &nbsp; 6s: 5</div>
+          </div>
+          <div class="batter-stats-tv">
+            <div class="runs-ball-tv">65 (27)</div>
+            <div class="sr-tv">SR: 240.74</div>
+          </div>
+        </div>
+        <!-- Cooper Connolly -->
+        <div class="batter-row-tv">
+          <div>
+            <div class="batter-name-tv">🇦🇺 COOPER CONNOLLY</div>
+            <div class="batter-meta">anchoring</div>
+            <div class="fours-sixes-tv">4s: 5 &nbsp; 6s: 2</div>
+          </div>
+          <div class="batter-stats-tv">
+            <div class="runs-ball-tv">41 (32)</div>
+            <div class="sr-tv">SR: 128.13</div>
+          </div>
+        </div>
+        <!-- Last wicket indicator enhanced -->
+        <div class="batter-row-tv wicket-row" style="background: #07222b;">
+          <div>
+            <div class="batter-name-tv" style="font-size:1rem; color:#ffb35c;">❌ LAST WICKET</div>
+            <div class="batter-meta">P Singh 0 (1) • b Prince Yadav</div>
+          </div>
+          <div class="batter-stats-tv">
+            <div class="runs-ball-tv" style="font-size:1.3rem;">OUT</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Bowler card (TV style) -->
+      <div class="bowler-panel-tv">
+        <div class="bowler-head">
+          <div class="bowler-name-tv">PRINCE YADAV</div>
+          <div class="bowler-fig">0-13 (2.0)</div>
+        </div>
+        <div class="econ-line">🧢 Economy: 6.50 • 2 overs, 1 maiden? (0 w)</div>
+        <div style="background:#00161e; border-radius: 28px; padding: 6px 12px; font-size:0.8rem; text-align:center;">⚡ Pace: 138 km/h avg • 2 fours conceded</div>
+
+        <div class="last-wicket-tv">
+          <span class="highlight-name">🎯 Last Wicket:</span> P Singh 0 (1) <br>
+          <small>caught at long-off • 8.4 over</small>
+        </div>
+
+        <div class="yet-to-bat-tv">
+          <span class="highlight-name">⏳ YET TO BAT:</span> S Iyer (Avg 35.13) • N Wadhera (Avg 24.87) + R.D Chahar
+          <div style="margin-top: 6px; font-size:0.65rem;">⚡ Impact players: Livingstone, Rabada in shed</div>
+        </div>
+        <!-- power stats -->
+        <div style="margin-top: 12px; background:#051f2a; border-radius: 28px; padding: 6px 12px; display: flex; justify-content: space-between;">
+          <span>🎯 POWERPLAY: 52/0</span>
+          <span>🚀 LAST 5 OV: 56/0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom ticker: additional match insights -->
+    <div class="news-ticker">
+      <span>🏟️ STADIUM: Mohali | Attendance: 42,500</span>
+      <span>📺 TV GRAPHIC: PBKS need 40 runs in 0 ov (innings break)</span>
+      <span>🏏 Partnership: 107(57) between Arya & Connolly</span>
+    </div>
+  </div>
+  <!-- tiny watermark broadcast effect -->
+  <div style="position: absolute; bottom: 12px; right: 35px; font-size: 10px; color: rgba(255,255,200,0.4); font-family: monospace; z-index: 30;">SKY SPORTS • HAWKEYE LIVE</div>
+</div>
+</body>
+</html>

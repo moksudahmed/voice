@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Cricket Scoreboard | Punjab Kings vs LSG | Electric Blue Edition</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a1128 0%, #1c2541 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+      padding: 20px;
+    }
+
+    /* main scoreboard card with new vibrant deep navy + electric coral accents */
+    .scoreboard {
+      max-width: 1150px;
+      width: 100%;
+      background: #0b132b;
+      backdrop-filter: blur(2px);
+      border-radius: 42px;
+      box-shadow: 0 35px 45px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 255, 255, 0.25);
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    /* Header section : team names and primary score — new teal & gold gradient */
+    .team-header {
+      background: linear-gradient(115deg, #0f1a2f, #071126);
+      padding: 20px 28px 16px 28px;
+      border-bottom: 3px solid #ff9f4a;
+    }
+
+    .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .team-name {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .team-name h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #f0f9ff, #ffd89c);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .score-big {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #fcaa3a;
+      line-height: 1;
+      margin-left: 6px;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 3px rgba(0,0,0,0.4);
+    }
+
+    .meta-detail {
+      display: flex;
+      gap: 20px;
+      align-items: baseline;
+      font-weight: 500;
+      color: #aad0ff;
+    }
+
+    .meta-detail span {
+      font-size: 1.1rem;
+      background: #182c47;
+      padding: 5px 14px;
+      border-radius: 40px;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+    }
+
+    .bowl-ov {
+      background: #0f212ecc;
+      padding: 5px 14px;
+      border-radius: 30px;
+      font-family: monospace;
+      font-weight: bold;
+    }
+
+    /* info strip: CRR, partnership — new electric cyan background */
+    .info-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 28px;
+      background: #0c1b2f;
+      border-bottom: 1px solid #2c4c6e;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .crr-box, .partnership-box {
+      font-size: 1rem;
+      background: #071725cc;
+      padding: 5px 18px;
+      border-radius: 60px;
+      font-weight: 600;
+      color: #c9e9ff;
+    }
+
+    .crr-box strong, .partnership-box strong {
+      color: #ffae5a;
+      margin-right: 8px;
+    }
+
+    /* bowler summary panel (fast bowler) redesigned with sunset gradient */
+    .bowler-summary {
+      background: linear-gradient(105deg, #14273e, #0a172b);
+      margin: 14px 24px 0 24px;
+      border-radius: 32px;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border: 1px solid #ff8c42;
+      box-shadow: 0 8px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .fast-bowler-tag {
+      background: #ff7526dd;
+      padding: 6px 18px;
+      border-radius: 50px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      color: #0a0f1f;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .over-details {
+      display: flex;
+      gap: 30px;
+      font-family: 'Courier New', 'Fira Code', monospace;
+      font-weight: 800;
+      font-size: 1.45rem;
+      background: #00000066;
+      padding: 6px 22px;
+      border-radius: 50px;
+      color: #fff0c0;
+    }
+
+    .over-details span {
+      color: #ffbe76;
+    }
+
+    /* two column layout: batters + bowler card */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 0.9fr;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    /* Left side: batters table style  with indigo slate background */
+    .batters-panel {
+      background: #0f172fe6;
+      border-radius: 32px;
+      backdrop-filter: blur(3px);
+      padding: 10px 0px;
+      box-shadow: inset 0 0 0 1px #2f4b70, 0 10px 20px -5px black;
+    }
+
+    .batter-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid #2c4e72;
+      transition: 0.1s;
+    }
+
+    .batter-card:last-child {
+      border-bottom: none;
+    }
+
+    .batter-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .batter-name {
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: #f3f9ff;
+      letter-spacing: -0.2px;
+    }
+
+    .batter-detail {
+      font-size: 0.75rem;
+      color: #93c5fd;
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .batter-stats {
+      text-align: right;
+    }
+
+    .runs-ball {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: #ffbc6e;
+      line-height: 1;
+    }
+
+    .sr-info {
+      font-size: 0.7rem;
+      background: #1f3f5c;
+      padding: 4px 10px;
+      border-radius: 28px;
+      display: inline-block;
+      margin-top: 6px;
+      font-weight: 600;
+      color: #e2f0ff;
+    }
+
+    .fours-sixes {
+      font-size: 0.75rem;
+      color: #bbd9ff;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    /* Right side: bowler card new hot coral accents */
+    .bowler-card {
+      background: #0f172fe6;
+      border-radius: 32px;
+      padding: 18px 24px;
+      backdrop-filter: blur(3px);
+      box-shadow: inset 0 0 0 1px #3e5f84, 0 10px 20px -5px black;
+    }
+
+    .bowler-name-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px dashed #ff9f4a;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+
+    .bowler-name {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #fdcb6e;
+    }
+
+    .bowler-figures {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: monospace;
+      background: #000c1ccc;
+      padding: 4px 12px;
+      border-radius: 60px;
+      color: #ffbc7a;
+    }
+
+    .bowler-econ {
+      font-size: 0.95rem;
+      margin-top: 8px;
+      margin-bottom: 14px;
+      color: #bbdef5;
+      font-weight: 500;
+    }
+
+    .last-wicket {
+      background: #102c3f;
+      border-radius: 26px;
+      padding: 12px 18px;
+      margin-top: 20px;
+      border-left: 6px solid #ff9460;
+    }
+
+    .last-wicket span {
+      font-weight: bold;
+      color: #ffbc6e;
+    }
+
+    .yet-to-bat {
+      margin-top: 20px;
+      font-size: 0.82rem;
+      color: #cae4ff;
+      background: #0a1f30;
+      padding: 12px 18px;
+      border-radius: 28px;
+      word-break: break-word;
+    }
+
+    .highlight {
+      font-weight: 800;
+      color: #ffae5a;
+    }
+
+    /* extra footer */
+    .extra-footer {
+      padding: 14px 28px 20px 28px;
+      border-top: 1px solid #2f5470;
+      font-size: 0.72rem;
+      color: #9bc2df;
+      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      background: #07152550;
+    }
+
+    @media (max-width: 760px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      .team-name h1 {
+        font-size: 1.4rem;
+      }
+      .score-big {
+        font-size: 1.9rem;
+      }
+      .runs-ball {
+        font-size: 1.5rem;
+      }
+      .over-details {
+        font-size: 1rem;
+        gap: 12px;
+      }
+      .bowler-name {
+        font-size: 1.3rem;
+      }
+      .batter-name {
+        font-size: 1.1rem;
+      }
+    }
+
+    /* over representation chips */
+    .viz-balls {
+      display: flex;
+      gap: 15px;
+      font-family: monospace;
+      background: #06212e;
+      padding: 5px 16px;
+      border-radius: 40px;
+      font-weight: bold;
+      color: #ffc48a;
+    }
+  </style>
+</head>
+<body>
+<div class="scoreboard">
+  <!-- Header: teams + primary score -->
+  <div class="team-header">
+    <div class="team-row">
+      <div class="team-name">
+        <h1>PUNJAB KINGS</h1>
+        <div class="score-big">110/1</div>
+      </div>
+      <div class="meta-detail">
+        <span>⚡ LSG</span>
+        <span class="bowl-ov">BOWL • 10.0</span>
+      </div>
+    </div>
+    <div class="info-strip">
+      <div class="crr-box"><strong>📈 CRR:</strong> 11.00</div>
+      <div class="partnership-box"><strong>🤝 P'SHIP:</strong> 107(57)</div>
+    </div>
+  </div>
+
+  <!-- Bowler and Over summary (fast bowler) - fresh neon orange -->
+  <div class="bowler-summary">
+    <div class="fast-bowler-tag">🔥 FAST BOWLER • FIRE</div>
+    <div class="over-details">
+      <span>OVER 9:</span> 2 ⚡ 4 =10
+      <span>OVER 10:</span> 6 🎯
+    </div>
+    <div class="viz-balls">
+      🧢 9.2 • 9.4 • 10.0 (6)
+    </div>
+  </div>
+
+  <!-- Main stats: batters + bowler info -->
+  <div class="stats-grid">
+    <!-- LEFT: BATTERS -->
+    <div class="batters-panel">
+      <!-- Batter 1: Priyansh Arya -->
+      <div class="batter-card">
+        <div class="batter-info">
+          <div class="batter-name">🏏 PRIYANSH ARYA</div>
+          <div class="batter-detail">
+            <span>💚 striking</span>
+          </div>
+          <div class="fours-sixes">✨ 4s:4  &nbsp; 🚀 6s:5</div>
+        </div>
+        <div class="batter-stats">
+          <div class="runs-ball">65 (27)</div>
+          <div class="sr-info">SR: 240.74</div>
+        </div>
+      </div>
+      <!-- Batter 2: Cooper Connolly -->
+      <div class="batter-card">
+        <div class="batter-info">
+          <div class="batter-name">🇦🇺 COOPER CONNOLLY</div>
+          <div class="batter-detail">
+            <span>💪 steady</span>
+          </div>
+          <div class="fours-sixes">🎯 4s:5  &nbsp; 💥 6s:2</div>
+        </div>
+        <div class="batter-stats">
+          <div class="runs-ball">41 (32)</div>
+          <div class="sr-info">SR: 128.13</div>
+        </div>
+      </div>
+      <!-- last wicket indicator (new styling) -->
+      <div class="batter-card" style="border-top: 1px solid #3e6990; background: #0f1d2f80;">
+        <div class="batter-info">
+          <div class="batter-name" style="font-size:0.95rem; color:#ffab62;">⚠️ LAST WICKET</div>
+          <div class="batter-detail">P Singh 0 (1)</div>
+        </div>
+        <div class="batter-stats">
+          <div class="runs-ball" style="font-size:1.2rem;">🕸️</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: BOWLER + extra resources with accent -->
+    <div class="bowler-card">
+      <div class="bowler-name-line">
+        <div class="bowler-name">PRINCE YADAV</div>
+        <div class="bowler-figures">0-13 (2.0)</div>
+      </div>
+      <div class="bowler-econ">📊 Economy: 6.50 | ⚡ 2 overs, 13 runs</div>
+      <!-- small analogy: bowling figures detail-->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+        <span style="font-size:0.75rem; background:#101f33; padding:2px 12px; border-radius:20px;">🎯 dots: 5</span>
+        <span style="font-family: monospace; font-weight:bold; color:#fcb26b;">✨ 0 wickets</span>
+      </div>
+
+      <!-- last wicket context  -->
+      <div class="last-wicket">
+        <span>📌 Fall of wicket:</span> P Singh 0 (1)<br>
+        <small style="color:#b9defa;">caught at long-on · 2nd over</small>
+      </div>
+
+      <!-- YET TO BAT: S Iyer & Wadhera with vibrant colors -->
+      <div class="yet-to-bat">
+        <span class="highlight">⏳ YET TO BAT:</span> Shreyas Iyer (Avg. 35.13) • Nehal Wadhera (Avg. 24.87)
+        <div style="margin-top: 5px; font-size:0.7rem;">💪 + Impact player: R. Bawa / M. Markande</div>
+      </div>
+      
+      <!-- additional batting depth info -->
+      <div style="margin-top: 14px; font-size:0.7rem; background:#0c2540; border-radius: 28px; padding: 6px 14px; color:#c3e2fc;">
+        🔥 middle order: firepower available
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom footer: match snapshot with new accent -->
+  <div class="extra-footer">
+    <div>🏟️ OVER 10.0 • 110/1 (Target: N/A)</div>
+    <div>⚡ Last 5 overs: 56/0 | RR 11.2</div>
+    <div>📊 Partnership run-rate: 11.24</div>
+  </div>
+  
+  <!-- data attribution based on original image spec -->
+  <div style="height: 0; overflow: hidden;">score card: PBKS 110/1 (10) CRR 11.00, partnership 107(57) Priyansh Arya 65(27) Connolly 41(32) Prince Yadav 0-13</div>
+</div>
+</body>
+</html>

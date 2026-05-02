@@ -18,14 +18,20 @@ from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY
 from utill import number_to_bangla_words
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
+
+
+app = FastAPI()
+
 # ---------------------------------------
 # CONFIG
 # ---------------------------------------
-CREX_URL = "https://crex.com/cricket-live-score/csk-vs-mi-44th-match-indian-premier-league-2026-match-updates-118P"
+#CREX_URL = "https://crex.com/cricket-live-score/ban-vs-nz-3rd-t20-new-zealand-tour-of-bangladesh-2026-match-updates-10Z5"
 OUTPUT_FILE = "C:/cricket_voices/score.json"
-TEAM1 = "চেন্নাই সুপার কিংস" 
-TEAM2 = "মুম্বাই ইন্ডিয়ান্স"
-match_title = "চেন্নাই সুপার কিংস বনাম মুম্বাই ইন্ডিয়ান্স"
+TEAM1 = "বাংলাদেশ" 
+TEAM2 = "নিউজিল্যান্ড"
+match_title = " "
 REFRESH_INTERVAL = 1  # seconds
 
 
@@ -38,26 +44,37 @@ last_over = None
 last_ball = None
 welcome_played = False
 welcome_msg = """
-স্বাগতম লাইভ কমেন্টারিতে! Chennai Super Kings vs Mumbai Indians | IPL 2026 | ৪৪তম T20 ম্যাচ
+🔴 স্বাগতম ক্রিকেট ভক্তদের! বাংলাদেশ বনাম নিউজিল্যান্ড লাইভ ম্যাচ আপডেট
+আসসালামু আলাইকুম এবং শুভেচ্ছা জানাচ্ছি সকল ক্রিকেট প্রেমীদের। আজকের এই গুরুত্বপূর্ণ ও উত্তেজনাপূর্ণ ম্যাচে মুখোমুখি হয়েছে বাংলাদেশ বনাম নিউজিল্যান্ড, ৩য় T twenty আন্তর্জাতিক ম্যাচ। এই ম্যাচ চলাকালীন আমরা আপনাদের জন্য নিয়ে এসেছি একদম রিয়েল টাইম স্কোর আপডেট, বল বাই বল পরিস্থিতি এবং লাইভ ম্যাচ বিশ্লেষণ।
 
-হ্যালো ক্রিকেটপ্রেমীরা! 👋
-আপনাদের সবাইকে স্বাগতম আজকের এই ব্লকবাস্টার ম্যাচে—Chennai Super Kings বনাম Mumbai Indians, IPL 2026-এর ৪৪তম T20 লড়াইয়ে।
+🏏 বর্তমান ম্যাচ পরিস্থিতি:
+(বাংলাদেশ) ব্যাটিং করছে
+Powerplay শেষ পর্যায়ে বাংলাদেশ কিছুটা ভালো শুরু করলেও চাপের মধ্যেই ব্যাট করছে।
+📊 স্কোর আপডেট:
+বাংলাদেশ: 50 রান 3 উইকেট হারিয়ে (6 ওভার 4 বল) 🔥
+ব্যাটসম্যানরা শুরুতে আক্রমণাত্মক ক্রিকেট খেললেও দ্রুত কয়েকটি গুরুত্বপূর্ণ উইকেট হারিয়ে কিছুটা চাপে পড়ে যায়। তবুও ইনিংস এগিয়ে নিতে তারা চেষ্টা করছে এবং স্কোরবোর্ড সচল রাখার জন্য সংগ্রাম করছে।
 
-আজকের ম্যাচে দুই চিরপ্রতিদ্বন্দ্বী দল মুখোমুখি হয়েছে, তাই মাঠে থাকছে চরম উত্তেজনা ও হাই-ভোল্টেজ ক্রিকেট অ্যাকশন!
+⚠️ তবে হঠাৎই পরিস্থিতি পরিবর্তন…
+🌧️ Match Update:
+মাঠের আবহাওয়া হঠাৎ করে খারাপ হয়ে যাওয়ায় ম্যাচটি সাময়িকভাবে বন্ধ (Rain Delay) করা হয়েছে!
+বৃষ্টি নামার কারণে খেলোয়াড়রা মাঠ ছেড়ে ড্রেসিং রুমে ফিরে গেছে এবং আম্পায়াররা পরিস্থিতি পর্যবেক্ষণ করছেন।
 
-🔥 TOSS UPDATE:
-Mumbai Indians টস জিতে প্রথমে ব্যাটিং করার সিদ্ধান্ত নিয়েছে।
-অর্থাৎ Mumbai Indians আজ আগে ব্যাট করবে এবং বড় স্কোর গড়ে Chennai Super Kings-কে চাপে ফেলার চেষ্টা করবে।
+🎙️ এখন পর্যন্ত ম্যাচ বিশ্লেষণ:
+বাংলাদেশ ইনিংসের শুরুটা ছিল আশা জাগানিয়া, তবে দ্রুত উইকেট হারানোর কারণে ব্যাটিং লাইনআপ কিছুটা চাপে পড়ে যায়। কিছু ব্যাটসম্যান চেষ্টা করছিল ইনিংসকে স্থির করে এগিয়ে নিতে, কিন্তু বৃষ্টির আগমন ম্যাচের গতি সম্পূর্ণভাবে থামিয়ে দিয়েছে।
 
-⚡ এখন দেখার বিষয়, Mumbai Indians-এর ব্যাটিং লাইনআপ কতটা শক্তিশালী শুরু করতে পারে, নাকি Chennai Super Kings-এর বোলাররা শুরুতেই ম্যাচের নিয়ন্ত্রণ নিয়ে নেয়!
+📊 আমরা এখন অপেক্ষায় আছি—
+👉 বৃষ্টি কখন থামবে এবং খেলা আবার কবে শুরু হবে
+👉 DLS (Duckworth-Lewis-Stern) অনুযায়ী নতুন পরিস্থিতি কী দাঁড়ায়
+👉 দুই দলের কৌশলে কী পরিবর্তন আসে
+👉 এবং পরবর্তী ওভারগুলোতে ম্যাচ কোন দিকে মোড় নেয়
 
-🏏 আমরা আপনাদের জন্য নিয়ে এসেছি:
-✅ বল বাই বল লাইভ আপডেট
-✅ রিয়েল টাইম স্কোর
-✅ ম্যাচ বিশ্লেষণ
-✅ গুরুত্বপূর্ণ মুহূর্তের আলোচনা
+🔴 আমাদের সাথে থাকুন, কারণ আমরা আপনাদের জন্য নিয়ে আসব:
+✅ একদম বল বাই বল লাইভ স্কোর আপডেট
+✅ রিয়েল টাইম ম্যাচ পরিস্থিতি বিশ্লেষণ
+✅ ইনিংস ভিত্তিক গভীর আলোচনা
+✅ এবং বৃষ্টি থামার পর তাৎক্ষণিক নতুন আপডেট
 
-📌 পুরো ম্যাচ জুড়ে আমাদের সাথে থাকুন এবং উপভোগ করুন Chennai Super Kings vs Mumbai Indians এই মহারণের প্রতিটি মুহূর্ত!
+📌 ম্যাচ আবার শুরু হলেই আমরা সঙ্গে সঙ্গে আপনাদের জানিয়ে দেব—তাই আমাদের সাথেই থাকুন এবং লাইভ আপডেট মিস করবেন না!
 """
  
 def parse_winning_info(text):
@@ -741,7 +758,7 @@ def extract_match_data(lines):
 
 def main():
     global welcome_played
-    speak("WELCOME",welcome_msg)
+    #speak("WELCOME",welcome_msg)
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -1070,6 +1087,32 @@ def main():
         
         browser.close()
 
-if __name__ == "__main__":
-    main()
-    
+
+def load(url):
+    global welcome_played
+    #speak("WELCOME",welcome_msg)
+    print("Hello Test")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        print(url)
+        #page.goto(CREX_URL)
+        page.goto(url, timeout=60000)
+        page.wait_for_load_state("networkidle")  # VERY IMPORTANT
+        page.wait_for_timeout(3000)
+       # page.wait_for_load_state("domcontentloaded")
+       # page.wait_for_timeout(2000)
+        print("🚀 SYSTEM STARTED...")
+        text = page.inner_text("body")                
+                
+        lines = text.splitlines()        
+        status = detect_game_status(lines)
+        
+        print(f"📊 Current Status: {text}")
+        
+        
+       
+        browser.close()
+
+"""if __name__ == "__main__":
+    main()"""

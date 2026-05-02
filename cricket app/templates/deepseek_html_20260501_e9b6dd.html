@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>TV Scorecard | Stadium Vision | Punjab Kings vs LSG</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Teko', 'Poppins', 'Roboto Condensed', system-ui, sans-serif;
+      background: #0a0f1a;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* MAIN LAYOUT: THREE SECTIONS */
+    .tv-broadcast {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+      background: #000;
+      position: relative;
+    }
+
+    /* TOP SCORE BAR — fixed at top */
+    .top-scorebar {
+      background: linear-gradient(135deg, #021018, #061e2c);
+      backdrop-filter: blur(12px);
+      border-bottom: 2px solid #ffcd4a;
+      padding: 12px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      z-index: 30;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+
+    /* left team block */
+    .team-block {
+      display: flex;
+      align-items: baseline;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .team-name {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      background: linear-gradient(135deg, #ffffff, #ffda88);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .score-large {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #ffcf4a;
+      font-family: 'Courier New', monospace;
+      line-height: 1;
+      text-shadow: 0 0 4px #000;
+    }
+
+    .meta-info {
+      display: flex;
+      gap: 22px;
+      align-items: center;
+      background: #00000066;
+      padding: 5px 20px;
+      border-radius: 60px;
+    }
+
+    .meta-info span {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #ffeaaf;
+    }
+
+    /* CENTER STADIUM IMAGE / GAME IMAGE */
+    .stadium-center {
+      flex: 1;
+      position: relative;
+      background: #0b2f2a;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .game-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+      filter: brightness(0.95) contrast(1.05);
+      transition: all 0.3s;
+    }
+
+    /* optional overlay gradient for text readability */
+    .stadium-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 35%;
+      background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+      pointer-events: none;
+    }
+
+    /* BOTTOM SCORE PANEL — fixed at bottom */
+    .bottom-score-panel {
+      background: linear-gradient(0deg, #031016, #0a1e2c);
+      backdrop-filter: blur(16px);
+      border-top: 2px solid #ffcd4a;
+      padding: 14px 28px 18px 28px;
+      z-index: 30;
+      box-shadow: 0 -6px 20px rgba(0,0,0,0.5);
+    }
+
+    /* bottom inner grid: stats & batters/bowler */
+    .bottom-stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    .partnership-crr {
+      display: flex;
+      gap: 28px;
+      background: #03181faa;
+      padding: 6px 22px;
+      border-radius: 60px;
+      font-weight: 600;
+    }
+
+    .partnership-crr div strong {
+      color: #ffb347;
+    }
+
+    .batter-mini {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      background: #00000066;
+      padding: 6px 22px;
+      border-radius: 60px;
+    }
+
+    .batter-mini-item {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      font-size: 0.95rem;
+    }
+
+    .batter-mini-name {
+      font-weight: 700;
+      color: #ffdd99;
+    }
+
+    .batter-mini-runs {
+      font-family: monospace;
+      font-weight: bold;
+    }
+
+    .bowler-snippet {
+      background: #02161faa;
+      padding: 6px 22px;
+      border-radius: 60px;
+      display: flex;
+      gap: 20px;
+      font-size: 0.9rem;
+    }
+
+    .fast-badge {
+      background: #ff7722;
+      border-radius: 50px;
+      padding: 2px 12px;
+      font-weight: bold;
+      color: black;
+    }
+
+    /* bottom row second line: over details and last wicket */
+    .extra-details {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-top: 1px solid #ffcd4a40;
+      padding-top: 12px;
+    }
+
+    .over-box {
+      font-family: monospace;
+      background: #000000aa;
+      padding: 4px 16px;
+      border-radius: 40px;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .last-wicket-chip {
+      background: #2c1a0c;
+      padding: 4px 16px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+    }
+
+    .yet-to-bat-chip {
+      background: #002635;
+      padding: 4px 16px;
+      border-radius: 30px;
+      font-size: 0.75rem;
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .top-scorebar {
+        padding: 8px 16px;
+      }
+      .team-name {
+        font-size: 1.1rem;
+      }
+      .score-large {
+        font-size: 1.8rem;
+      }
+      .bottom-score-panel {
+        padding: 10px 16px;
+      }
+      .batter-mini {
+        gap: 12px;
+      }
+      .bowler-snippet {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* extra: highlight live effect */
+    .live-badge {
+      background: #e31b23;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; text-shadow: 0 0 0 red;}
+      100% { opacity: 0.7; text-shadow: 0 0 4px red;}
+    }
+  </style>
+</head>
+<body>
+<div class="tv-broadcast">
+  <!-- TOP SCORE BAR -->
+  <div class="top-scorebar">
+    <div class="team-block">
+      <div class="team-name">PUNJAB KINGS</div>
+      <div class="score-large">110/1</div>
+      <div class="meta-info">
+        <span>LSG</span>
+        <span>BOWL • 10.0</span>
+      </div>
+    </div>
+    <div class="live-badge">● LIVE</div>
+  </div>
+
+  <!-- CENTER: STADIUM PICTURE / GAME ACTION IMAGE -->
+  <div class="stadium-center">
+    <!-- dynamic high-quality stadium + match image (cricket game vibe) -->
+    <img class="game-image" src="https://images.pexels.com/photos/1264080/cricket-stadium-sports-match-1264080.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" 
+         alt="Cricket stadium match action"
+         onerror="this.src='https://placehold.co/1920x800/1a472a/ffffff?text=LIVE+STADIUM+VISION'">
+    <div class="stadium-overlay"></div>
+    <!-- optional picture credit subtle -->
+    <div style="position: absolute; bottom: 8px; right: 12px; font-size: 9px; color: rgba(255,255,200,0.5); background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 12px;">🏟️ PCA Stadium • Mohali</div>
+  </div>
+
+  <!-- BOTTOM SCORE PANEL (detailed stats, batters, bowler, etc) -->
+  <div class="bottom-score-panel">
+    <div class="bottom-stats">
+      <!-- CRR & Partnership -->
+      <div class="partnership-crr">
+        <div><strong>CRR:</strong> 11.00</div>
+        <div><strong>P'SHIP:</strong> 107(57)</div>
+      </div>
+
+      <!-- Batters quick view -->
+      <div class="batter-mini">
+        <div class="batter-mini-item">
+          <span class="batter-mini-name">PRIYANSH ARYA</span>
+          <span class="batter-mini-runs">65 (27)</span>
+          <span style="font-size:0.7rem;">4s:4 6s:5</span>
+        </div>
+        <div class="batter-mini-item">
+          <span class="batter-mini-name">COOPER CONNOLLY</span>
+          <span class="batter-mini-runs">41 (32)</span>
+          <span style="font-size:0.7rem;">4s:5 6s:2</span>
+        </div>
+      </div>
+
+      <!-- Bowler overview (Prince Yadav) -->
+      <div class="bowler-snippet">
+        <span class="fast-badge">⚡ FAST</span>
+        <span><strong>PRINCE YADAV</strong> 0-13 (2.0)</span>
+        <span>Econ: 6.50</span>
+      </div>
+    </div>
+
+    <!-- extra details: over info, last wicket, yet to bat -->
+    <div class="extra-details">
+      <div class="over-box">
+        🏏 OVER9: 2 4 =10 | OVER10: 6 
+        <span style="margin-left: 10px;">📊 10.0 overs complete</span>
+      </div>
+      <div class="last-wicket-chip">
+        ⚡ Last Wkt: P Singh 0 (1)
+      </div>
+      <div class="yet-to-bat-chip">
+        🔄 YET TO BAT: S Iyer (Avg 35.13) • N Wadhera (Avg 24.87)
+      </div>
+    </div>
+
+    <!-- extra decorative strike rate + partnership runs -->
+    <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.7rem; opacity: 0.8;">
+      <span>🏏 SR: 240.74 (Arya) | 128.13 (Connolly)</span>
+      <span>🎯 Last 5 overs: 56/0</span>
+      <span>📺 TV Graphics | Live from stadium</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

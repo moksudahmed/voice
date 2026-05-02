@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body{
+    margin:0;
+    background:transparent;
+    color:white;
+    font-family:Segoe UI;
+}
+
+.top{
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    background:red;
+    padding:10px 20px;
+    border-radius:10px;
+    display:flex;
+    gap:40px;
+}
+
+.score{
+    font-size:30px;
+    font-weight:bold;
+}
+
+.over{
+    position:absolute;
+    top:80px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:5px;
+}
+
+.ball{
+    width:25px;
+    height:25px;
+    background:#222;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+    <div>
+        <div id="team1">TEAM A</div>
+        <div class="score" id="score">0/0</div>
+        <div id="overs">0.0</div>
+    </div>
+
+    <div id="team2">TEAM B</div>
+</div>
+
+<div class="over" id="overBar"></div>
+
+<script>
+const ws = new WebSocket("ws://" + location.host + "/ws");
+
+ws.onmessage = (e)=>{
+    const d = JSON.parse(e.data);
+
+    document.getElementById("team1").innerText = d.team1;
+    document.getElementById("team2").innerText = d.team2;
+    document.getElementById("score").innerText = d.score;
+    document.getElementById("overs").innerText = d.overs;
+
+    const overBar = document.getElementById("overBar");
+    overBar.innerHTML = "";
+
+    d.this_over.forEach(b=>{
+        const el = document.createElement("div");
+        el.className = "ball";
+        el.innerText = b;
+        overBar.appendChild(el);
+    });
+};
+</script>
+
+</body>
+</html>

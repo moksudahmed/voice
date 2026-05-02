@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CRICKET ENGINE PRO</title>
+<style>
+body{margin:0;background:#0b1220;color:white;font-family:Segoe UI;}
+.container{padding:40px;max-width:900px;margin:auto;}
+.card{background:#111c33;padding:20px;border-radius:12px;}
+input,button{padding:10px;margin:5px;}
+button{background:#00ffcc;border:none;font-weight:bold;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>🏏 CRICKET ENGINE PRO</h1>
+
+<div class="card">
+<h3>Start Match From URL</h3>
+<input id="url" style="width:80%" placeholder="Paste match URL">
+<button onclick="start()">START</button>
+</div>
+
+<div class="card">
+<a href="/overlay">🎥 OPEN OVERLAY</a>
+</div>
+
+</div>
+
+<script>
+function start(){
+fetch("/start-url?url=" + encodeURIComponent(document.getElementById("url").value));
+}
+</script>
+
+</body>
+</html>

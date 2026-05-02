@@ -1,14 +1,199 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, FileResponse
+import asyncio
+import random
+import requests
+from bs4 import BeautifulSoup
+from game_engine import ai_commentry
+app = FastAPI()
+
+# =========================
+# CLIENTS
+# =========================
+clients = set()
+
+# =========================
+# MATCH STATE
+# =========================
+MATCH = {
+    "running": False,
+    "url": None,
+
+    "team1": "TEAM A",
+    "team2": "TEAM B",
+
+    "score": "0/0",
+    "overs": "0.0",
+
+    "this_over": [],
+
+    "striker": {"name": "Batter A", "runs": 0, "balls": 0},
+    "non_striker": {"name": "Batter B", "runs": 0, "balls": 0},
+    "bowler": {"name": "Bowler X", "runs": 0},
+
+    "partnership_runs": 0,
+    "partnership_balls": 0
+}
+
+# =========================
+# UTILS
+# =========================
+def play_ball():
+    return random.choice(["0", "1", "1", "2", "4", "6", "W"])
+
+def scene_logic(ball):
+    if ball == "6":
+        return "CROWD"
+    if ball == "W":
+        return "REPLAY"
+    return "LIVE"
+
+async def push(data):
+    dead = set()
+    for ws in clients:
+        try:
+            await ws.send_json(data)
+        except:
+            dead.add(ws)
+    for d in dead:
+        clients.remove(d)
+
+# =========================
+# SCRAPER (SAFE)
+# =========================
+def scrape_match_data(url):
+    try:
+        r = requests.get(url, timeout=5)
+        soup = BeautifulSoup(r.text, "html.parser")
+        text = soup.get_text(" ", strip=True)
+
+        import re
+        score = re.search(r"\d+[/\-]\d+", text)
+        overs = re.search(r"\d+\.\d", text)
+
+        return {
+            "score": score.group(0).replace("-", "/") if score else "0/0",
+            "overs": overs.group(0) if overs else "0.0",
+            "ball": play_ball()
+        }
+    except:
+        return None
+
+# =========================
+# ENGINE
+# =========================
+async def engine():
+    while True:
+        if not MATCH["running"]:
+            await asyncio.sleep(1)
+            continue
+
+        data = None
+        if MATCH["url"]:
+            data = await asyncio.to_thread(scrape_match_data, MATCH["url"])
+
+        ball = data["ball"] if data else play_ball()
+
+        # update score
+        if ball != "W":
+            runs = int(ball)
+            total = int(MATCH["score"].split("/")[0]) + runs
+            wickets = int(MATCH["score"].split("/")[1])
+        else:
+            total = int(MATCH["score"].split("/")[0])
+            wickets = int(MATCH["score"].split("/")[1]) + 1
+
+        MATCH["score"] = f"{total}/{wickets}"
+
+        # overs
+        over, ball_no = map(int, MATCH["overs"].split("."))
+        ball_no += 1
+        if ball_no == 6:
+            ball_no = 0
+            over += 1
+        MATCH["overs"] = f"{over}.{ball_no}"
+
+        # this over
+        MATCH["this_over"].append(ball)
+        if len(MATCH["this_over"]) > 6:
+            MATCH["this_over"].pop(0)
+
+        payload = {
+            "team1": MATCH["team1"],
+            "team2": MATCH["team2"],
+            "score": MATCH["score"],
+            "overs": MATCH["overs"],
+            "this_over": MATCH["this_over"],
+            "scene": scene_logic(ball)
+        }
+
+        await push(payload)
+        await asyncio.sleep(1.5)
+
+# =========================
+# WEBSOCKET
+# =========================
+@app.websocket("/ws")
+async def websocket_endpoint(ws: WebSocket):
+    await ws.accept()
+    clients.add(ws)
+    try:
+        while True:
+            await ws.receive_text()
+    except WebSocketDisconnect:
+        clients.remove(ws)
+
+# =========================
+# ROUTES
+# =========================
+@app.get("/")
+def home():
+    return HTMLResponse("""
+    <h1>🏏 Cricket Engine</h1>
+    <input id="url" placeholder="Match URL">
+    <button onclick="start()">START</button>
+
+    <br><br>
+    <a href="/overlay">🎥 Open Overlay</a>
+
+    <script>
+    function start(){
+        fetch("/start?url=" + document.getElementById("url").value)
+    }
+    </script>
+    """)
+
+@app.get("/overlay")
+def overlay():
+    return FileResponse("templates/overlay.html")
+
+@app.get("/start")
+async def start(url: str):
+    MATCH["url"] = url
+    MATCH["running"] = True
+    return {"status": "started"}
+
+@app.get("/stop")
+async def stop():
+    MATCH["running"] = False
+    return {"status": "stopped"}
+
+# =========================
+# STARTUP
+# =========================
+@app.on_event("startup")
+async def startup():
+    asyncio.create_task(engine())
+
+
+
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 import asyncio
 import random
 import requests
 from bs4 import BeautifulSoup
-import asyncio
-import re
-import requests
-from bs4 import BeautifulSoup
-
 
 app = FastAPI()
 
@@ -40,7 +225,7 @@ def init_obs():
         return
 
     try:
-        obs = ReqClient(host="localhost", port=4455, password="123456")
+        obs = ReqClient(host="localhost", port=4455, password="jbuDLaKfxUZc6c7m")
         print("✅ OBS CONNECTED")
     except Exception as e:
         print("❌ OBS ERROR:", e)
@@ -178,6 +363,19 @@ async def push(data):
 # =========================
 # GAME ENGINE (ONLY LOOP)
 # =========================
+import asyncio
+import re
+import requests
+from bs4 import BeautifulSoup
+
+import requests
+from bs4 import BeautifulSoup
+import re
+
+
+import requests
+from bs4 import BeautifulSoup
+import re
 
 def scrape_match_data(url: str):
     try:
@@ -519,301 +717,17 @@ async def stop():
 # =========================
 @app.get("/")
 def home():
-    return HTMLResponse("""
-<!DOCTYPE html>
-<html>
-<head>
-<title>CRICKET ENGINE PRO</title>
-<style>
-body{margin:0;background:#0b1220;color:white;font-family:Segoe UI;}
-.container{padding:40px;max-width:900px;margin:auto;}
-.card{background:#111c33;padding:20px;border-radius:12px;}
-input,button{padding:10px;margin:5px;}
-button{background:#00ffcc;border:none;font-weight:bold;cursor:pointer;}
-</style>
-</head>
-<body>
-
-<div class="container">
-<h1>🏏 CRICKET ENGINE PRO</h1>
-
-<div class="card">
-<h3>Start Match From URL</h3>
-<input id="url" style="width:80%" placeholder="Paste match URL">
-<button onclick="start()">START</button>
-</div>
-
-<div class="card">
-<a href="/overlay">🎥 OPEN OVERLAY</a>
-</div>
-
-</div>
-
-<script>
-function start(){
-fetch("/start-url?url=" + encodeURIComponent(document.getElementById("url").value));
-}
-</script>
-
-</body>
-</html>
-""")
+    return FileResponse("templates/home.html")
 
 
 # =========================
 # TV OVERLAY (PRO SCOREBOARD)
 # =========================
+
 @app.get("/overlay")
 def overlay():
-    return HTMLResponse("""
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-body{
-margin:0;
-background:transparent;
-font-family:'Segoe UI',Arial;
-color:white;
-overflow:hidden;
-}
+    return FileResponse("templates/template2.html")
 
-/* =========================
-   TOP SCOREBOARD
-========================= */
-.top-bar{
-position:absolute;
-top:10px;
-left:50%;
-transform:translateX(-50%);
-width:90%;
-display:flex;
-justify-content:space-between;
-background:linear-gradient(90deg,#8b0000,#ff0000);
-border-radius:12px;
-padding:10px 20px;
-box-shadow:0 0 20px rgba(0,0,0,0.6);
-}
-
-.team{
-font-size:18px;
-font-weight:bold;
-}
-
-.score{
-font-size:40px;
-font-weight:800;
-}
-
-.overs{
-font-size:16px;
-opacity:0.9;
-}
-
-/* =========================
-   MID INFO BAR
-========================= */
-.mid-bar{
-position:absolute;
-top:90px;
-left:50%;
-transform:translateX(-50%);
-width:90%;
-display:flex;
-justify-content:space-between;
-background:#1e3a8a;
-padding:8px 15px;
-border-radius:8px;
-font-size:14px;
-}
-
-.label{
-color:#facc15;
-font-weight:bold;
-}
-
-/* =========================
-   THIS OVER
-========================= */
-.over-bar{
-position:absolute;
-top:140px;
-left:50%;
-transform:translateX(-50%);
-display:flex;
-gap:6px;
-}
-
-.ball{
-width:28px;
-height:28px;
-display:flex;
-align-items:center;
-justify-content:center;
-border-radius:6px;
-font-weight:bold;
-background:#111;
-}
-
-.b4{background:#2563eb;}
-.b6{background:#16a34a;}
-.bW{background:#dc2626;}
-.b0{background:#444;}
-
-/* =========================
-   PLAYER CARDS
-========================= */
-.players{
-position:absolute;
-bottom:20px;
-left:50%;
-transform:translateX(-50%);
-display:flex;
-gap:20px;
-}
-
-.card{
-background:rgba(0,0,0,0.85);
-padding:12px 18px;
-border-radius:10px;
-min-width:220px;
-text-align:center;
-box-shadow:0 0 15px rgba(0,0,0,0.7);
-}
-
-.name{
-font-weight:bold;
-font-size:16px;
-}
-
-.stats{
-font-size:22px;
-font-weight:bold;
-color:#00ffcc;
-}
-
-/* =========================
-   BOWLER CARD
-========================= */
-.bowler{
-position:absolute;
-bottom:20px;
-right:30px;
-background:rgba(0,0,0,0.85);
-padding:12px 18px;
-border-radius:10px;
-min-width:180px;
-text-align:center;
-}
-
-/* =========================
-   ANIMATION
-========================= */
-.top-bar,.mid-bar,.players{
-animation:fade 0.5s ease;
-}
-
-@keyframes fade{
-from{opacity:0;transform:translateY(-10px);}
-to{opacity:1;transform:translateY(0);}
-}
-</style>
-</head>
-
-<body>
-
-<!-- TOP BAR -->
-<div class="top-bar">
-    <div>
-        <div class="team" id="team1">TEAM A</div>
-        <div class="score" id="score">0/0</div>
-        <div class="overs" id="overs">0.0</div>
-    </div>
-
-    <div>
-        <div class="team" id="team2">TEAM B</div>
-        <div style="font-size:30px;font-weight:bold;">BOWL</div>
-    </div>
-</div>
-
-<!-- MID BAR -->
-<div class="mid-bar">
-    <div><span class="label">CRR:</span> <span id="crr">0.00</span></div>
-    <div><span class="label">P'SHIP:</span> <span id="pship">0 (0)</span></div>
-</div>
-
-<!-- THIS OVER -->
-<div class="over-bar" id="overBar"></div>
-
-<!-- BATTERS -->
-<div class="players">
-    <div class="card">
-        <div class="name" id="s_name">Striker</div>
-        <div class="stats" id="s_stats">0 (0)</div>
-    </div>
-
-    <div class="card">
-        <div class="name" id="ns_name">Non-Striker</div>
-        <div class="stats" id="ns_stats">0 (0)</div>
-    </div>
-</div>
-
-<!-- BOWLER -->
-<div class="bowler">
-    <div class="name" id="bowler">Bowler</div>
-    <div class="stats" id="b_stats">0-0 (0)</div>
-</div>
-
-<script>
-const ws = new WebSocket("ws://" + location.host + "/ws");
-
-ws.onmessage = (e)=>{
-    let d = JSON.parse(e.data);
-
-    document.getElementById("team1").innerText = d.team1 || "TEAM A";
-    document.getElementById("team2").innerText = d.team2 || "TEAM B";
-
-    document.getElementById("score").innerText = d.score || "0/0";
-    document.getElementById("overs").innerText = d.overs || "0.0";
-
-    document.getElementById("crr").innerText = d.crr || "0.00";
-    document.getElementById("pship").innerText = d.partnership || "0 (0)";
-
-    document.getElementById("s_name").innerText = d.striker || "-";
-    document.getElementById("s_stats").innerText =
-        (d.striker_runs || 0) + " (" + (d.striker_balls || 0) + ")";
-
-    document.getElementById("ns_name").innerText = d.non_striker || "-";
-    document.getElementById("ns_stats").innerText =
-        (d.non_striker_runs || 0) + " (" + (d.non_striker_balls || 0) + ")";
-
-    document.getElementById("bowler").innerText = d.bowler || "-";
-    document.getElementById("b_stats").innerText = d.bowler_fig || "-";
-
-    // THIS OVER
-    let overDiv = document.getElementById("overBar");
-    overDiv.innerHTML = "";
-
-    if(d.this_over){
-        d.this_over.forEach(ball=>{
-            let el = document.createElement("div");
-            el.className = "ball";
-
-            if(ball == "4") el.classList.add("b4");
-            else if(ball == "6") el.classList.add("b6");
-            else if(ball == "W") el.classList.add("bW");
-            else el.classList.add("b0");
-
-            el.innerText = ball;
-            overDiv.appendChild(el);
-        });
-    }
-};
-</script>
-
-</body>
-</html>
-""")
 
 # =========================
 # STARTUP FIX (IMPORTANT)

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    margin:0;
+    overflow:hidden;
+    font-family: Arial;
+    color:white;
+}
+
+/* 🌍 STADIUM BACKGROUND */
+.stadium {
+    position:absolute;
+    width:100%;
+    height:100%;
+    background: radial-gradient(circle at bottom, #1a1a2e, #000);
+    animation: lights 4s infinite alternate;
+}
+
+/* 💡 STADIUM LIGHT EFFECT */
+@keyframes lights {
+    0% { filter: brightness(1); }
+    100% { filter: brightness(1.3); }
+}
+
+/* 🏟 CROWD EFFECT */
+.crowd {
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:120px;
+    background: repeating-linear-gradient(
+        90deg,
+        #111,
+        #222 10px,
+        #111 20px
+    );
+    opacity:0.6;
+}
+
+/* 📊 SCORE BUG (ESPN STYLE) */
+.score {
+    position:absolute;
+    top:20px;
+    left:20px;
+    background:rgba(0,0,0,0.75);
+    padding:15px;
+    border-radius:10px;
+    font-size:28px;
+    border-left:5px solid gold;
+}
+
+/* 🎙 COMMENTARY */
+.commentary {
+    position:absolute;
+    bottom:120px;
+    left:20px;
+    background:rgba(0,0,0,0.7);
+    padding:15px;
+    max-width:50%;
+    border-left:5px solid red;
+    font-size:20px;
+}
+
+/* 🔥 FX LABEL */
+.fx {
+    position:absolute;
+    top:20px;
+    right:20px;
+    background:yellow;
+    color:black;
+    padding:10px;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="stadium"></div>
+<div class="crowd"></div>
+
+<div class="score" id="score">0/0 (0.0)</div>
+<div class="commentary" id="commentary">Loading ESPN Feed...</div>
+<div class="fx" id="fx">LIVE</div>
+
+<script>
+const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+
+    document.getElementById("score").innerText = d.score;
+    document.getElementById("commentary").innerText = d.commentary;
+    document.getElementById("fx").innerText = d.fx;
+};
+</script>
+
+</body>
+</html>

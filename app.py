@@ -2,8 +2,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-import threading
 import asyncio
+import threading
+import time
+import json
 
 from run_old import ai_commentry
 
@@ -12,7 +14,6 @@ from run_old import ai_commentry
 # =========================================
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="templates"), name="static")
-
 
 @app.get("/")
 def home():
@@ -27,14 +28,24 @@ clients = set()
 STATE = {
     "running": False,
     "voice": True,
-    "url": None
+    "url": None,
+    "match_id": None
 }
+
+MAIN_LOOP = None
+worker_thread = None
+
+# replay buffer (for frontend replay engine)
+REPLAY_BUFFER = []
+
 
 # =========================================
 # 📡 BROADCAST SYSTEM
 # =========================================
-async def broadcast(msg: str):
+async def broadcast(payload: dict):
     dead = set()
+
+    msg = json.dumps(payload)
 
     for ws in clients:
         try:
@@ -45,61 +56,125 @@ async def broadcast(msg: str):
     clients.difference_update(dead)
 
 
-# =========================================
-# 🔊 TTS HOOK
-# =========================================
-def speak(text: str):
-    if STATE["voice"]:
-        print("🎙", text)
+def send(payload: dict):
+    """Thread-safe broadcaster"""
+    if MAIN_LOOP:
+        asyncio.run_coroutine_threadsafe(
+            broadcast(payload),
+            MAIN_LOOP
+        )
 
 
 # =========================================
-# 🧠 RUN AI COMMENTARY IN BACKGROUND THREAD
+# 🎙 OUTPUT HOOK (VERY IMPORTANT)
+# =========================================
+def emit_commentary(text: str):
+    print("🎙", text)
+
+    # store for replay
+    REPLAY_BUFFER.append(text)
+    if len(REPLAY_BUFFER) > 30:
+        REPLAY_BUFFER.pop(0)
+
+    send({
+        "type": "commentary",
+        "data": text
+    })
+
+
+def emit_score(score="0/0", overs="0.0"):
+    send({
+        "type": "score",
+        "data": {
+            "score": score,
+            "overs": overs
+        }
+    })
+
+
+def emit_system(text):
+    send({
+        "type": "system",
+        "data": text
+    })
+
+
+# =========================================
+# 🧠 AI ENGINE WRAPPER (THREAD SAFE FIX)
 # =========================================
 def run_ai_engine(url: str):
-    """
-    IMPORTANT:
-    Runs your Playwright + scraping engine safely in background thread.
-    """
     try:
-        print(f"🚀 AI ENGINE STARTED WITH URL: {url}")
-        ai_commentry(url)   # 🔥 YOUR EXISTING CODE (UNCHANGED)
+        print("🚀 AI ENGINE START:", url)
+
+        STATE["running"] = True
+
+        # ---------------------------------
+        # 🔥 IMPORTANT HOOK
+        # ---------------------------------
+        # You must modify ai_commentry() to call:
+        # emit_commentary(...)
+        # emit_score(...)
+        # ---------------------------------
+
+        ai_commentry(url)
+
     except Exception as e:
-        print("❌ AI ENGINE ERROR:", e)
+        print("❌ AI ERROR:", e)
+
+    finally:
+        STATE["running"] = False
+        emit_system("🛑 Match Engine Stopped")
+        print("🛑 AI ENGINE STOPPED")
 
 
+# =========================================
+# 🏟 START MATCH
+# =========================================
 def start_match(url: str):
-    """
-    This is now NON-BLOCKING.
-    """
-    print("🏏 START MATCH REQUEST:", url)
+    global worker_thread
 
-    STATE["running"] = True
+    print("🔥 START MATCH:", url)
+
+    # stop previous safely
+    STATE["running"] = False
+    time.sleep(1)
+
+    if worker_thread and worker_thread.is_alive():
+        print("⚠️ Previous engine still running, ignoring new start")
+        return
+
     STATE["url"] = url
+    STATE["running"] = True
 
-    # 🚀 RUN AI IN SEPARATE THREAD
-    thread = threading.Thread(
+    emit_system("🚀 Match Started")
+
+    worker_thread = threading.Thread(
         target=run_ai_engine,
         args=(url,),
         daemon=True
     )
-    thread.start()
+    worker_thread.start()
 
-    print("✅ MATCH ENGINE LAUNCHED (NON-BLOCKING)")
+    print("✅ ENGINE THREAD STARTED")
 
 
+# =========================================
+# 🛑 STOP MATCH
+# =========================================
 def stop_match():
-    print("🛑 STOP MATCH")
+    print("🛑 STOP REQUEST")
 
     STATE["running"] = False
-    STATE["url"] = None
+    emit_system("🛑 Match Stopped")
 
 
 # =========================================
 # 🌐 WEBSOCKET CONTROL ROOM
 # =========================================
 @app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
+async def ws_endpoint(ws: WebSocket):
+    global MAIN_LOOP
+
     await ws.accept()
     clients.add(ws)
 
@@ -107,53 +182,64 @@ async def websocket_endpoint(ws: WebSocket):
 
     try:
         while True:
-            data = await ws.receive_text()
-            print("📩 WS:", data)
+            raw = await ws.receive_text()
+            print("📩 WS:", raw)
+
+            msg = None
+            try:
+                msg = json.loads(raw)
+            except:
+                pass
 
             # =========================
-            # FORCE START (MAIN FIX)
+            # JSON MODE (PRIMARY)
             # =========================
-            if data.startswith("force:"):
-                url = data.split(":", 1)[1].strip()
+            if isinstance(msg, dict):
 
-                if not url:
-                    await ws.send_text("❌ INVALID URL")
-                    continue
+                action = msg.get("type")
+                data = msg.get("data")
 
-                print("🔥 FORCE START RECEIVED:", url)
+                if action in ["start", "force"] and data:
+                    start_match(data)
 
-                start_match(url)
+                elif action == "stop":
+                    stop_match()
 
-                await ws.send_text(f"🚀 MATCH STARTED: {url}")
+                elif action == "replay":
+                    send({
+                        "type": "replay",
+                        "data": REPLAY_BUFFER
+                    })
 
-            # =========================
-            # STOP
-            # =========================
-            elif data == "stop":
-                stop_match()
-                await ws.send_text("🛑 STOPPED")
+                elif action == "mute":
+                    STATE["voice"] = False
 
-            # =========================
-            # MUTE
-            # =========================
-            elif data == "mute":
-                STATE["voice"] = False
-                await ws.send_text("🔇 MUTED")
+                elif action == "unmute":
+                    STATE["voice"] = True
 
-            # =========================
-            # UNMUTE
-            # =========================
-            elif data == "unmute":
-                STATE["voice"] = True
-                await ws.send_text("🔊 UNMUTED")
+                elif action == "status":
+                    send({
+                        "type": "status",
+                        "data": STATE
+                    })
 
             # =========================
-            # STATUS
+            # FALLBACK STRING MODE
             # =========================
-            elif data == "status":
-                await ws.send_text(
-                    f"📊 RUNNING: {STATE['running']} | URL: {STATE['url']}"
-                )
+            else:
+
+                if raw.startswith("start:") or raw.startswith("force:"):
+                    url = raw.split(":", 1)[1]
+                    start_match(url)
+
+                elif raw == "stop":
+                    stop_match()
+
+                elif raw == "replay":
+                    send({
+                        "type": "replay",
+                        "data": REPLAY_BUFFER
+                    })
 
     except WebSocketDisconnect:
         clients.remove(ws)
@@ -165,4 +251,7 @@ async def websocket_endpoint(ws: WebSocket):
 # =========================================
 @app.on_event("startup")
 async def startup():
-    print("🏏 IPL BROADCAST CONTROL ROOM ONLINE")
+    global MAIN_LOOP
+
+    MAIN_LOOP = asyncio.get_running_loop()
+    print("🏏 IPL BROADCAST ENGINE ONLINE")
