@@ -1,6 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from playwright.sync_api import sync_playwright
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 import asyncio
 import random
 import requests
@@ -413,75 +413,23 @@ async def load(url):
             await browser.close()
         except:
             pass
-async def load_once(url):
-    try:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-
-            await page.goto(url)
-            await page.wait_for_timeout(2000)
-
-            text = await page.inner_text("body")
-
-            await browser.close()
-
-            return text
-
-    except Exception as e:
-        print("ERROR:", e)
-        return None
-    
 async def engine():
     while True:
         if not MATCH["running"]:
             await asyncio.sleep(1)
             continue
-
-        data = await load_once(MATCH["url"])
+        print("Hello")
+        await asyncio.to_thread(load, MATCH["url"]) if MATCH["url"] else None
         #print(data)
-        lines = data.splitlines()
+        #load(MATCH["url"])
 
-                    # =========================
-                    # PARSE DATA
-                    # =========================
-        score_data = parse_score(data)
-        print("PARSED:", score_data)
 
-        runs, wickets, over, ball = score_data
-        # =========================
-                    # STATUS MESSAGE SAFE
-                    # =========================
-        last_status_message = ""
-
-        if len(lines) > 17:
-            if "CRR" in lines[17]:
-                last_status_message = lines[16] if len(lines) > 16 else ""
-            else:
-                last_status_message = lines[17]
-
-        print("STATUS:", last_status_message)
-
-        batsmen = parse_batsmen(data)
-        bowler = parse_bowler(data)
-
-        print("BATSMEN:", batsmen)
-        print("BOWLER:", bowler)
-        payload = {
-                        "runs": runs,
-                        "wickets": wickets,
-                        "over": over,
-                        "ball": ball,
-                        "status": last_status_message,
-                        "batsmen": batsmen,
-                        "bowler": bowler,
-                        "scene": "LIVE"  # you can enhance with logic
-                    }
-        await push(payload)
 
         # OBS SWITCH
-        switch_scene(payload["scene"])
-        await asyncio.sleep(5)    
+        #switch_scene(payload["scene"])
+
+        await asyncio.sleep(0.2)
+    
 
 async def engine2():
     while True:
@@ -682,13 +630,8 @@ fetch("/start-url?url=" + encodeURIComponent(document.getElementById("url").valu
 # =========================
 # TV OVERLAY (PRO SCOREBOARD)
 # =========================
-
 @app.get("/overlay")
 def overlay():
-    return HTMLResponse(open("templates/overlay.html").read())
-
-@app.get("/overlay2")
-def overlay2():
     return HTMLResponse("""
 <!DOCTYPE html>
 <html>
@@ -897,7 +840,7 @@ ws.onmessage = (e)=>{
     document.getElementById("team1").innerText = d.team1 || "TEAM A";
     document.getElementById("team2").innerText = d.team2 || "TEAM B";
 
-    document.getElementById("runs").innerText = d.runs || "20/30";
+    document.getElementById("score").innerText = d.score || "0/0";
     document.getElementById("overs").innerText = d.overs || "0.0";
 
     document.getElementById("crr").innerText = d.crr || "0.00";
