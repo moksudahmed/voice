@@ -4,6 +4,7 @@ import threading
 import time
 import re
 import asyncio
+from playwright.async_api import async_playwright
 from playwright.sync_api import sync_playwright
 import random
 from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary, generate_full_commentary
@@ -14,6 +15,8 @@ from utill import number_to_bangla_words
 import edge_tts
 import sounddevice as sd
 import soundfile as sf
+from fastapi.staticfiles import StaticFiles
+from bs4 import BeautifulSoup
 
 app = FastAPI()
 
@@ -102,7 +105,7 @@ def init_obs():
         return
 
     try:
-        obs = ReqClient(host="localhost", port=4455, password="Wl1CueV8045rDXyV")
+        obs = ReqClient(host="localhost", port=4455, password="jbuDLaKfxUZc6c7m")
         print("✅ OBS CONNECTED")
     except Exception as e:
         print("❌ OBS ERROR:", e)
@@ -125,6 +128,10 @@ def switch_scene(scene: str):
 # =========================
 STATE = {
     "url": None,
+    "flags": {
+        "team_a_flag": "",
+        "team_b_flag": ""
+    },
     "data": {
         "team_a": "WAIT",
         "team_b": "SOURCE",
@@ -145,8 +152,66 @@ STATE = {
         "bowler_fig": "0-0 (0)"
     }
 }
+
 PREV_DATA = None
 
+# =========================
+# TEAM FLAGS SCRAPER (FIXED)
+# =========================
+   
+def extract_team_flags(url):
+    result = {
+        "team_a_name": "TEAM A",
+        "team_b_name": "TEAM B",
+        "team_a_flag": "",
+        "team_b_flag": ""
+    }
+    
+    
+    if not url:
+        return result
+
+    try:
+        with sync_playwright() as p:
+            url = url.rstrip("/") + "/match-details"
+            
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+
+            print("🌐 OPENING:", url)
+            page.goto(url, timeout=60000)
+
+            # wait main container
+            page.wait_for_selector(".team-header-card", timeout=30000)
+
+            # =========================
+            # FIX: STRICT SCOPING (IMPORTANT)
+            # =========================
+            card = page.locator(".team-header-card").first
+
+            # TEAM 1 (LEFT)
+            team1 = card.locator(".team1").first
+            team1_name = team1.locator(".team-name").inner_text().strip()
+            team1_flag = team1.locator("img").get_attribute("src")
+
+            # TEAM 2 (RIGHT)
+            team2 = card.locator(".team2").first
+            team2_name = team2.locator(".team-name").inner_text().strip()
+            team2_flag = team2.locator("img").get_attribute("src")
+
+            browser.close()
+
+            return {
+                "team_a_name": team1_name,
+                "team_b_name": team2_name,
+                "team_a_flag": team1_flag,
+                "team_b_flag": team2_flag
+            }
+
+    except Exception as e:
+        print("❌ FLAG ERROR:", e)
+        return result
+    
 # =========================
 # SCORE PARSER
 # =========================
@@ -315,17 +380,142 @@ def extract_teams(lines):
                 print("Parse error:", e)
 
     return None, None
+import re
+
+def parse_crex_data(lines):
+    data = {
+        "team_a": "WAIT",
+        "team_b": "SOURCE",
+        "score": "0/0",
+        "overs": "0.0",
+        "status": "LIVE",
+        "scene": "LIVE",
+        "commentary": "",
+        "crr": "0.00",
+        "partnership": "0 (0)",
+        "striker": "-",
+        "striker_runs": 0,
+        "striker_balls": 0,
+        "non_striker": "-",
+        "non_striker_runs": 0,
+        "non_striker_balls": 0,
+        "bowler": "-",
+        "bowler_fig": "0-0 (0)"
+    }
+
+    text = " ".join(lines)
+
+    # =========================
+    # TEAMS
+    # =========================
+    for line in lines:
+        if " vs " in line.lower():
+            parts = re.split(r'\bvs\b', line, flags=re.IGNORECASE)
+            if len(parts) >= 2:
+                data["team_a"] = parts[0].strip()
+                data["team_b"] = parts[1].strip().split()[0]
+                break
+
+    # =========================
+    # SCORE + OVERS (FIXED)
+    # =========================
+    score_data = parse_score(text) 
+    if score_data: 
+        runs, wickets, over, ball = score_data 
+        score = f"{runs}/{wickets}" 
+        overs = f"{over}.{ball}" 
+        data["score"] = f"{runs}/{wickets}"
+        data["overs"] = f"{overs}"
+    else: 
+        score = "0/0" 
+        overs = "0.0"
+        data["score"] = f"{score}"
+        data["overs"] = f"{overs}"
+    
+   
+
+    # =========================
+    # CRR
+    # =========================
+    crr_match = re.search(r'CRR\s*:\s*([\d\.]+)', text)
+    if crr_match:
+        data["crr"] = crr_match.group(1)
+
+    # =========================
+    # STATUS
+    # =========================
+    for line in lines:
+        if "need" in line.lower() or "opt" in line.lower():
+            data["status"] = line
+            break
+
+    # =========================
+    # PARTNERSHIP
+    # =========================
+    part_match = re.search(r"P'ship\s*:\s*(\d+\(\d+\))", text)
+    if part_match:
+        data["partnership"] = part_match.group(1)
+
+    # =========================
+    # 🔥 BATSMEN (USING YOUR FUNCTION)
+    # =========================
+    batsmen = parse_batsmen(text)
+
+    if len(batsmen) >= 1:
+        data["striker"] = batsmen[0]["name"]
+        data["striker_runs"] = batsmen[0]["runs"]
+        data["striker_balls"] = batsmen[0]["balls"]
+
+    if len(batsmen) >= 2:
+        data["non_striker"] = batsmen[1]["name"]
+        data["non_striker_runs"] = batsmen[1]["runs"]
+        data["non_striker_balls"] = batsmen[1]["balls"]
+
+    # =========================
+    # 🔥 BOWLER (USING YOUR FUNCTION)
+    # =========================
+    bowler_data = parse_bowler(text)
+
+    if bowler_data and "bowler" in bowler_data:
+        data["bowler"] = bowler_data["bowler"]
+        data["bowler_fig"] = f"{bowler_data['wickets']}-{bowler_data['runs_conceded']} ({bowler_data['overs']})"
+
+    return data
 
 def scrape_loop():
     global STATE, PREV_DATA
+     
+    url = "https://crex.com/cricket-live-score/lsg-vs-mi-47th-match-indian-premier-league-2026-match-updates-118S"
+    
+    
+   
+    try:    
+            print("Hello")
+            data = extract_team_flags(url)
+            
+            # =========================
+            # UPDATE FLAGS
+            # =========================
+            STATE["flags"] = {
+                "team_a_flag": data["team_a_flag"],
+                "team_b_flag": data["team_b_flag"]
+            }
+            print(data)
+            STATE["data"]["team_a"] = data["team_a_name"]
+            STATE["data"]["team_b"] = data["team_b_name"]
 
+            print("🏏 FLAGS UPDATED:", STATE["flags"])
+
+    except Exception as e:
+            print("❌ SCRAPER ERROR:", e)
     while True:
         url = STATE["url"]
 
         if not url:
             time.sleep(2)
             continue
-
+        
+       
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -436,8 +626,11 @@ def scrape_loop():
                 if commentary:
                     new_data["commentary"] = commentary
                     speak(commentary)   # 🔥 DIRECT CALL (FIXED)
+                
+                parsed = parse_crex_data(lines)
 
-                STATE["data"] = new_data
+                STATE["data"] = parsed
+                #STATE["data"] = new_data
                 PREV_DATA = new_data
                 print(STATE["data"])
                 switch_scene(scene)
@@ -465,6 +658,7 @@ def set_url(payload: dict):
     STATE["url"] = payload.get("url")
     return {"status": "ok"}
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # =========================
 # WEBSOCKET
 # =========================

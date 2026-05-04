@@ -3,118 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Cricket Overlay</title>
+<title>Pro Cricket Scoreboard</title>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: transparent;
-  overflow: hidden;
+body{
+  font-family:'Segoe UI',sans-serif;
+  background:#000;
+  overflow:hidden;
 }
 
-/* CONTAINER */
-.broadcast-container {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #0a1520, #1a1f2e);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+/* =========================
+   MAIN
+========================= */
+.broadcast-container{
+  width:100%;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
 }
 
-/* TOP BAR */
-.top-scorebar {
-  background: linear-gradient(135deg, #1a1f2e, #0f1119);
-  border-bottom: 2px solid #00f0ff;
-  padding: 14px 28px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* =========================
+   TOP BAR
+========================= */
+.top{
+  background:linear-gradient(135deg,#1a1f2e,#0f1119);
+  border-bottom:2px solid #00f0ff;
+  padding:12px 30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
-.team-name {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #fff;
+.team{
+  font-size:26px;
+  font-weight:800;
+  color:#fff;
 }
 
-.score {
-  font-size: 3rem;
-  font-weight: 900;
-  color: #ffd966;
-  font-family: monospace;
+.score{
+  font-size:48px;
+  color:#ffd966;
+  font-family:monospace;
 }
 
-.meta {
-  font-size: 1rem;
-  color: #ccc;
+.meta{
+  color:#ccc;
 }
 
-.live {
-  background: #00f0ff;
-  color: #000;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  animation: blink 1.2s infinite;
+.live{
+  background:#00f0ff;
+  padding:6px 14px;
+  border-radius:20px;
+  font-weight:bold;
+  animation:blink 1s infinite;
 }
 
-@keyframes blink {
-  50% { opacity: 0.5; }
+@keyframes blink{
+  50%{opacity:0.5;}
 }
 
-/* BOTTOM */
-.bottom-panel {
-  background: rgba(0,0,0,0.6);
-  border-top: 2px solid #00f0ff;
-  padding: 18px 28px;
-  color: #fff;
+/* =========================
+   MIDDLE
+========================= */
+.middle{
+  flex:1;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
 }
 
-/* STATS */
-.stats {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
+/* background */
+.bg-img{
+  position:absolute;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:0;
 }
 
-.highlight {
-  color: #00f0ff;
-  font-weight: bold;
+/* overlay */
+.middle::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.75),
+    rgba(0,0,0,0.2),
+    rgba(0,0,0,0.75)
+  );
+  z-index:1;
 }
 
-/* BATTERS */
-.batters {
-  display: flex;
-  gap: 30px;
-  margin-bottom: 10px;
+/* =========================
+   TEAM DISPLAY
+========================= */
+.vs-container{
+  position:absolute;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:80px;
 }
 
-.batter {
-  background: rgba(255,255,255,0.05);
-  padding: 10px 16px;
-  border-radius: 10px;
+.team-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
 }
 
-.runs {
-  color: #ffd966;
-  font-weight: bold;
+/* FLAGS */
+.team-flag{
+  width:95px;
+  height:95px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid #00f0ff;
+  box-shadow:0 0 20px rgba(0,240,255,0.6);
+  background:#111;
 }
 
-/* BOWLER */
-.bowler {
-  display: flex;
-  justify-content: space-between;
-  background: rgba(255,255,255,0.05);
-  padding: 8px 16px;
-  border-radius: 10px;
+/* TEAM NAME */
+.team-label{
+  color:#fff;
+  font-size:22px;
+  font-weight:800;
+}
+
+/* VS */
+.vs-text{
+  font-size:42px;
+  font-weight:900;
+  color:#ffd966;
+}
+
+/* COMMENTARY */
+.center-text{
+  position:absolute;
+  bottom:40px;
+  z-index:3;
+  color:#fff;
+  font-size:22px;
+  font-weight:bold;
+  background:rgba(0,0,0,0.6);
+  padding:10px 20px;
+  border-radius:10px;
+}
+
+/* =========================
+   BOTTOM
+========================= */
+.bottom{
+  background:rgba(15,17,25,0.95);
+  border-top:2px solid #00f0ff;
+  padding:20px;
+  color:#fff;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
+}
+
+.stats{
+  display:flex;
+  gap:25px;
+  background:rgba(0,0,0,0.4);
+  padding:8px 20px;
+  border-radius:40px;
+}
+
+.highlight{
+  color:#00f0ff;
+  font-weight:bold;
+}
+
+.batters{
+  display:flex;
+  gap:40px;
+}
+
+.batter{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.name{
+  font-weight:bold;
+}
+
+.runs{
+  color:#ffd966;
+  font-family:monospace;
+}
+
+.bowler{
+  background:rgba(0,0,0,0.4);
+  padding:8px 20px;
+  border-radius:40px;
+}
+
+.status{
+  margin-top:10px;
+  font-size:14px;
+  color:#00f0ff;
 }
 </style>
 </head>
@@ -124,90 +229,140 @@ body {
 <div class="broadcast-container">
 
   <!-- TOP -->
-  <div class="top-scorebar">
+  <div class="top">
     <div>
-      <div class="team-name" id="team">TEAM A vs TEAM B</div>
+      <div class="team" id="teams">TEAM A vs TEAM B</div>
       <div class="meta" id="overs">0.0 Overs</div>
     </div>
 
     <div class="score" id="score">0/0</div>
-
     <div class="live">LIVE</div>
   </div>
 
+  <!-- MIDDLE -->
+  <div class="middle">
+
+    <img id="bg" class="bg-img" src="/static/stadium.jpg">
+
+    <div class="vs-container">
+
+      <div class="team-box">
+        <img id="flag_a" class="team-flag" src="/static/default_a.png">
+        <div id="team_a_mid" class="team-label">TEAM A</div>
+      </div>
+
+      <div class="vs-text">VS</div>
+
+      <div class="team-box">
+        <img id="flag_b" class="team-flag" src="/static/default_b.jpg">
+        <div id="team_b_mid" class="team-label">TEAM B</div>
+      </div>
+
+    </div>
+
+    <div class="center-text" id="commentary">
+      Live Match Starting...
+    </div>
+
+  </div>
+
   <!-- BOTTOM -->
-  <div class="bottom-panel">
+  <div class="bottom">
 
-    <div class="stats">
-      <div>CRR: <span class="highlight" id="crr">0.00</span></div>
-      <div>Partnership: <span class="highlight" id="partnership">0 (0)</span></div>
-    </div>
-
-    <div class="batters">
-      <div class="batter">
-        <strong id="striker">Striker</strong><br>
-        <span class="runs" id="s_runs">0 (0)</span>
-      </div>
-
-      <div class="batter">
-        <strong id="non_striker">Non Striker</strong><br>
-        <span class="runs" id="ns_runs">0 (0)</span>
+    <div class="row">
+      <div class="stats">
+        <span>CRR: <span class="highlight" id="crr">0.00</span></span>
+        <span>P'SHIP: <span class="highlight" id="partnership">0 (0)</span></span>
       </div>
     </div>
 
-    <div class="bowler">
-      <div id="bowler">Bowler</div>
-      <div id="bowler_fig">0-0 (0)</div>
+    <div class="row">
+
+      <div class="batters">
+        <div class="batter">
+          <div class="name" id="striker">Striker</div>
+          <div class="runs" id="s_runs">0 (0)</div>
+        </div>
+
+        <div class="batter">
+          <div class="name" id="non_striker">Non-Striker</div>
+          <div class="runs" id="ns_runs">0 (0)</div>
+        </div>
+      </div>
+
+      <div class="bowler">
+        <span id="bowler">Bowler</span> |
+        <span id="bowler_fig">0-0 (0)</span>
+      </div>
+
     </div>
+
+    <div class="status" id="status">Match Starting...</div>
 
   </div>
 
 </div>
 
 <script>
+
+// =========================
+// BACKGROUND FALLBACK
+// =========================
+const bg = document.getElementById("bg");
+bg.onerror = () => {
+  bg.src = "https://images.pexels.com/photos/1264080/cricket-stadium-sports-match-1264080.jpeg";
+};
+
+// =========================
+// SAFE HELPER
+// =========================
+function setText(id, value){
+  const el = document.getElementById(id);
+  if(el) el.innerText = value;
+}
+
+// =========================
+// WEBSOCKET
+// =========================
 const ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
-ws.onopen = () => {
-  console.log("✅ WS Connected");
-};
-
-ws.onmessage = (e) => {
+ws.onmessage = (e)=>{
   const d = JSON.parse(e.data);
 
-  console.log("📡 DATA:", d);
+  setText("teams", `${d.team_a || "TEAM A"} vs ${d.team_b || "TEAM B"}`);
+  setText("score", d.score || "0/0");
+  setText("overs", (d.overs || "0.0") + " Overs");
 
-  // TEAM + SCORE
-  document.getElementById("team").innerText =
-    (d.team_a || "TEAM A") + " vs " + (d.team_b || "TEAM B");
+  // =========================
+  // FLAGS FIX (SAFE)
+  // =========================
+  if(d.flags){
+    document.getElementById("flag_a").src =
+      d.flags.team_a?.flag || "/static/default_a.png";
 
-  document.getElementById("score").innerText = d.score || "0/0";
-  document.getElementById("overs").innerText = (d.overs || "0.0") + " Overs";
+    document.getElementById("flag_b").src =
+      d.flags.team_b?.flag || "/static/default_b.jpg";
 
-  // STATS
-  document.getElementById("crr").innerText = d.crr || "0.00";
-  document.getElementById("partnership").innerText = d.partnership || "0 (0)";
+    setText("team_a_mid", d.flags.team_a?.name || d.team_a);
+    setText("team_b_mid", d.flags.team_b?.name || d.team_b);
+  }
 
-  // BATTERS
-  document.getElementById("striker").innerText = d.striker || "-";
-  document.getElementById("s_runs").innerText =
-    (d.striker_runs || 0) + " (" + (d.striker_balls || 0) + ")";
+  setText("crr", d.crr || "0.00");
+  setText("partnership", d.partnership || "0 (0)");
 
-  document.getElementById("non_striker").innerText = d.non_striker || "-";
-  document.getElementById("ns_runs").innerText =
-    (d.non_striker_runs || 0) + " (" + (d.non_striker_balls || 0) + ")";
+  setText("striker", d.striker || "-");
+  setText("s_runs", `${d.striker_runs || 0} (${d.striker_balls || 0})`);
 
-  // BOWLER
-  document.getElementById("bowler").innerText = d.bowler || "-";
-  document.getElementById("bowler_fig").innerText = d.bowler_fig || "0-0 (0)";
+  setText("non_striker", d.non_striker || "-");
+  setText("ns_runs", `${d.non_striker_runs || 0} (${d.non_striker_balls || 0})`);
+
+  setText("bowler", d.bowler || "-");
+  setText("bowler_fig", d.bowler_fig || "0-0 (0)");
+
+  setText("status", d.status || "LIVE");
+  setText("commentary", d.commentary || "Live Match");
 };
 
-ws.onerror = (err) => {
-  console.error("❌ WS Error:", err);
-};
-
-ws.onclose = () => {
-  console.warn("⚠️ WS Disconnected");
-};
 </script>
 
 </body>
