@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live Cricket Overlay</title>
 
 <style>
@@ -18,9 +18,7 @@ body {
   overflow: hidden;
 }
 
-/* =========================
-   MAIN CONTAINER
-========================= */
+/* CONTAINER */
 .broadcast-container {
   position: fixed;
   width: 100%;
@@ -31,9 +29,7 @@ body {
   justify-content: space-between;
 }
 
-/* =========================
-   TOP BAR
-========================= */
+/* TOP BAR */
 .top-scorebar {
   background: linear-gradient(135deg, #1a1f2e, #0f1119);
   border-bottom: 2px solid #00f0ff;
@@ -74,9 +70,7 @@ body {
   50% { opacity: 0.5; }
 }
 
-/* =========================
-   BOTTOM PANEL
-========================= */
+/* BOTTOM */
 .bottom-panel {
   background: rgba(0,0,0,0.6);
   border-top: 2px solid #00f0ff;
@@ -89,10 +83,6 @@ body {
   display: flex;
   justify-content: space-between;
   margin-bottom: 12px;
-}
-
-.crr, .partnership {
-  font-size: 1rem;
 }
 
 .highlight {
@@ -113,11 +103,6 @@ body {
   border-radius: 10px;
 }
 
-.batter strong {
-  color: #fff;
-  font-size: 1.1rem;
-}
-
 .runs {
   color: #ffd966;
   font-weight: bold;
@@ -130,16 +115,6 @@ body {
   background: rgba(255,255,255,0.05);
   padding: 8px 16px;
   border-radius: 10px;
-  margin-top: 10px;
-}
-
-.bowler-name {
-  font-weight: bold;
-}
-
-.fig {
-  color: #00f0ff;
-  font-family: monospace;
 }
 </style>
 </head>
@@ -151,7 +126,7 @@ body {
   <!-- TOP -->
   <div class="top-scorebar">
     <div>
-      <div class="team-name" id="team">TEAM A</div>
+      <div class="team-name" id="team">TEAM A vs TEAM B</div>
       <div class="meta" id="overs">0.0 Overs</div>
     </div>
 
@@ -163,13 +138,11 @@ body {
   <!-- BOTTOM -->
   <div class="bottom-panel">
 
-    <!-- STATS -->
     <div class="stats">
-      <div class="crr">CRR: <span class="highlight" id="crr">0.00</span></div>
-      <div class="partnership">Partnership: <span class="highlight" id="partnership">0 (0)</span></div>
+      <div>CRR: <span class="highlight" id="crr">0.00</span></div>
+      <div>Partnership: <span class="highlight" id="partnership">0 (0)</span></div>
     </div>
 
-    <!-- BATTERS -->
     <div class="batters">
       <div class="batter">
         <strong id="striker">Striker</strong><br>
@@ -182,10 +155,9 @@ body {
       </div>
     </div>
 
-    <!-- BOWLER -->
     <div class="bowler">
-      <div class="bowler-name" id="bowler">Bowler</div>
-      <div class="fig" id="bowler_fig">0-0 (0)</div>
+      <div id="bowler">Bowler</div>
+      <div id="bowler_fig">0-0 (0)</div>
     </div>
 
   </div>
@@ -195,12 +167,18 @@ body {
 <script>
 const ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
+ws.onopen = () => {
+  console.log("✅ WS Connected");
+};
+
 ws.onmessage = (e) => {
   const d = JSON.parse(e.data);
 
-  // TOP
+  console.log("📡 DATA:", d);
+
+  // TEAM + SCORE
   document.getElementById("team").innerText =
-    (d.team1 || "TEAM A") + " vs " + (d.team2 || "TEAM B");
+    (d.team_a || "TEAM A") + " vs " + (d.team_b || "TEAM B");
 
   document.getElementById("score").innerText = d.score || "0/0";
   document.getElementById("overs").innerText = (d.overs || "0.0") + " Overs";
@@ -221,6 +199,14 @@ ws.onmessage = (e) => {
   // BOWLER
   document.getElementById("bowler").innerText = d.bowler || "-";
   document.getElementById("bowler_fig").innerText = d.bowler_fig || "0-0 (0)";
+};
+
+ws.onerror = (err) => {
+  console.error("❌ WS Error:", err);
+};
+
+ws.onclose = () => {
+  console.warn("⚠️ WS Disconnected");
 };
 </script>
 
