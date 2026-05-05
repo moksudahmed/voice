@@ -277,9 +277,9 @@ def generate_commentary2(prev, curr):
 
     return None
 
-def generate_commentary(status, bowler=None, batsmen=None):
-    status = (status or "").strip()
-
+def generate_commentary(events, batsmen, bowler, score, team1=None, team2=None, context=None):
+    events = (events or "").strip()
+    runs, wickets, over, ball = score
     # Normalize keys
     mapping = {
         "Ball": "BOWLER_RUNUP",
@@ -292,7 +292,7 @@ def generate_commentary(status, bowler=None, batsmen=None):
         "Strategic Timeout": "STRATEGIC_TIMEOUT"
     }
 
-    key = mapping.get(status)
+    key = mapping.get(events)
 
     if not key or key not in COMMENTARY:
         return None  # safe fallback
@@ -605,6 +605,7 @@ def scrape_loop():
                     last_status_message = lines[16]
                 else : 
                     last_status_message = lines[17]
+                print("Hello world")
                 print(last_status_message)
                 has_alpha = any(c.isalpha() for c in last_status_message)
 
@@ -617,13 +618,17 @@ def scrape_loop():
                 scene = scene_logic(text)
                 
                 message = ""
+                commentary = generate_commentary(last_status_message, batsmen, bowler, score_data, team_a, team_b)
+                    #if commentary:
+                    #    speak_bangla(commentary) 
+                print(commentary)
                 if last_status_message and message != last_status_message:
                             
-                    commentary = generate_commentary(last_status_message, bowler, batsmen)
-                    if commentary:
-                        speak_bangla(commentary) 
+                    #commentary = generate_commentary(last_status_message, bowler, batsmen)
+                    #if commentary:
+                    #    speak_bangla(commentary) 
                     print(commentary)
-                    speak_bangla(commentary)
+                    #speak_bangla(commentary)
                     message = last_status_message   
 
                 new_data = {
@@ -637,11 +642,11 @@ def scrape_loop():
                 }
                 status = last_status_message.upper()
                 # COMMENTARY + VOICE
-                commentary = generate_commentary(PREV_DATA, new_data)
+                """commentary = generate_commentary(status, bowler, batsmen)
                 print(commentary)
                 if commentary:
-                    new_data["commentary"] = commentary
-                    speak(commentary)   # 🔥 DIRECT CALL (FIXED)
+                    new_data["commentary"] = commentary"""
+                    #speak(commentary)   # 🔥 DIRECT CALL (FIXED)
                 
                 parsed = parse_crex_data(lines)
 
@@ -859,8 +864,8 @@ async def ws(websocket: WebSocket):
 
     try:
         while True:
-            print("Final Test")
-            print(STATE["data"])
+            #print("Final Test")
+            #print(STATE["data"])
             await websocket.send_json({
                 **STATE["data"],
                 "flags": STATE["flags"]

@@ -27,13 +27,6 @@ body{
   font-weight:800;
 }
 
-.status-box{
-  display:flex;
-  gap:15px;
-  font-size:13px;
-  color:#ccc;
-}
-
 .badge{
   background:#00f0ff;
   color:#000;
@@ -53,14 +46,11 @@ body{
 /* LEFT PANEL */
 .panel{
   background:#111a2e;
-  border:1px solid rgba(0,240,255,0.2);
   border-radius:12px;
   padding:15px;
-  height:fit-content;
 }
 
 .panel h3{
-  margin-bottom:12px;
   color:#00f0ff;
 }
 
@@ -70,7 +60,6 @@ input{
   border-radius:8px;
   border:none;
   margin-bottom:10px;
-  outline:none;
 }
 
 button{
@@ -86,94 +75,76 @@ button{
 .start{ background:#00f0ff; }
 .stop{ background:#ff3b3b; color:#fff; }
 
-#msg{
-  font-size:13px;
-  color:#00f0ff;
-  margin-top:5px;
-}
-
 /* RIGHT */
-.right{
-  display:flex;
-  flex-direction:column;
-  gap:15px;
-}
-
-/* SUMMARY */
-.summary{
-  background:#111a2e;
-  border-radius:12px;
-  padding:15px;
-  border-left:4px solid #00f0ff;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-/* GRID */
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
   gap:12px;
 }
 
 /* CARD */
 .card{
   background:#111a2e;
-  padding:12px;
+  padding:14px;
   border-radius:10px;
   border-left:4px solid #00f0ff;
   cursor:pointer;
-  transition:0.2s;
+  transition:0.25s ease;
+  position:relative;
 }
 
 .card:hover{
-  transform:scale(1.02);
+  transform:translateY(-3px);
+}
+
+.card.active{
   border-left:4px solid #ff3b3b;
+  box-shadow:0 0 15px rgba(255,0,0,0.4);
 }
 
-.card-title{
-  font-weight:bold;
-  font-size:14px;
-  white-space:pre-line;
-}
-
-.live{
-  display:inline-block;
-  font-size:11px;
+/* LIVE DOT */
+.live-dot{
+  width:8px;
+  height:8px;
   background:red;
-  padding:3px 8px;
-  border-radius:20px;
-  animation:blink 1s infinite;
+  border-radius:50%;
+  display:inline-block;
+  animation:pulse 1s infinite;
+  margin-right:6px;
 }
 
-@keyframes blink{
+@keyframes pulse{
   50%{opacity:0.4;}
 }
 
-a{
-  display:inline-block;
-  margin-top:8px;
+/* SCORE */
+.score{
+  font-size:18px;
+  font-weight:bold;
+  margin-top:6px;
+  transition:0.3s;
+}
+
+.flash{
   color:#00f0ff;
-  text-decoration:none;
-  font-size:13px;
+  transform:scale(1.1);
+}
+
+/* STATUS */
+.status{
+  font-size:12px;
+  color:#ccc;
 }
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
   <div class="title">🏏 Cricket AI Broadcast</div>
-
-  <div class="status-box">
-    <div>📡 SYSTEM: <span class="badge">LIVE</span></div>
-    <div>🟢 MATCHES: <span id="count">0</span></div>
-  </div>
+  <div>📡 SYSTEM: <span class="badge">LIVE</span></div>
 </div>
 
-<!-- MAIN -->
 <div class="container">
 
   <!-- LEFT -->
@@ -182,22 +153,19 @@ a{
 
     <input id="url" placeholder="Paste Match URL">
 
-    <button class="start" onclick="startMatch()">START BROADCAST</button>
-    <button class="stop" onclick="stopMatch()">STOP BROADCAST</button>
+    <button class="start" onclick="startMatch()">START</button>
+    <button class="stop" onclick="stopMatch()">STOP</button>
 
     <div id="msg"></div>
   </div>
 
   <!-- RIGHT -->
-  <div class="right">
-
-    <div class="summary">
-      <div>📊 Live Matches Loaded: <b id="total">0</b></div>
-      <div>⚡ Auto Update: ON</div>
+  <div>
+    <div style="margin-bottom:10px;">
+      📊 Matches: <b id="count">0</b>
     </div>
 
     <div class="grid" id="matches"></div>
-
   </div>
 
 </div>
@@ -205,57 +173,58 @@ a{
 <script>
 
 let selectedCard = null;
+let prevScores = {};
 
 // =========================
-// START / STOP BROADCAST
+// START / STOP
 // =========================
-function startMatch(){
+async function startMatch(){
   const url = document.getElementById("url").value;
 
-  fetch("/set-url", {
+  await fetch("/set-url", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({url})
   });
 
-  document.getElementById("msg").innerText = "🚀 Broadcast Started";
+  msg("🚀 Broadcast Started");
 }
 
-function stopMatch(){
-  fetch("/set-url", {
+async function stopMatch(){
+  await fetch("/set-url", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({url:null})
   });
 
-  document.getElementById("msg").innerText = "🛑 Broadcast Stopped";
+  msg("🛑 Broadcast Stopped");
+}
+
+function msg(text){
+  document.getElementById("msg").innerText = text;
 }
 
 // =========================
-// CLICK MATCH TO START
+// SELECT MATCH
 // =========================
 function selectMatch(url, el){
 
-  // remove previous highlight
   if(selectedCard){
-    selectedCard.style.borderLeft = "4px solid #00f0ff";
+    selectedCard.classList.remove("active");
   }
 
   selectedCard = el;
-  el.style.borderLeft = "4px solid #ff3b3b";
+  el.classList.add("active");
 
-  // auto fill input
   document.getElementById("url").value = url;
 
-  // start broadcast immediately
   fetch("/set-url", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({url})
   });
 
-  document.getElementById("msg").innerText =
-    "🚀 Broadcasting selected match...";
+  msg("🚀 Broadcasting selected match...");
 }
 
 // =========================
@@ -264,42 +233,48 @@ function selectMatch(url, el){
 async function loadMatches(){
   try{
     const res = await fetch("/api/matches");
-
     const data = await res.json();
 
     document.getElementById("count").innerText = data.count || 0;
-    document.getElementById("total").innerText = data.count || 0;
 
     const box = document.getElementById("matches");
     box.innerHTML = "";
 
     if(!data.matches || data.matches.length === 0){
-      box.innerHTML = "<div class='card'>No live matches found</div>";
+      box.innerHTML = "<div class='card'>No live matches</div>";
       return;
     }
 
     data.matches.forEach(m => {
 
-      const isLive = (m.text || "").toLowerCase().includes("live");
+      const prev = prevScores[m.url];
+      const flash = prev && prev !== m.text ? "flash" : "";
 
-      box.innerHTML += `
-        <div class="card" onclick="selectMatch('${m.url}', this)">
-          <div class="card-title">${m.text || "No Title"}</div>
-          ${isLive ? `<div class="live">LIVE</div>` : ""}
-          <br/>
-          <a href="${m.url}" target="_blank" onclick="event.stopPropagation()">▶ Open Match</a>
-        </div>
+      prevScores[m.url] = m.text;
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.onclick = () => selectMatch(m.url, card);
+
+      card.innerHTML = `
+        <div><span class="live-dot"></span> ${m.text || "Match"}</div>
+        <div class="score ${flash}">LIVE</div>
+        <a href="${m.url}" target="_blank" onclick="event.stopPropagation()">▶ Open</a>
       `;
+
+      box.appendChild(card);
     });
 
-  } catch(err){
-    console.error("Error loading matches:", err);
+  }catch(err){
+    console.error(err);
   }
 }
 
-// auto refresh
+// =========================
+// AUTO REFRESH
+// =========================
 loadMatches();
-setInterval(loadMatches, 10000);
+setInterval(loadMatches, 8000);
 
 </script>
 
