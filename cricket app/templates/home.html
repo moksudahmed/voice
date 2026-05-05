@@ -1,36 +1,306 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>CRICKET ENGINE PRO</title>
+<meta charset="UTF-8">
+<title>Cricket AI Broadcast Dashboard</title>
+
 <style>
-body{margin:0;background:#0b1220;color:white;font-family:Segoe UI;}
-.container{padding:40px;max-width:900px;margin:auto;}
-.card{background:#111c33;padding:20px;border-radius:12px;}
-input,button{padding:10px;margin:5px;}
-button{background:#00ffcc;border:none;font-weight:bold;cursor:pointer;}
+body{
+  margin:0;
+  font-family:Segoe UI, sans-serif;
+  background:#0b1220;
+  color:#fff;
+}
+
+/* HEADER */
+.header{
+  padding:18px 25px;
+  background:#111a2e;
+  border-bottom:2px solid #00f0ff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.title{
+  font-size:22px;
+  font-weight:800;
+}
+
+.status-box{
+  display:flex;
+  gap:15px;
+  font-size:13px;
+  color:#ccc;
+}
+
+.badge{
+  background:#00f0ff;
+  color:#000;
+  padding:4px 10px;
+  border-radius:20px;
+  font-weight:bold;
+}
+
+/* MAIN */
+.container{
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:20px;
+  padding:20px;
+}
+
+/* LEFT PANEL */
+.panel{
+  background:#111a2e;
+  border:1px solid rgba(0,240,255,0.2);
+  border-radius:12px;
+  padding:15px;
+  height:fit-content;
+}
+
+.panel h3{
+  margin-bottom:12px;
+  color:#00f0ff;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin-bottom:10px;
+  outline:none;
+}
+
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+  margin-bottom:8px;
+}
+
+.start{ background:#00f0ff; }
+.stop{ background:#ff3b3b; color:#fff; }
+
+#msg{
+  font-size:13px;
+  color:#00f0ff;
+  margin-top:5px;
+}
+
+/* RIGHT */
+.right{
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+/* SUMMARY */
+.summary{
+  background:#111a2e;
+  border-radius:12px;
+  padding:15px;
+  border-left:4px solid #00f0ff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:12px;
+}
+
+/* CARD */
+.card{
+  background:#111a2e;
+  padding:12px;
+  border-radius:10px;
+  border-left:4px solid #00f0ff;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.card:hover{
+  transform:scale(1.02);
+  border-left:4px solid #ff3b3b;
+}
+
+.card-title{
+  font-weight:bold;
+  font-size:14px;
+  white-space:pre-line;
+}
+
+.live{
+  display:inline-block;
+  font-size:11px;
+  background:red;
+  padding:3px 8px;
+  border-radius:20px;
+  animation:blink 1s infinite;
+}
+
+@keyframes blink{
+  50%{opacity:0.4;}
+}
+
+a{
+  display:inline-block;
+  margin-top:8px;
+  color:#00f0ff;
+  text-decoration:none;
+  font-size:13px;
+}
 </style>
 </head>
+
 <body>
 
+<!-- HEADER -->
+<div class="header">
+  <div class="title">🏏 Cricket AI Broadcast</div>
+
+  <div class="status-box">
+    <div>📡 SYSTEM: <span class="badge">LIVE</span></div>
+    <div>🟢 MATCHES: <span id="count">0</span></div>
+  </div>
+</div>
+
+<!-- MAIN -->
 <div class="container">
-<h1>🏏 CRICKET ENGINE PRO</h1>
 
-<div class="card">
-<h3>Start Match From URL</h3>
-<input id="url" style="width:80%" placeholder="Paste match URL">
-<button onclick="start()">START</button>
-</div>
+  <!-- LEFT -->
+  <div class="panel">
+    <h3>🎮 Control Panel</h3>
 
-<div class="card">
-<a href="/overlay">🎥 OPEN OVERLAY</a>
-</div>
+    <input id="url" placeholder="Paste Match URL">
+
+    <button class="start" onclick="startMatch()">START BROADCAST</button>
+    <button class="stop" onclick="stopMatch()">STOP BROADCAST</button>
+
+    <div id="msg"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+
+    <div class="summary">
+      <div>📊 Live Matches Loaded: <b id="total">0</b></div>
+      <div>⚡ Auto Update: ON</div>
+    </div>
+
+    <div class="grid" id="matches"></div>
+
+  </div>
 
 </div>
 
 <script>
-function start(){
-fetch("/start-url?url=" + encodeURIComponent(document.getElementById("url").value));
+
+let selectedCard = null;
+
+// =========================
+// START / STOP BROADCAST
+// =========================
+function startMatch(){
+  const url = document.getElementById("url").value;
+
+  fetch("/set-url", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({url})
+  });
+
+  document.getElementById("msg").innerText = "🚀 Broadcast Started";
 }
+
+function stopMatch(){
+  fetch("/set-url", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({url:null})
+  });
+
+  document.getElementById("msg").innerText = "🛑 Broadcast Stopped";
+}
+
+// =========================
+// CLICK MATCH TO START
+// =========================
+function selectMatch(url, el){
+
+  // remove previous highlight
+  if(selectedCard){
+    selectedCard.style.borderLeft = "4px solid #00f0ff";
+  }
+
+  selectedCard = el;
+  el.style.borderLeft = "4px solid #ff3b3b";
+
+  // auto fill input
+  document.getElementById("url").value = url;
+
+  // start broadcast immediately
+  fetch("/set-url", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({url})
+  });
+
+  document.getElementById("msg").innerText =
+    "🚀 Broadcasting selected match...";
+}
+
+// =========================
+// LOAD MATCHES
+// =========================
+async function loadMatches(){
+  try{
+    const res = await fetch("/api/matches");
+
+    const data = await res.json();
+
+    document.getElementById("count").innerText = data.count || 0;
+    document.getElementById("total").innerText = data.count || 0;
+
+    const box = document.getElementById("matches");
+    box.innerHTML = "";
+
+    if(!data.matches || data.matches.length === 0){
+      box.innerHTML = "<div class='card'>No live matches found</div>";
+      return;
+    }
+
+    data.matches.forEach(m => {
+
+      const isLive = (m.text || "").toLowerCase().includes("live");
+
+      box.innerHTML += `
+        <div class="card" onclick="selectMatch('${m.url}', this)">
+          <div class="card-title">${m.text || "No Title"}</div>
+          ${isLive ? `<div class="live">LIVE</div>` : ""}
+          <br/>
+          <a href="${m.url}" target="_blank" onclick="event.stopPropagation()">▶ Open Match</a>
+        </div>
+      `;
+    });
+
+  } catch(err){
+    console.error("Error loading matches:", err);
+  }
+}
+
+// auto refresh
+loadMatches();
+setInterval(loadMatches, 10000);
+
 </script>
 
 </body>

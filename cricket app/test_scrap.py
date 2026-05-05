@@ -13,19 +13,29 @@ from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY
 from utill import number_to_bangla_words
 import edge_tts
+from fastapi.middleware.cors import CORSMiddleware
 import sounddevice as sd
 import soundfile as sf
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
+from pydantic import BaseModel
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # =========================
 # TTS ENGINE (WORKING FIX)
 # =========================
 import pyttsx3
 
 speech_lock = threading.Lock()
+SCRAPER_RUNNING = False
 
 def get_bangla_voice(engine):
     voices = engine.getProperty('voices')
@@ -243,7 +253,7 @@ def scene_logic(text):
 # =========================
 # COMMENTARY GENERATOR
 # =========================
-def generate_commentary(prev, curr):
+def generate_commentary2(prev, curr):
     if not prev:
         return "Welcome to the live match!"
 
@@ -267,6 +277,37 @@ def generate_commentary(prev, curr):
 
     return None
 
+def generate_commentary(status, bowler=None, batsmen=None):
+    status = (status or "").strip()
+
+    # Normalize keys
+    mapping = {
+        "Ball": "BOWLER_RUNUP",
+        "0": "DOT",
+        "1": "SINGLE",
+        "2": "DOUBLE",
+        "4": "FOUR",
+        "6": "SIX",
+        "Time Out": "TIME_OUT",
+        "Strategic Timeout": "STRATEGIC_TIMEOUT"
+    }
+
+    key = mapping.get(status)
+
+    if not key or key not in COMMENTARY:
+        return None  # safe fallback
+
+    template = random.choice(COMMENTARY[key])
+
+    # Handle special formatting (bowler)
+    if key == "BOWLER_RUNUP" and bowler:
+        try:
+            name = remove_first_part(clean_name(bowler.get("bowler", "")))
+            return template.format(bowler=name)
+        except:
+            return template
+
+    return template              
 # =========================
 # SCRAPER LOOP
 # =========================
@@ -483,39 +524,47 @@ def parse_crex_data(lines):
     return data
 
 def scrape_loop():
-    global STATE, PREV_DATA
-     
-    url = "https://crex.com/cricket-live-score/lsg-vs-mi-47th-match-indian-premier-league-2026-match-updates-118S"
-    
+    #global STATE, PREV_DATA
+    global STATE, PREV_DATA, SCRAPER_RUNNING
+    #url = "https://crex.com/cricket-live-score/lsg-vs-mi-47th-match-indian-premier-league-2026-match-updates-118S"
+    flag = False
     
    
-    try:    
-            print("Hello")
-            data = extract_team_flags(url)
-            
-            # =========================
-            # UPDATE FLAGS
-            # =========================
-            STATE["flags"] = {
-                "team_a_flag": data["team_a_flag"],
-                "team_b_flag": data["team_b_flag"]
-            }
-            print(data)
-            STATE["data"]["team_a"] = data["team_a_name"]
-            STATE["data"]["team_b"] = data["team_b_name"]
-
-            print("🏏 FLAGS UPDATED:", STATE["flags"])
-
-    except Exception as e:
-            print("❌ SCRAPER ERROR:", e)
+    
     while True:
         url = STATE["url"]
+
+        # 🛑 HARD STOP
+        if not SCRAPER_RUNNING:
+            time.sleep(1)
+            continue
 
         if not url:
             time.sleep(2)
             continue
         
-       
+        if url and not flag :
+            try:    
+                
+                
+                data = extract_team_flags(url)
+                
+                # =========================
+                # UPDATE FLAGS
+                # =========================
+                STATE["flags"] = {
+                    "team_a_flag": data["team_a_flag"],
+                    "team_b_flag": data["team_b_flag"]
+                }
+                
+                STATE["data"]["team_a"] = data["team_a_name"]
+                STATE["data"]["team_b"] = data["team_b_name"]
+
+                print("🏏 FLAGS UPDATED:", STATE["flags"])
+                flag = True
+            except Exception as e:
+                print("❌ SCRAPER ERROR:", e)
+
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -570,44 +619,11 @@ def scrape_loop():
                 message = ""
                 if last_status_message and message != last_status_message:
                             
-                    if last_status_message == "Ball":  
-                        commentary = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler=remove_first_part(clean_name(bowler['bowler'])))                            
-                        print(commentary)                       
-                        speak_bangla(commentary)
-
-                    elif last_status_message == "0":                       
-                        commentary = random.choice(COMMENTARY["DOT"])                           
-                        print(commentary)                       
-                        speak_bangla(commentary)
-
-                    elif last_status_message == "1":  
-                        commentary = random.choice(COMMENTARY["SINGLE"])                          
-                        print(commentary)                       
-                        speak_bangla(commentary)
-                    
-                    elif last_status_message == "4":
-                        commentary =random.choice(COMMENTARY["FOUR"])
-                        print(commentary)                       
-                        speak_bangla(commentary)
-
-                    elif last_status_message == "6":
-                        commentary =random.choice(COMMENTARY["SIX"])
-                        print(commentary)                       
-                        speak_bangla(commentary)
-
-                    elif last_status_message == "2":
-                        commentary =random.choice(COMMENTARY["DOUBLE"])
-                        print(commentary)                       
-                        speak_bangla(commentary)
-                       
-                    elif last_status_message == "Time Out":  
-                        commentary = random.choice(COMMENTARY["TIME_OUT"])                            
-                        print(commentary)
-                        speak_bangla(commentary)
-                    elif last_status_message == "Strategic Timeout":  
-                        commentary = random.choice(COMMENTARY["STRATEGIC_TIMEOUT"])                            
-                        print(commentary)
-                        speak_bangla(commentary)
+                    commentary = generate_commentary(last_status_message, bowler, batsmen)
+                    if commentary:
+                        speak_bangla(commentary) 
+                    print(commentary)
+                    speak_bangla(commentary)
                     message = last_status_message   
 
                 new_data = {
@@ -622,7 +638,7 @@ def scrape_loop():
                 status = last_status_message.upper()
                 # COMMENTARY + VOICE
                 commentary = generate_commentary(PREV_DATA, new_data)
-
+                print(commentary)
                 if commentary:
                     new_data["commentary"] = commentary
                     speak(commentary)   # 🔥 DIRECT CALL (FIXED)
@@ -645,6 +661,167 @@ def scrape_loop():
         time.sleep(2)
 
 # =========================
+# SCRAPER FUNCTION
+# =========================
+# =========================
+# SAMPLE SCRAPER FUNCTION
+# replace with your real get_live_matches()
+# =========================
+async def get_live_matches2():
+    # TODO: replace with crex scraper
+    return [
+        {"text": "Live (3)", "url": "https://crex.com/cricket-live-score"},
+        {"text": "LSG vs MI Live", "url": "https://crex.com"},
+        {"text": "RCB vs CSK Live", "url": "https://crex.com"}
+    ]
+
+# =========================
+# REQUEST MODEL
+# =========================
+class UrlRequest(BaseModel):
+    url: str | None = None
+
+async def get_live_matches():
+    matches = []
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        
+        CREX_URL = "https://crex.com/cricket-live-score"
+        
+        await page.goto(CREX_URL, timeout=60000)
+        await page.wait_for_timeout(5000)  # allow JS load
+
+        # match cards (CREX structure)
+        #cards = await page.locator(".match-card, .match-box, .scorecard, a").all()
+        cards = await page.locator("app-live-matches .live-card").all()
+        print(cards)
+        for card in cards:
+            try:
+                text = await card.inner_text()
+
+                # filter only live matches
+                if "LIVE" in text.upper() or "STUMPS" in text.upper():
+
+                    teams = await card.locator("text=/vs/i").all_inner_texts()
+
+                    link = await card.get_attribute("href")
+                    if link and link.startswith("/"):
+                        link = "https://crex.com" + link
+
+                    matches.append({
+                        "text": text.strip(),
+                        "url": link
+                    })
+
+            except:
+                continue
+
+        await browser.close()
+
+    return matches
+
+async def get_live_matches():
+    matches = []
+
+    CREX_URL = "https://crex.com/cricket-live-score"
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+
+        await page.goto(CREX_URL, timeout=60000)
+        await page.wait_for_timeout(6000)  # wait Angular render
+
+        # =========================
+        # LIVE MATCH CARDS
+        # =========================
+        cards = await page.locator("div.live-card").all()
+
+        for card in cards:
+            try:
+                # =========================
+                # CHECK LIVE STATUS
+                # =========================
+                live_tag = await card.locator(".liveTag").all_inner_texts()
+                if not any("live" in t.lower() for t in live_tag):
+                    continue
+
+                # =========================
+                # SERIES NAME (TOP)
+                # =========================
+                series = await card.locator("h2.snameTag").first.inner_text()
+                series = series.strip() if series else "Live Match"
+
+                # =========================
+                # MATCH URL (MAIN LINK)
+                # =========================
+                match_link_el = card.locator(
+                    "a[href*='cricket-live-score'], a[href*='match-updates']"
+                ).last
+
+                href = await match_link_el.get_attribute("href")
+
+                if href and href.startswith("/"):
+                    href = "https://crex.com" + href
+
+                # =========================
+                # MATCH TITLE / INFO
+                # =========================
+                match_info = await card.locator("h3.match-number").first.inner_text()
+                match_info = match_info.strip() if match_info else ""
+
+                # =========================
+                # COMMENT (IMPORTANT INFO)
+                # =========================
+                comment = await card.locator(".comment").first.inner_text()
+                comment = comment.strip() if comment else ""
+
+                # =========================
+                # TEAMS + SCORES
+                # =========================
+                teams = await card.locator(".team-name").all_inner_texts()
+                scores = await card.locator(".team-score").all_inner_texts()
+                overs = await card.locator(".match-over").all_inner_texts()
+
+                team_info = ""
+                if len(teams) >= 2:
+                    team_info = f"{teams[0]} vs {teams[1]}"
+
+                score_info = ""
+                if scores:
+                    score_info = " | ".join([s.strip() for s in scores if s.strip()])
+
+                over_info = ""
+                if overs:
+                    over_info = "Overs: " + " | ".join(overs)
+
+                # =========================
+                # FINAL FORMAT
+                # =========================
+                text = "\n".join(filter(None, [
+                    series,
+                    match_info,
+                    team_info,
+                    score_info,
+                    over_info,
+                    comment
+                ]))
+
+                matches.append({
+                    "text": text,
+                    "url": href
+                })
+
+            except Exception as e:
+                print("❌ CARD ERROR:", e)
+                continue
+
+        await browser.close()
+
+    return matches
+# =========================
 # INIT
 # =========================
 init_obs()
@@ -653,9 +830,22 @@ threading.Thread(target=scrape_loop, daemon=True).start()
 # =========================
 # API
 # =========================
+
 @app.post("/set-url")
 def set_url(payload: dict):
-    STATE["url"] = payload.get("url")
+    global SCRAPER_RUNNING
+
+    url = payload.get("url")
+
+    STATE["url"] = url
+
+    if url:
+        SCRAPER_RUNNING = True
+        print("▶ SCRAPER STARTED")
+    else:
+        SCRAPER_RUNNING = False
+        print("⏹ SCRAPER STOPPED")
+
     return {"status": "ok"}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -669,7 +859,13 @@ async def ws(websocket: WebSocket):
 
     try:
         while True:
-            await websocket.send_json(STATE["data"])
+            print("Final Test")
+            print(STATE["data"])
+            await websocket.send_json({
+                **STATE["data"],
+                "flags": STATE["flags"]
+            })
+            #await websocket.send_json(STATE["data"])
             await asyncio.sleep(1)
     except WebSocketDisconnect:
         print("❌ WS CLOSED")
@@ -682,30 +878,49 @@ def overlay():
     return FileResponse("templates/overlay.html")
 
 # =========================
-# HOME
+# HOME PAGE (UI)
 # =========================
 @app.get("/")
 def home():
-    return HTMLResponse("""
-    <html>
-    <body style="font-family:Arial;background:#0b1220;color:white;padding:40px">
-        <h2>🏏 Cricket AI Broadcast</h2>
+    return FileResponse("templates/home.html")
 
-        <input id="url" style="width:400px;padding:10px" placeholder="Match URL">
-        <button onclick="start()">START</button>
 
-        <p id="msg"></p>
+# =========================
+# LIVE MATCH API (NEW FIXED)
+# =========================
+@app.get("/api/matches")
+async def live_matches():
+    data = await get_live_matches()
+    return {
+        "count": len(data),
+        "matches": data
+    }
 
-        <script>
-        function start(){
-            fetch("/set-url", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({url: document.getElementById("url").value})
-            });
-            document.getElementById("msg").innerText = "🚀 Running...";
-        }
-        </script>
-    </body>
-    </html>
-    """)
+
+# =========================
+# SET MATCH URL
+# =========================
+@app.post("/set-url")
+def set_url(payload: UrlRequest):
+    STATE["url"] = payload.url
+    return {"status": "ok", "url": STATE["url"]}
+
+
+# =========================
+# STOP MATCH
+# =========================
+@app.post("/stop")
+def stop():
+    STATE["url"] = None
+    
+    STATE["data"] = {
+        "team_a": "STOPPED",
+        "team_b": "",
+        "score": "0/0",
+        "overs": "0.0",
+        "status": "STOPPED",
+        "scene": "LIVE",
+        "commentary": ""
+    }
+    print("🛑 Broadcast stopped")
+    return {"status": "stopped"}

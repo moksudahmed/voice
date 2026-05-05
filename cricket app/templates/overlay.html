@@ -6,97 +6,46 @@
 <title>Pro Cricket Scoreboard</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
 
-body{
-  font-family:'Segoe UI',sans-serif;
-  background:#000;
-  overflow:hidden;
-}
-
-/* =========================
-   MAIN
-========================= */
 .broadcast-container{
-  width:100%;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
+  width:100%;height:100vh;display:flex;flex-direction:column;justify-content:space-between;
 }
 
-/* =========================
-   TOP BAR
-========================= */
+/* TOP */
 .top{
   background:linear-gradient(135deg,#1a1f2e,#0f1119);
   border-bottom:2px solid #00f0ff;
   padding:12px 30px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  display:flex;justify-content:space-between;align-items:center;
 }
 
-.team{
-  font-size:26px;
-  font-weight:800;
-  color:#fff;
-}
-
-.score{
-  font-size:48px;
-  color:#ffd966;
-  font-family:monospace;
-}
-
-.meta{
-  color:#ccc;
-}
+.team{font-size:26px;font-weight:800;color:#fff;}
+.score{font-size:48px;color:#ffd966;font-family:monospace;}
+.meta{color:#ccc;}
 
 .live{
-  background:#00f0ff;
-  padding:6px 14px;
-  border-radius:20px;
-  font-weight:bold;
-  animation:blink 1s infinite;
+  background:#00f0ff;padding:6px 14px;border-radius:20px;
+  font-weight:bold;animation:blink 1s infinite;
 }
 
-@keyframes blink{
-  50%{opacity:0.5;}
-}
+@keyframes blink{50%{opacity:0.5;}}
 
-/* =========================
-   MIDDLE
-========================= */
+/* MIDDLE */
 .middle{
-  flex:1;
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
+  flex:1;position:relative;display:flex;
+  align-items:center;justify-content:center;
 }
 
-/* background */
 .bg-img{
-  position:absolute;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  z-index:0;
+  position:absolute;width:100%;height:100%;
+  object-fit:cover;z-index:0;
 }
 
-/* overlay */
 .middle::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    to bottom,
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(to bottom,
     rgba(0,0,0,0.75),
     rgba(0,0,0,0.2),
     rgba(0,0,0,0.75)
@@ -104,123 +53,66 @@ body{
   z-index:1;
 }
 
-/* =========================
-   TEAM DISPLAY
-========================= */
+/* TEAM DISPLAY */
 .vs-container{
-  position:absolute;
-  z-index:2;
-  display:flex;
-  align-items:center;
-  gap:80px;
+  position:absolute;z-index:2;
+  display:flex;align-items:center;gap:80px;
 }
 
 .team-box{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:10px;
 }
 
-/* FLAGS */
 .team-flag{
-  width:95px;
-  height:95px;
-  border-radius:50%;
-  object-fit:cover;
-  border:3px solid #00f0ff;
+  width:95px;height:95px;border-radius:50%;
+  object-fit:cover;border:3px solid #00f0ff;
   box-shadow:0 0 20px rgba(0,240,255,0.6);
   background:#111;
 }
 
-/* TEAM NAME */
-.team-label{
-  color:#fff;
-  font-size:22px;
-  font-weight:800;
-}
+.team-label{color:#fff;font-size:22px;font-weight:800;}
+.vs-text{font-size:42px;font-weight:900;color:#ffd966;}
 
-/* VS */
-.vs-text{
-  font-size:42px;
-  font-weight:900;
-  color:#ffd966;
-}
-
-/* COMMENTARY */
 .center-text{
-  position:absolute;
-  bottom:40px;
-  z-index:3;
-  color:#fff;
-  font-size:22px;
-  font-weight:bold;
+  position:absolute;bottom:40px;z-index:3;
+  color:#fff;font-size:22px;font-weight:bold;
   background:rgba(0,0,0,0.6);
-  padding:10px 20px;
-  border-radius:10px;
+  padding:10px 20px;border-radius:10px;
 }
 
-/* =========================
-   BOTTOM
-========================= */
+/* BOTTOM */
 .bottom{
   background:rgba(15,17,25,0.95);
   border-top:2px solid #00f0ff;
-  padding:20px;
-  color:#fff;
+  padding:20px;color:#fff;
 }
 
 .row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:15px;
+  display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:15px;
 }
 
 .stats{
-  display:flex;
-  gap:25px;
+  display:flex;gap:25px;
   background:rgba(0,0,0,0.4);
-  padding:8px 20px;
-  border-radius:40px;
+  padding:8px 20px;border-radius:40px;
 }
 
-.highlight{
-  color:#00f0ff;
-  font-weight:bold;
-}
+.highlight{color:#00f0ff;font-weight:bold;}
 
-.batters{
-  display:flex;
-  gap:40px;
-}
+.batters{display:flex;gap:40px;}
+.batter{display:flex;gap:10px;align-items:center;}
 
-.batter{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-
-.name{
-  font-weight:bold;
-}
-
-.runs{
-  color:#ffd966;
-  font-family:monospace;
-}
+.name{font-weight:bold;}
+.runs{color:#ffd966;font-family:monospace;}
 
 .bowler{
   background:rgba(0,0,0,0.4);
-  padding:8px 20px;
-  border-radius:40px;
+  padding:8px 20px;border-radius:40px;
 }
 
-.status{
-  margin-top:10px;
-  font-size:14px;
-  color:#00f0ff;
-}
+.status{margin-top:10px;font-size:14px;color:#00f0ff;}
 </style>
 </head>
 
@@ -228,97 +120,89 @@ body{
 
 <div class="broadcast-container">
 
-  <!-- TOP -->
-  <div class="top">
-    <div>
-      <div class="team" id="teams">TEAM A vs TEAM B</div>
-      <div class="meta" id="overs">0.0 Overs</div>
-    </div>
-
-    <div class="score" id="score">0/0</div>
-    <div class="live">LIVE</div>
+<!-- TOP -->
+<div class="top">
+  <div>
+    <div class="team" id="teams">TEAM A vs TEAM B</div>
+    <div class="meta" id="overs">0.0 Overs</div>
   </div>
 
-  <!-- MIDDLE -->
-  <div class="middle">
+  <div class="score" id="score">0/0</div>
+  <div class="live">LIVE</div>
+</div>
 
-    <img id="bg" class="bg-img" src="/static/stadium.jpg">
+<!-- MIDDLE -->
+<div class="middle">
 
-    <div class="vs-container">
+<img id="bg" class="bg-img" src="/static/stadium.jpg">
 
-      <div class="team-box">
-        <img id="flag_a" class="team-flag" src="/static/default_a.png">
-        <div id="team_a_mid" class="team-label">TEAM A</div>
-      </div>
+<div class="vs-container">
 
-      <div class="vs-text">VS</div>
-
-      <div class="team-box">
-        <img id="flag_b" class="team-flag" src="/static/default_b.jpg">
-        <div id="team_b_mid" class="team-label">TEAM B</div>
-      </div>
-
-    </div>
-
-    <div class="center-text" id="commentary">
-      Live Match Starting...
-    </div>
-
+  <div class="team-box">
+    <img id="flag_a" class="team-flag" src="/static/default_a.png">
+    <div id="team_a_mid" class="team-label">TEAM A</div>
   </div>
 
-  <!-- BOTTOM -->
-  <div class="bottom">
+  <div class="vs-text">VS</div>
 
-    <div class="row">
-      <div class="stats">
-        <span>CRR: <span class="highlight" id="crr">0.00</span></span>
-        <span>P'SHIP: <span class="highlight" id="partnership">0 (0)</span></span>
-      </div>
-    </div>
-
-    <div class="row">
-
-      <div class="batters">
-        <div class="batter">
-          <div class="name" id="striker">Striker</div>
-          <div class="runs" id="s_runs">0 (0)</div>
-        </div>
-
-        <div class="batter">
-          <div class="name" id="non_striker">Non-Striker</div>
-          <div class="runs" id="ns_runs">0 (0)</div>
-        </div>
-      </div>
-
-      <div class="bowler">
-        <span id="bowler">Bowler</span> |
-        <span id="bowler_fig">0-0 (0)</span>
-      </div>
-
-    </div>
-
-    <div class="status" id="status">Match Starting...</div>
-
+  <div class="team-box">
+    <img id="flag_b" class="team-flag" src="/static/default_b.png">
+    <div id="team_b_mid" class="team-label">TEAM B</div>
   </div>
+
+</div>
+
+<div class="center-text" id="commentary">
+  Live Match Starting...
+</div>
+
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom">
+
+<div class="row">
+  <div class="stats">
+    <span>CRR: <span class="highlight" id="crr">0.00</span></span>
+    <span>P'SHIP: <span class="highlight" id="partnership">0 (0)</span></span>
+  </div>
+</div>
+
+<div class="row">
+
+  <div class="batters">
+    <div class="batter">
+      <div class="name" id="striker">Striker</div>
+      <div class="runs" id="s_runs">0 (0)</div>
+    </div>
+
+    <div class="batter">
+      <div class="name" id="non_striker">Non-Striker</div>
+      <div class="runs" id="ns_runs">0 (0)</div>
+    </div>
+  </div>
+
+  <div class="bowler">
+    <span id="bowler">Bowler</span> |
+    <span id="bowler_fig">0-0 (0)</span>
+  </div>
+
+</div>
+
+<div class="status" id="status">Match Starting...</div>
+
+</div>
 
 </div>
 
 <script>
 
 // =========================
-// BACKGROUND FALLBACK
-// =========================
-const bg = document.getElementById("bg");
-bg.onerror = () => {
-  bg.src = "https://images.pexels.com/photos/1264080/cricket-stadium-sports-match-1264080.jpeg";
-};
-
-// =========================
-// SAFE HELPER
+// SAFE SET TEXT
 // =========================
 function setText(id, value){
   const el = document.getElementById(id);
-  if(el) el.innerText = value;
+  if(el) el.innerText = value ?? "-";
 }
 
 // =========================
@@ -329,23 +213,26 @@ const ws = new WebSocket("ws://127.0.0.1:8000/ws");
 ws.onmessage = (e)=>{
   const d = JSON.parse(e.data);
 
+  console.log("DATA:", d);
+
   setText("teams", `${d.team_a || "TEAM A"} vs ${d.team_b || "TEAM B"}`);
   setText("score", d.score || "0/0");
   setText("overs", (d.overs || "0.0") + " Overs");
 
   // =========================
-  // FLAGS FIX (SAFE)
+  // ✅ FIXED FLAGS (IMPORTANT)
   // =========================
+  console.log(d);
   if(d.flags){
     document.getElementById("flag_a").src =
-      d.flags.team_a?.flag || "/static/default_a.png";
+      d.flags.team_a_flag || "/static/default_a.png";
 
     document.getElementById("flag_b").src =
-      d.flags.team_b?.flag || "/static/default_b.jpg";
-
-    setText("team_a_mid", d.flags.team_a?.name || d.team_a);
-    setText("team_b_mid", d.flags.team_b?.name || d.team_b);
+      d.flags.team_b_flag || "/static/default_b.png";
   }
+
+  setText("team_a_mid", d.team_a || "TEAM A");
+  setText("team_b_mid", d.team_b || "TEAM B");
 
   setText("crr", d.crr || "0.00");
   setText("partnership", d.partnership || "0 (0)");
