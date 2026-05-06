@@ -19,7 +19,7 @@ import soundfile as sf
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
-
+from live_players import scrape_players
 app = FastAPI()
 
 app.add_middleware(
@@ -60,7 +60,7 @@ def speak_bangla(text: str):
     def run():
         with speech_lock:
             try:
-                print("🎙 AI SPEAK (BN):", text)
+                #print("🎙 AI SPEAK (BN):", text)
 
                 async def _run():
                     tts = edge_tts.Communicate(
@@ -147,6 +147,12 @@ STATE = {
     "flags": {
         "team_a_flag": "",
         "team_b_flag": ""
+    },
+    "live_players":{
+        "name": "",
+        "runs": "",
+        "balls": "",
+        "image": ""
     },
     "data": {
         "team_a": "WAIT",
@@ -566,6 +572,68 @@ def parse_batsmen(html):
 
     return result
 
+def parse_players2(html):
+    """
+    Extract active players (batsmen only) with image, runs, balls
+    """
+
+    html = html.replace("\r", "").strip()
+
+    result = []
+
+    # ---------------------------------------
+    # STEP 1: Get ONLY batsmen blocks (exclude bowler)
+    # ---------------------------------------
+    blocks = re.findall(
+        r'<div[^>]*class="batsmen-partnership"(?![^>]*bowler)[\s\S]*?</div>\s*</div>',
+        html
+    )
+
+    for block in blocks:
+
+        # -------------------------
+        # NAME
+        # -------------------------
+        name_match = re.search(
+            r'class="batsmen-name"[\s\S]*?<p[^>]*>(.*?)</p>',
+            block
+        )
+
+        # -------------------------
+        # RUNS + BALLS
+        # -------------------------
+        score_match = re.search(
+            r'class="batsmen-score"(?![^>]*bowler)[\s\S]*?<p[^>]*>(\d+)</p>\s*<p[^>]*>\((\d+)\)</p>',
+            block
+        )
+
+        # -------------------------
+        # IMAGE (IMPORTANT FIX)
+        # pick FIRST img inside batsmen-image (player image)
+        # -------------------------
+        img_match = re.search(
+            r'class="batsmen-image[^"]*"[\s\S]*?<img[^>]+src="([^"]+players[^"]+)"',
+            block
+        )
+
+        if name_match and score_match:
+
+            name = remove_first_part(clean_name(name_match.group(1)))
+            runs = int(score_match.group(1))
+            balls = int(score_match.group(2))
+            image = img_match.group(1) if img_match else None
+
+            result.append({
+                "name": name,
+                "runs": runs,
+                "balls": balls,
+                "image": image
+            })
+
+        if len(result) == 2:
+            break
+
+    return result
 def extract_teams(lines):
     for line in lines:
         if " vs " in line.lower():
@@ -750,6 +818,36 @@ def get_over_before_crr(lines):
 
     return None
 
+def scrape_players2(url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        print("🌐 VISITING:", url)
+
+        # ✅ First load page
+        page.goto(url, timeout=60000)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+
+        # ✅ Ensure element exists (VERY IMPORTANT)
+        page.wait_for_selector(".playing-batsmen-wrapper", timeout=10000)
+
+        # ✅ Get HTML (STRING, not Page object)
+        html = page.inner_html(".playing-batsmen-wrapper")
+
+        # ✅ Now parse correctly
+        players = parse_players(html)
+
+        print("✅ PLAYERS:", players)
+
+        # Optional
+        text = page.inner_text("body")
+        lines = text.splitlines()
+
+        browser.close()
+
+        return players
 def scrape_loop():
     #global STATE, PREV_DATA
     global STATE, PREV_DATA, SCRAPER_RUNNING
@@ -796,17 +894,15 @@ def scrape_loop():
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
                 page = browser.new_page()
-
                 print("🌐 VISITING:", url)
-
-                page.goto(url, timeout=60000)
-                page.wait_for_load_state("networkidle")
-                page.wait_for_timeout(3000)
-
                 
-
+                page.goto(url, timeout=60000)
+                page.wait_for_load_state("domcontentloaded")
+                page.wait_for_timeout(3000)
+                
+                # ✅ GET FULL HTML
+                #scrape_players(url)
                 text = page.inner_text("body")
-                print(text)
                 lines = text.splitlines()
                 
                 # TEAMS
@@ -814,6 +910,7 @@ def scrape_loop():
                 #team_b = lines[1] if len(lines) > 1 else "TEAM B"
                 
                 team_a, team_b = extract_teams(lines)
+                
                 
 
                 # SCORE
@@ -856,10 +953,10 @@ def scrape_loop():
                 print("EVENTS:", events)
                 #commentary = generate_commentary(last_status_message, batsmen, bowler, score_data, team_a, team_b)
                 commentary = generate_continuous_commentary(events, batsmen, bowler, score_data, team_a, team_b, last_status_message)
-                                
+                #speak_bangla(commentary)    
                 if commentary:
                     speak_bangla(commentary) 
-                    print(commentary)
+                    #print(commentary)
                 """if last_status_message and message != last_status_message:
                             
                     #commentary = generate_commentary(last_status_message, bowler, batsmen)
@@ -1116,11 +1213,15 @@ async def ws(websocket: WebSocket):
 
     try:
         while True:
+            print("TESTEST")
+            data = await scrape_players(STATE["url"])
+            print(data)
             #print("Final Test")
             #print(STATE["data"])
             await websocket.send_json({
                 **STATE["data"],
-                "flags": STATE["flags"]
+                "flags": STATE["flags"],
+                "live_players":data
             })
             #await websocket.send_json(STATE["data"])
             await asyncio.sleep(1)
@@ -1194,11 +1295,17 @@ async def ws(websocket: WebSocket):
 
     try:
         while True:
-
+            #try:
+            print("TESTEST")
+            data = await scrape_players(STATE["url"])
+            print(data)
+            #except Exception as e:
+            #    return {"error": str(e)}
             # 🔥 send raw data (NO WRAPPING)
             await websocket.send_json({
                 **STATE["data"],
-                "flags": STATE["flags"]
+                "flags": STATE["flags"],
+                "live_players":data
             })
 
             # reset event AFTER sending (important)

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -10,7 +10,9 @@
 body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
 
 .broadcast-container{
-  width:100%;height:100vh;display:flex;flex-direction:column;justify-content:space-between;
+  width:100%;height:100vh;
+  display:flex;flex-direction:column;
+  justify-content:space-between;
 }
 
 /* TOP */
@@ -26,16 +28,16 @@ body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
 .meta{color:#ccc;}
 
 .live{
-  background:#00f0ff;padding:6px 14px;border-radius:20px;
-  font-weight:bold;animation:blink 1s infinite;
+  background:#00f0ff;
+  padding:6px 14px;
+  border-radius:20px;
+  font-weight:bold;
 }
-
-@keyframes blink{50%{opacity:0.5;}}
 
 /* MIDDLE */
 .middle{
-  flex:1;position:relative;display:flex;
-  align-items:center;justify-content:center;
+  flex:1;position:relative;
+  display:flex;align-items:center;justify-content:center;
 }
 
 .bg-img{
@@ -44,7 +46,8 @@ body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
 }
 
 .middle::after{
-  content:"";position:absolute;inset:0;
+  content:"";
+  position:absolute;inset:0;
   background:linear-gradient(to bottom,
     rgba(0,0,0,0.75),
     rgba(0,0,0,0.2),
@@ -53,7 +56,7 @@ body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
   z-index:1;
 }
 
-/* TEAM DISPLAY */
+/* TEAM */
 .vs-container{
   position:absolute;z-index:2;
   display:flex;align-items:center;gap:80px;
@@ -67,18 +70,16 @@ body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
 .team-flag{
   width:95px;height:95px;border-radius:50%;
   object-fit:cover;border:3px solid #00f0ff;
-  box-shadow:0 0 20px rgba(0,240,255,0.6);
   background:#111;
 }
 
 .team-label{color:#fff;font-size:22px;font-weight:800;}
-.last-status{color:#fff;font-size:22px;font-weight:800;}
 
 .vs-text{font-size:42px;font-weight:900;color:#ffd966;}
 
 .center-text{
   position:absolute;bottom:40px;z-index:3;
-  color:#fff;font-size:22px;font-weight:bold;
+  color:#fff;font-size:22px;
   background:rgba(0,0,0,0.6);
   padding:10px 20px;border-radius:10px;
 }
@@ -91,8 +92,10 @@ body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
 }
 
 .row{
-  display:flex;justify-content:space-between;
-  align-items:center;margin-bottom:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
 }
 
 .stats{
@@ -104,109 +107,40 @@ body{font-family:'Segoe UI',sans-serif;background:#000;overflow:hidden;}
 .highlight{color:#00f0ff;font-weight:bold;}
 
 .batters{display:flex;gap:40px;}
-.batter{display:flex;gap:10px;align-items:center;}
+
+.batter{
+  display:flex;gap:10px;align-items:center;
+}
+
+.player-img{
+  width:45px;height:45px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid #00f0ff;
+}
 
 .name{font-weight:bold;}
 .runs{color:#ffd966;font-family:monospace;}
 
 .bowler{
   background:rgba(0,0,0,0.4);
-  padding:8px 20px;border-radius:40px;
+  padding:8px 20px;
+  border-radius:40px;
+  display:flex;
+  align-items:center;
+  gap:10px;
 }
 
-.status{margin-top:10px;font-size:14px;color:#00f0ff;}
-
-/* =========================
-EVENT BASE
-========================= */
-.event{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  font-size:120px;
-  font-weight:900;
-  z-index:999;
-  display:none;
-  pointer-events:none;
-}
-
-.four{color:#00f0ff;text-shadow:0 0 20px #00f0ff,0 0 60px #00f0ff;}
-.six{color:gold;text-shadow:0 0 30px gold,0 0 80px orange,0 0 120px red;}
-.wicket{color:#ff0033;text-shadow:0 0 25px #ff0033,0 0 80px darkred;}
-
-.animate{
-  animation:pop 0.4s ease, glow 1s infinite alternate;
-}
-
-@keyframes pop{
-  0%{transform:translate(-50%,-50%) scale(0.2);opacity:0;}
-  100%{transform:translate(-50%,-50%) scale(1);opacity:1;}
-}
-
-@keyframes glow{
-  0%{filter:brightness(1);}
-  100%{filter:brightness(1.7);}
-}
-
-/* =========================
-🔴 RED STADIUM FLASH (WICKET)
-========================= */
-.flash-red{
-  animation:redFlash 0.8s ease;
-}
-
-@keyframes redFlash{
-  0%{filter:none;}
-  20%{filter:brightness(2) saturate(2) hue-rotate(-20deg);}
-  50%{filter:brightness(0.6) sepia(1) hue-rotate(-50deg);}
-  100%{filter:none;}
-}
-
-/* =========================
-🏏 BROKEN STUMP EFFECT
-========================= */
-.stump-piece{
-  position:absolute;
-  width:10px;
-  height:40px;
-  background:#c49a6c;
-  top:50%;
-  left:50%;
-  z-index:1000;
-  transform:translate(-50%,-50%);
-  animation:fly 1s ease forwards;
-}
-
-@keyframes fly{
-  0%{transform:translate(-50%,-50%) rotate(0deg) scale(1);}
-  100%{transform:translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(720deg) scale(0.5);opacity:0;}
-}
-
-/* SHAKE SCREEN */
-.shake{
-  animation:shake 0.6s;
-}
-
-@keyframes shake{
-  0%{transform:translate(0,0);}
-  25%{transform:translate(-5px,5px);}
-  50%{transform:translate(5px,-5px);}
-  75%{transform:translate(-5px,-5px);}
-  100%{transform:translate(0,0);}
+.status{
+  margin-top:10px;
+  font-size:14px;
+  color:#00f0ff;
 }
 
 </style>
 </head>
 
 <body>
-
-  <!-- SOUND EFFECTS (ADD ONLY THIS) -->
-<audio id="snd_four" src="/static/sounds/cheer.wav" preload="auto"></audio>
-<audio id="snd_six" src="/static/sounds/cheer.wav" preload="auto"></audio>
-<audio id="snd_wicket" src="/static/sounds/bat_crack.wav" preload="auto"></audio>
-<audio id="snd_crowd" src="/static/sounds/crowd_shock.wav" preload="auto"></audio>
-<audio id="snd_bat" src="/static/sounds/bat_crack.wav" preload="auto"></audio>
 
 <div class="broadcast-container">
 
@@ -222,32 +156,25 @@ EVENT BASE
 </div>
 
 <!-- MIDDLE -->
-<div class="middle" id="middle">
+<div class="middle">
 
 <img id="bg" class="bg-img" src="/static/stadium.jpg">
 
 <div class="vs-container">
-  <div>  
-  <div id="last_status" class="last-status"></div>
-</div>
   <div class="team-box">
-    <img id="flag_a" class="team-flag" src="/static/default_a.png">
+    <img id="flag_a" class="team-flag">
     <div id="team_a_mid" class="team-label">TEAM A</div>
   </div>
 
   <div class="vs-text">VS</div>
 
   <div class="team-box">
-    <img id="flag_b" class="team-flag" src="/static/default_b.png">
+    <img id="flag_b" class="team-flag">
     <div id="team_b_mid" class="team-label">TEAM B</div>
   </div>
 </div>
 
 <div class="center-text" id="commentary">Live Match Starting...</div>
-
-<div id="four" class="event four">FOUR!</div>
-<div id="six" class="event six">SIX!</div>
-<div id="wicket" class="event wicket">WICKET!</div>
 
 </div>
 
@@ -263,21 +190,31 @@ EVENT BASE
 
 <div class="row">
 
-  <div class="batters">
-    <div class="batter">
-      <div class="name" id="striker">Striker</div>
+  <!-- STRIKER -->
+  <div class="batter">
+    <img id="striker_img" class="player-img">
+    <div>
+      <div class="name" id="striker">-</div>
       <div class="runs" id="s_runs">0 (0)</div>
     </div>
+  </div>
 
-    <div class="batter">
-      <div class="name" id="non_striker">Non-Striker</div>
+  <!-- NON STRIKER -->
+  <div class="batter">
+    <img id="non_striker_img" class="player-img">
+    <div>
+      <div class="name" id="non_striker">-</div>
       <div class="runs" id="ns_runs">0 (0)</div>
     </div>
   </div>
 
+  <!-- BOWLER -->
   <div class="bowler">
-    <span id="bowler">Bowler</span> |
-    <span id="bowler_fig">0-0 (0)</span>
+    <img id="bowler_img" class="player-img">
+    <div>
+      <span id="bowler">-</span> |
+      <span id="bowler_fig">0-0 (0)</span>
+    </div>
   </div>
 
 </div>
@@ -290,151 +227,61 @@ EVENT BASE
 
 <script>
 
-// =========================
-// SOUND ENGINE
-// =========================
-function playSound(id){
-  const audio = document.getElementById(id);
-  if(!audio) return;
-
-  audio.currentTime = 0;
-  audio.volume = 1;
-
-  audio.play().catch(()=>{});
-}
-function showEvent(type){
-  const el = document.getElementById(type.toLowerCase());
-  if(!el) return;
-
-  const middle = document.getElementById("middle");
-
-  el.style.display = "block";
-  el.classList.add("animate");
-
-  middle.classList.remove("flash-red","shake");
-
-  // =========================
-  // SOUND TRIGGERS
-  // =========================
-  if(type === "FOUR"){
-    playSound("snd_four");
-  }
-
-  if(type === "SIX"){
-    playSound("snd_six");
-  }
-
-  if(type === "WICKET"){
-    playSound("snd_wicket");
-    playSound("snd_crowd");
-    playSound("snd_bat");
-
-    middle.classList.add("flash-red","shake");
-
-    for(let i=0;i<6;i++){
-      const piece = document.createElement("div");
-      piece.className = "stump-piece";
-      piece.style.setProperty("--x", (Math.random()*200-100)+"px");
-      piece.style.setProperty("--y", (Math.random()*200-100)+"px");
-      document.body.appendChild(piece);
-
-      setTimeout(()=>piece.remove(),1000);
-    }
-  }
-
-  setTimeout(()=>{
-    el.style.display = "none";
-  },2000);
-}
-// =========================
-// SET TEXT
-// =========================
-function setText(id, value){
+function setText(id, val){
   const el = document.getElementById(id);
-  if(el) el.innerText = value ?? "-";
+  if(el) el.innerText = val ?? "-";
 }
 
-// =========================
-// EVENT SYSTEM
-// =========================
-let lastEventTime = 0;
-
-function showEvent(type){
-  const el = document.getElementById(type.toLowerCase());
-  if(!el) return;
-
-  const middle = document.getElementById("middle");
-
-  el.style.display = "block";
-  el.classList.add("animate");
-
-  // RESET FLASH
-  middle.classList.remove("flash-red","shake");
-
-  if(type === "WICKET"){
-    // 🔴 STADIUM FLASH
-    middle.classList.add("flash-red","shake");
-
-    // 🏏 BROKEN STUMPS
-    for(let i=0;i<6;i++){
-      const piece = document.createElement("div");
-      piece.className = "stump-piece";
-      piece.style.setProperty("--x", (Math.random()*200-100)+"px");
-      piece.style.setProperty("--y", (Math.random()*200-100)+"px");
-      document.body.appendChild(piece);
-
-      setTimeout(()=>piece.remove(),1000);
-    }
-  }
-
-  setTimeout(()=>{
-    el.style.display = "none";
-  },2000);
+function setImg(id, src){
+  const el = document.getElementById(id);
+  if(el) el.src = src || "/static/player.png";
 }
 
-// =========================
-// WEBSOCKET
-// =========================
 const ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
 ws.onmessage = (e)=>{
   const d = JSON.parse(e.data);
 
-  setText("teams", `${d.team_a || "TEAM A"} vs ${d.team_b || "TEAM B"}`);
-  setText("score", d.score || "0/0");
-  setText("overs", (d.overs || "0.0") + " Overs");
-
-  if(d.flags){
-    document.getElementById("flag_a").src = d.flags.team_a_flag || "/static/default_a.png";
-    document.getElementById("flag_b").src = d.flags.team_b_flag || "/static/default_b.png";
-  }
+  // TEAM INFO
+  setText("teams", `${d.team_a} vs ${d.team_b}`);
+  setText("score", d.score);
+  setText("overs", d.overs + " Overs");
 
   setText("team_a_mid", d.team_a);
   setText("team_b_mid", d.team_b);
+
   setText("crr", d.crr);
   setText("partnership", d.partnership);
 
-  setText("striker", d.striker);
-  setText("s_runs", `${d.striker_runs || 0} (${d.striker_balls || 0})`);
+  // =========================
+  // LIVE PLAYERS
+  // =========================
+  const batsmen = d.live_players?.batsmen || [];
+  const bowler = d.live_players?.bowler;
 
-  setText("non_striker", d.non_striker);
-  setText("ns_runs", `${d.non_striker_runs || 0} (${d.non_striker_balls || 0})`);
+  // STRIKER
+  if(batsmen[0]){
+    setText("striker", batsmen[0].name);
+    setText("s_runs", `${batsmen[0].runs} (${batsmen[0].balls})`);
+    setImg("striker_img", batsmen[0].image);
+  }
 
-  setText("bowler", d.bowler);
-  setText("bowler_fig", d.bowler_fig);
+  // NON STRIKER
+  if(batsmen[1]){
+    setText("non_striker", batsmen[1].name);
+    setText("ns_runs", `${batsmen[1].runs} (${batsmen[1].balls})`);
+    setImg("non_striker_img", batsmen[1].image);
+  }
+
+  // BOWLER
+  if(bowler){
+    setText("bowler", bowler.name);
+    setText("bowler_fig", `${bowler.runs} (${bowler.balls})`);
+    setImg("bowler_img", bowler.image);
+  }
 
   setText("status", d.status);
   setText("commentary", d.commentary);
-  
-  setText("last_status", d.last_status);
-
-
-  const eventTime = d.event_time || Date.now();
-
-  if(d.event && eventTime !== lastEventTime){
-    lastEventTime = eventTime;
-    showEvent(d.event);
-  }
 };
 
 </script>
