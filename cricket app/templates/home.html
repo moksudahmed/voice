@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Cricket AI Broadcast Dashboard</title>
+<title>🏏 Cricket AI Broadcast Dashboard</title>
 
 <style>
 body{
@@ -75,7 +75,7 @@ button{
 .start{ background:#00f0ff; }
 .stop{ background:#ff3b3b; color:#fff; }
 
-/* RIGHT */
+/* GRID */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
@@ -90,7 +90,6 @@ button{
   border-left:4px solid #00f0ff;
   cursor:pointer;
   transition:0.25s ease;
-  position:relative;
 }
 
 .card:hover{
@@ -119,7 +118,7 @@ button{
 
 /* SCORE */
 .score{
-  font-size:18px;
+  font-size:16px;
   font-weight:bold;
   margin-top:6px;
   transition:0.3s;
@@ -127,13 +126,35 @@ button{
 
 .flash{
   color:#00f0ff;
-  transform:scale(1.1);
+  transform:scale(1.08);
+}
+
+/* LINKS */
+.links{
+  margin-top:8px;
+  display:flex;
+  gap:10px;
+}
+
+.links a{
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:6px;
+  text-decoration:none;
+  background:#1a2a40;
+  color:#00f0ff;
+}
+
+.links a:hover{
+  background:#00f0ff;
+  color:#000;
 }
 
 /* STATUS */
-.status{
-  font-size:12px;
-  color:#ccc;
+#msg{
+  font-size:13px;
+  margin-top:8px;
+  color:#00f0ff;
 }
 </style>
 </head>
@@ -174,12 +195,18 @@ button{
 
 let selectedCard = null;
 let prevScores = {};
+const OVERLAY_URL = "http://127.0.0.1:8000/overlay";
 
 // =========================
 // START / STOP
 // =========================
 async function startMatch(){
   const url = document.getElementById("url").value;
+
+  if(!url){
+    msg("⚠️ Enter a match URL");
+    return;
+  }
 
   await fetch("/set-url", {
     method:"POST",
@@ -196,6 +223,11 @@ async function stopMatch(){
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({url:null})
   });
+
+  if(selectedCard){
+    selectedCard.classList.remove("active");
+    selectedCard = null;
+  }
 
   msg("🛑 Broadcast Stopped");
 }
@@ -218,13 +250,7 @@ function selectMatch(url, el){
 
   document.getElementById("url").value = url;
 
-  fetch("/set-url", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({url})
-  });
-
-  msg("🚀 Broadcasting selected match...");
+  startMatch();
 }
 
 // =========================
@@ -233,6 +259,9 @@ function selectMatch(url, el){
 async function loadMatches(){
   try{
     const res = await fetch("/api/matches");
+
+    if(!res.ok) throw new Error("API error");
+
     const data = await res.json();
 
     document.getElementById("count").innerText = data.count || 0;
@@ -257,16 +286,24 @@ async function loadMatches(){
       card.onclick = () => selectMatch(m.url, card);
 
       card.innerHTML = `
-        <div><span class="live-dot"></span> ${m.text || "Match"}</div>
+        <div>
+          <span class="live-dot"></span>
+          ${m.text || "Match"}
+        </div>
+
         <div class="score ${flash}">LIVE</div>
-        <a href="${m.url}" target="_blank" onclick="event.stopPropagation()">▶ Open</a>
+
+        <div class="links">
+          <a href="${m.url}" target="_blank" onclick="event.stopPropagation()">Main</a>
+          <a href="${OVERLAY_URL}" target="_blank" onclick="event.stopPropagation()">Overlay</a>
+        </div>
       `;
 
       box.appendChild(card);
     });
 
   }catch(err){
-    console.error(err);
+    console.error("Load error:", err);
   }
 }
 

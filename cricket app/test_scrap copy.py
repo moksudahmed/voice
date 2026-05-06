@@ -165,11 +165,7 @@ STATE = {
         "non_striker_runs": 0,
         "non_striker_balls": 0,
         "bowler": "-",
-        "bowler_fig": "0-0 (0)",
-        "last_status":None,
-        # ✅ ADD THESE (EVENT SYSTEM)
-        "event": None,
-        "event_time": 0
+        "bowler_fig": "0-0 (0)"
     }
 }
 
@@ -287,93 +283,6 @@ def generate_commentary2(prev, curr):
 
     return None
 
-def get_milestone_comment(name, runs):
-    """Return milestone commentary for 50/100 runs."""
-    if runs == 50:
-        return f"🎉 কী দুর্দান্ত ব্যাটিং! {name} এখন হাফ সেঞ্চুরি (৫০ রান) পূর্ণ করেছে!"
-    elif runs == 100:
-        return f"🔥 অসাধারণ ইনিংস! {name} সেঞ্চুরি (১০০ রান) পূর্ণ করেছে! গ্যালারি উল্লাসে ফেটে পড়ছে!"
-    return None
-
-def generate_continuous_commentary(events, batsmen, bowler, score, team1=None, team2=None, context=None):
-    """
-    Generate a smooth, human-like cricket commentary for a sequence of events
-    - events: list of strings (SIX, FOUR, WICKET, DOUBLE, SINGLE, DOT, WIDE, NO_BALL, OVER_COMPLETE)
-    - batsmen: list of dicts [{'name':str,'runs':int}, ...]
-    - runs: total runs
-    - wickets: total wickets
-    - over: current over (float)
-    - team1, team2: optional team names for updates
-    """
-    has_alpha = any(c.isalpha() for c in context)
-    #has_digit = any(c.isdigit() for c in context)
-    runs, wickets, over, ball = score
-    status = None
-    if has_alpha:
-        status = context
-        print("Context", context)
-    
-    
-    parts = []
-
-    # 1️⃣ WICKET has highest priority
-    if "WICKET" in events:
-        parts.append(generate_wicket_commentary(runs, wickets, over, batsmen[0]['name'] if batsmen else None, context))
-
-    # 2️⃣ Scoring events (SIX, FOUR, DOUBLE, SINGLE, DOT)
-    scoring_priority = ["SIX", "FOUR", "DOUBLE", "SINGLE", "DOT"]
-    for event in scoring_priority:
-        if event in events:        
-            parts.append(generate_event_commentary([event]))            
-            break  # Only one scoring commentary per ball
-
-    # 3️⃣ Extras
-    for extra in ["WIDE", "NO_BALL"]:
-        if extra in events:
-            parts.append(generate_event_commentary([extra]))
-
-    # 4️⃣ Batsman status
-    if batsmen and len(batsmen) >= 2:
-        b1 = batsmen[0]
-        b2 = batsmen[1]
-
-        # Basic score update commentary
-        parts.append(
-            f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
-            f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
-        )
-
-        # Check milestones for both batsmen
-        for b in [b1, b2]:
-            milestone_comment = get_milestone_comment(b["name"], b["runs"])
-            if milestone_comment:
-                parts.append(milestone_comment)
-    elif batsmen and len(batsmen) == 1:
-        b1 = batsmen[0]
-        parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
-
-    # 5️⃣ Over complete summary
-    if "OVER_COMPLETE" in events:
-        over_comment = ""
-        if context == "MAIDEN OVER":
-            commentary_text = random.choice(COMMENTARY["MAIDEN_OVER"])
-            over_comment = commentary_text + f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
-        else:
-            over_comment = f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
-        parts.append(over_comment)
-        
-        # 6️⃣ Welcome message and quick update for new viewers
-        if team1 and team2:
-            welcome_msg = (
-                f"যারা নতুন যুক্ত হয়েছেন, স্বাগতম! "
-                f"এই সময় {team1} বনাম {team2} ম্যাচে স্কোর {number_to_bangla_words(runs)} রানে {number_to_bangla_words(wickets)} উইকেট। "
-                f"{number_to_bangla_words(over)} ওভার শেষ হয়েছে, দলের সংগ্রহ ভালোভাবে এগুচ্ছে। ম্যাচে উত্তেজনা অব্যাহত!"
-            )
-            parts.append(welcome_msg)     
-
-    # Combine all commentary parts naturally
-    return " ".join(parts)
-
 def generate_commentary(events, batsmen, bowler, score, team1=None, team2=None, context=None):
     events = (events or "").strip()
     runs, wickets, over, ball = score
@@ -454,7 +363,7 @@ def parse_bowler(text):
     except Exception as e:
         return {"error": str(e)}
         
-def parse_batsmen2(text):
+def parse_batsmen(text):
     """
     Extract exactly 2 batsmen (clean & accurate)
     """
@@ -497,74 +406,6 @@ def parse_batsmen2(text):
         ]
 
     return []
-def parse_batsmen(html):
-    """
-    Extract exactly 2 batsmen (name, runs, balls, image)
-    """
-
-    html = html.replace("\r", "").strip()
-
-    # remove noise
-    remove_words = [
-        "Match info", "Live", "Scorecard",
-        "Commentary", "Over", "Projected Score"
-    ]
-    for w in remove_words:
-        html = html.replace(w, "")
-
-    result = []
-
-    # ✅ STEP 1: get full batsman blocks safely
-    blocks = re.findall(
-        r'<div[^>]*class="batsmen-partnership"[\s\S]*?(?=<div[^>]*class="batsmen-partnership"|</div>\s*</div>\s*</div>)',
-        html
-    )
-
-    for block in blocks:
-
-        # -------------------------
-        # NAME (main displayed name)
-        # -------------------------
-        name_match = re.search(
-            r'class="batsmen-name"[\s\S]*?<p[^>]*>(.*?)</p>',
-            block
-        )
-
-        # -------------------------
-        # RUNS + BALLS
-        # -------------------------
-        score_match = re.search(
-            r'class="batsmen-score"[\s\S]*?<p[^>]*>(\d+)</p>\s*<p[^>]*>\((\d+)\)</p>',
-            block
-        )
-
-        # -------------------------
-        # IMAGE (FIXED - correct scope)
-        # -------------------------
-        img_match = re.search(
-            r'class="batsmen-image"[\s\S]*?<img[^>]+src="([^"]+cricketvectors[^"]+)"',
-            block
-        )
-
-        if name_match and score_match:
-
-            name = remove_first_part(clean_name(name_match.group(1)))
-            runs = int(score_match.group(1))
-            balls = int(score_match.group(2))
-
-            image = img_match.group(1) if img_match else None
-            print(image)
-            result.append({
-                "name": name,
-                "runs": runs,
-                "balls": balls,
-                "image": image
-            })
-            print(result)
-        if len(result) == 2:
-            break
-
-    return result
 
 def extract_teams(lines):
     for line in lines:
@@ -666,7 +507,7 @@ def parse_crex_data(lines):
     # 🔥 BATSMEN (USING YOUR FUNCTION)
     # =========================
     batsmen = parse_batsmen(text)
-   
+
     if len(batsmen) >= 1:
         data["striker"] = batsmen[0]["name"]
         data["striker_runs"] = batsmen[0]["runs"]
@@ -687,68 +528,6 @@ def parse_crex_data(lines):
         data["bowler_fig"] = f"{bowler_data['wickets']}-{bowler_data['runs_conceded']} ({bowler_data['overs']})"
 
     return data
-
-# =====================================================
-# 🎯 EVENT MAPS (FAST LOOKUP)
-# =====================================================
-RUN_EVENT_MAP = {
-    "0": "DOT",
-    "1": "SINGLE",
-    "2": "DOUBLE",
-    "3": "TRIPLE",
-    "4": "FOUR",
-    "6": "SIX",
-    "Wide": "WIDE",
-    "No Ball": "NO_BALL",
-    "Bye": "BYE",
-    "Wicket": "WICKET",
-    "Over": "OVER_COMPLETE"
-}
-
-EXTRA_EVENT_MAP = {
-    "Wide": "WIDE",
-    "No Ball": "NO_BALL",
-    "Bye": "BYE"
-}
-
-BREAK_EVENT_MAP = {
-    "Innings Break": "INNINGS_BREAK",
-    "Drinks Break": "DRINKS_BREAK",
-    "Tea Break": "TEA_BREAK",
-    "Lunch Break": "LUNCH_BREAK",
-    "Rain Break": "RAIN_BREAK",
-    "Rain Break (Delayed)": "RAIN_DELAY"
-}
-# =====================================================
-# 🎯 EVENT DETECTION (FAST)
-# =====================================================
-def detect_event(event):
-    return RUN_EVENT_MAP.get(event) or EXTRA_EVENT_MAP.get(event)
-
-def detect_run_event(event):
-    if event == "6":
-        return "SIX"
-    elif event == "4":
-        return "FOUR"
-    elif event == "Wicket":
-        return "WICKET"
-    else: return None
-
-def get_over_before_crr(lines):
-    try:
-        for i, item in enumerate(lines):
-            if "CRR" in item:
-                # return previous non-empty value
-                j = i - 1
-                while j >= 0:
-                    val = lines[j].strip()
-                    if val:   # skip empty strings
-                        return val
-                    j -= 1
-    except Exception as e:
-        print("Error:", e)
-
-    return None
 
 def scrape_loop():
     #global STATE, PREV_DATA
@@ -803,18 +582,15 @@ def scrape_loop():
                 page.wait_for_load_state("networkidle")
                 page.wait_for_timeout(3000)
 
-                
-
                 text = page.inner_text("body")
-                print(text)
                 lines = text.splitlines()
-                
+                #print(lines)
                 # TEAMS
                 #team_a = lines[0] if len(lines) > 0 else "TEAM A"
                 #team_b = lines[1] if len(lines) > 1 else "TEAM B"
                 
                 team_a, team_b = extract_teams(lines)
-                
+                print(team_a)
 
                 # SCORE
                 score_data = parse_score(text)
@@ -831,13 +607,12 @@ def scrape_loop():
                 status = lines[16] if len(lines) > 16 else "LIVE"
 
                 last_status_message =""
-                """if "CRR" in lines[17]:                                                     
+                if "CRR" in lines[17]:                                                     
                     last_status_message = lines[16]
                 else : 
-                    last_status_message = lines[17]"""
-                last_status_message = get_over_before_crr(lines)
-                
-                
+                    last_status_message = lines[17]
+                print("Hello world")
+                print(last_status_message)
                 has_alpha = any(c.isalpha() for c in last_status_message)
 
                 # ---------------------------------------
@@ -848,26 +623,19 @@ def scrape_loop():
                 # SCENE
                 scene = scene_logic(text)
                 
-                events = detect_event(last_status_message)
-                if not events:
-                    #time.sleep(REFRESH_INTERVAL)
-                    continue
-
-                print("EVENTS:", events)
-                #commentary = generate_commentary(last_status_message, batsmen, bowler, score_data, team_a, team_b)
-                commentary = generate_continuous_commentary(events, batsmen, bowler, score_data, team_a, team_b, last_status_message)
-                                
-                if commentary:
-                    speak_bangla(commentary) 
-                    print(commentary)
-                """if last_status_message and message != last_status_message:
+                message = ""
+                commentary = generate_commentary(last_status_message, batsmen, bowler, score_data, team_a, team_b)
+                    #if commentary:
+                    #    speak_bangla(commentary) 
+                print(commentary)
+                if last_status_message and message != last_status_message:
                             
                     #commentary = generate_commentary(last_status_message, bowler, batsmen)
                     #if commentary:
                     #    speak_bangla(commentary) 
                     print(commentary)
                     #speak_bangla(commentary)
-                    message = last_status_message   """
+                    message = last_status_message   
 
                 new_data = {
                     "team_a": team_a,
@@ -880,33 +648,19 @@ def scrape_loop():
                 }
                 status = last_status_message.upper()
                 # COMMENTARY + VOICE
-                #speak(commentary)   # 🔥 DIRECT CALL (FIXED)
+                """commentary = generate_commentary(status, bowler, batsmen)
+                print(commentary)
+                if commentary:
+                    new_data["commentary"] = commentary"""
+                    #speak(commentary)   # 🔥 DIRECT CALL (FIXED)
                 
                 parsed = parse_crex_data(lines)
 
                 STATE["data"] = parsed
                 #STATE["data"] = new_data
                 PREV_DATA = new_data
-
-                STATE["data"]["last_status"] = last_status_message
-                
-                STATE["data"]["event"] = detect_run_event(last_status_message)     
-                #print(STATE)
-                # =========================
-                # 🔥 EVENT DETECTION (CRITICAL FIX)
-                # =========================                
-                parsed["event_time"] = int(time.time() * 1000)
-                
+                print(STATE["data"])
                 switch_scene(scene)
-                # =========================
-                # 🎬 OBS SCENE SWITCH
-                # =========================
-                if last_status_message == "SIX":
-                    switch_scene("CROWD")
-                elif last_status_message == "FOUR":
-                    switch_scene("REPLAY")               
-
-                #print(STATE)
 
                 print("📊 UPDATED:", new_data)
 
@@ -1155,56 +909,49 @@ async def live_matches():
 
 
 # =========================
-# START / STOP API
+# SET MATCH URL
 # =========================
 @app.post("/set-url")
-def set_url(payload: dict):
-    global SCRAPER_RUNNING
+def set_url(payload: UrlRequest):
+    STATE["url"] = payload.url
+    return {"status": "ok", "url": STATE["url"]}
 
-    STATE["url"] = payload.get("url")
-
-    if STATE["url"]:
-        SCRAPER_RUNNING = True
-    else:
-        SCRAPER_RUNNING = False
-
-    return {"status": "ok", "running": SCRAPER_RUNNING}
 
 # =========================
 # STOP MATCH
 # =========================
-
 @app.post("/stop")
 def stop():
-    global SCRAPER_RUNNING
-
-    SCRAPER_RUNNING = False
-
-    STATE["data"]["status"] = "STOPPED"
-    STATE["data"]["event"] = None
-
+    STATE["url"] = None
+    
+    STATE["data"] = {
+        "team_a": "STOPPED",
+        "team_b": "",
+        "score": "0/0",
+        "overs": "0.0",
+        "status": "STOPPED",
+        "scene": "LIVE",
+        "commentary": ""
+    }
+    print("🛑 Broadcast stopped")
     return {"status": "stopped"}
 
-# WEBSOCKET (🔥 FIXED STRUCTURE)
-# =========================
+
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):
     await websocket.accept()
-    print("WS CONNECTED")
 
     try:
         while True:
-
-            # 🔥 send raw data (NO WRAPPING)
             await websocket.send_json({
                 **STATE["data"],
                 "flags": STATE["flags"]
             })
 
-            # reset event AFTER sending (important)
+            # reset event after sending
             STATE["data"]["event"] = None
 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
 
     except WebSocketDisconnect:
-        print("WS DISCONNECTED")
+        print("❌ WS CLOSED")
