@@ -19,6 +19,7 @@ import soundfile as sf
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
+import pyttsx3
 
 app = FastAPI()
 
@@ -32,7 +33,7 @@ app.add_middleware(
 # =========================
 # TTS ENGINE (WORKING FIX)
 # =========================
-import pyttsx3
+
 
 EVENT_STATE = {
     "last_runs": 0,

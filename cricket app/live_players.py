@@ -3,11 +3,6 @@ from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 import asyncio
 
-app = FastAPI()
-
-URL = "https://crex.com/cricket-live-score/pbks-vs-srh-49th-match-indian-premier-league-2026-match-updates-118U"
-
-
 # =========================
 # PARSER FUNCTION (PURE HTML)
 # =========================

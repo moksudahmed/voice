@@ -39,6 +39,11 @@ EVENT_STATE = {
     "last_wickets": 0,
     "last_event": None
 }
+# =========================
+# GLOBALS
+# =========================
+FLAGS_LOADED = False
+FLAGS_URL = None
 
 speech_lock = threading.Lock()
 SCRAPER_RUNNING = False
@@ -154,6 +159,7 @@ STATE = {
         "balls": "",
         "image": ""
     },
+    "overs_timeline": [],
     "data": {
         "team_a": "WAIT",
         "team_b": "SOURCE",
@@ -184,48 +190,73 @@ PREV_DATA = None
 # =========================
 # TEAM FLAGS SCRAPER (FIXED)
 # =========================
-   
-def extract_team_flags(url):
+   # =========================
+# ASYNC FLAG SCRAPER
+# =========================
+async def extract_team_flags(url):
+
     result = {
         "team_a_name": "TEAM A",
         "team_b_name": "TEAM B",
         "team_a_flag": "",
         "team_b_flag": ""
     }
-    
-    
+
     if not url:
         return result
 
     try:
-        with sync_playwright() as p:
-            url = url.rstrip("/") + "/match-details"
-            
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
+
+        url = url.rstrip("/") + "/match-details"
+
+        async with async_playwright() as p:
+
+            browser = await p.chromium.launch(headless=True)
+
+            page = await browser.new_page()
 
             print("🌐 OPENING:", url)
-            page.goto(url, timeout=60000)
 
-            # wait main container
-            page.wait_for_selector(".team-header-card", timeout=30000)
+            await page.goto(url, timeout=60000)
+
+            # WAIT MAIN CONTAINER
+            await page.wait_for_selector(
+                ".team-header-card",
+                timeout=30000
+            )
 
             # =========================
-            # FIX: STRICT SCOPING (IMPORTANT)
+            # STRICT SCOPING
             # =========================
             card = page.locator(".team-header-card").first
 
-            # TEAM 1 (LEFT)
+            # =========================
+            # TEAM 1
+            # =========================
             team1 = card.locator(".team1").first
-            team1_name = team1.locator(".team-name").inner_text().strip()
-            team1_flag = team1.locator("img").get_attribute("src")
 
-            # TEAM 2 (RIGHT)
+            team1_name = (
+                await team1
+                .locator(".team-name")
+                .inner_text()
+            ).strip()
+
+            team1_flag = await team1.locator("img").get_attribute("src")
+
+            # =========================
+            # TEAM 2
+            # =========================
             team2 = card.locator(".team2").first
-            team2_name = team2.locator(".team-name").inner_text().strip()
-            team2_flag = team2.locator("img").get_attribute("src")
 
-            browser.close()
+            team2_name = (
+                await team2
+                .locator(".team-name")
+                .inner_text()
+            ).strip()
+
+            team2_flag = await team2.locator("img").get_attribute("src")
+
+            await browser.close()
 
             return {
                 "team_a_name": team1_name,
@@ -235,9 +266,77 @@ def extract_team_flags(url):
             }
 
     except Exception as e:
+
         print("❌ FLAG ERROR:", e)
+
         return result
-    
+
+
+# =========================
+# UPDATE FLAGS
+# =========================
+async def update_team_flags(url):
+
+    """
+    Fetch and store team flags asynchronously.
+    """
+
+    try:
+
+        data = await extract_team_flags(url)
+        
+        STATE["flags"] = {
+            "team_a_flag": data.get("team_a_flag", ""),
+            "team_b_flag": data.get("team_b_flag", "")
+        }
+
+        # OPTIONAL TEAM NAME SYNC
+        STATE["data"]["team_a"] = data.get(
+            "team_a_name",
+            "TEAM A"
+        )
+
+        STATE["data"]["team_b"] = data.get(
+            "team_b_name",
+            "TEAM B"
+        )
+        print("Check")
+        print(STATE["data"])
+        print("🏏 FLAGS UPDATED:", STATE["flags"])
+
+        return True
+
+    except Exception as e:
+
+        print("❌ FLAG FETCH ERROR:", e)
+
+        return False
+
+# =========================
+# LOAD FLAGS ONCE
+# =========================
+async def ensure_flags_loaded():
+
+    global FLAGS_LOADED, FLAGS_URL
+
+    url = STATE["url"]
+
+    if not url:
+        return
+
+    # =========================
+    # PREVENT RELOADING
+    # =========================
+    if FLAGS_LOADED and FLAGS_URL == url:
+        return
+
+    print("🏏 LOADING TEAM FLAGS...")
+
+    success = await update_team_flags(url)
+
+    if success:
+        FLAGS_LOADED = True
+        FLAGS_URL = url
 # =========================
 # SCORE PARSER
 # =========================
@@ -427,6 +526,50 @@ def remove_first_part(name):
     parts = name.split(" ", 1)
     return parts[1] if len(parts) > 1 else name
 
+import re
+
+def parse_overs(text):
+    overs_data = []
+
+    # Split by "Over X"
+    pattern = r"Over\s+(\d+)(.*?)(?=Over\s+\d+|Projected Score|Commentary|$)"
+    matches = re.findall(pattern, text, re.S)
+
+    for over_no, content in matches:
+        lines = [
+            line.strip()
+            for line in content.splitlines()
+            if line.strip()
+        ]
+
+        balls = []
+        total = None
+
+        for line in lines:
+
+            # Skip total line
+            if "=" in line:
+                total_match = re.search(r"=\s*(\d+)", line)
+                if total_match:
+                    total = int(total_match.group(1))
+                continue
+
+            # Valid ball events
+            valid = [
+                "0", "1", "2", "3", "4", "5", "6",
+                "W", "wd", "nb", "lb", "b"
+            ]
+
+            if line in valid:
+                balls.append(line)
+
+        overs_data.append({
+            "over": int(over_no),
+            "balls": balls,
+            "total": total
+        })
+
+    return overs_data
 
 def parse_bowler(text):
     """
@@ -634,32 +777,11 @@ def parse_players2(html):
             break
 
     return result
-def extract_teams(lines):
-    for line in lines:
-        if " vs " in line.lower():
-            try:
-                # Normalize
-                line = line.replace(",", "")
-                
-                # Split by vs
-                parts = re.split(r'\bvs\b', line, flags=re.IGNORECASE)
-
-                if len(parts) >= 2:
-                    team_a = parts[0].strip()
-                    team_b = parts[1].strip().split()[0]  # first word after vs
-
-                    return team_a, team_b
-
-            except Exception as e:
-                print("Parse error:", e)
-
-    return None, None
-import re
 
 def parse_crex_data(lines):
     data = {
-        "team_a": "WAIT",
-        "team_b": "SOURCE",
+        "team_a": STATE["data"].get("team_a", "WAIT"),
+        "team_b": STATE["data"].get("team_b", "SOURCE"),
         "score": "0/0",
         "overs": "0.0",
         "status": "LIVE",
@@ -682,13 +804,13 @@ def parse_crex_data(lines):
     # =========================
     # TEAMS
     # =========================
-    for line in lines:
+    """for line in lines:
         if " vs " in line.lower():
             parts = re.split(r'\bvs\b', line, flags=re.IGNORECASE)
             if len(parts) >= 2:
                 data["team_a"] = parts[0].strip()
                 data["team_b"] = parts[1].strip().split()[0]
-                break
+                break"""
 
     # =========================
     # SCORE + OVERS (FIXED)
@@ -818,43 +940,10 @@ def get_over_before_crr(lines):
 
     return None
 
-def scrape_players2(url):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-
-        print("🌐 VISITING:", url)
-
-        # ✅ First load page
-        page.goto(url, timeout=60000)
-        page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(3000)
-
-        # ✅ Ensure element exists (VERY IMPORTANT)
-        page.wait_for_selector(".playing-batsmen-wrapper", timeout=10000)
-
-        # ✅ Get HTML (STRING, not Page object)
-        html = page.inner_html(".playing-batsmen-wrapper")
-
-        # ✅ Now parse correctly
-        players = parse_players(html)
-
-        print("✅ PLAYERS:", players)
-
-        # Optional
-        text = page.inner_text("body")
-        lines = text.splitlines()
-
-        browser.close()
-
-        return players
-def scrape_loop():
+def game_engine():
     #global STATE, PREV_DATA
     global STATE, PREV_DATA, SCRAPER_RUNNING
-    #url = "https://crex.com/cricket-live-score/lsg-vs-mi-47th-match-indian-premier-league-2026-match-updates-118S"
-    flag = False
     
-   
     
     while True:
         url = STATE["url"]
@@ -866,29 +955,8 @@ def scrape_loop():
 
         if not url:
             time.sleep(2)
-            continue
-        
-        if url and not flag :
-            try:    
-                
-                
-                data = extract_team_flags(url)
-                
-                # =========================
-                # UPDATE FLAGS
-                # =========================
-                STATE["flags"] = {
-                    "team_a_flag": data["team_a_flag"],
-                    "team_b_flag": data["team_b_flag"]
-                }
-                
-                STATE["data"]["team_a"] = data["team_a_name"]
-                STATE["data"]["team_b"] = data["team_b_name"]
-
-                print("🏏 FLAGS UPDATED:", STATE["flags"])
-                flag = True
-            except Exception as e:
-                print("❌ SCRAPER ERROR:", e)
+            continue     
+       
 
         try:
             with sync_playwright() as p:
@@ -909,7 +977,7 @@ def scrape_loop():
                 #team_a = lines[0] if len(lines) > 0 else "TEAM A"
                 #team_b = lines[1] if len(lines) > 1 else "TEAM B"
                 
-                team_a, team_b = extract_teams(lines)
+                #team_a, team_b = extract_teams(lines)
                 
                 
 
@@ -952,7 +1020,7 @@ def scrape_loop():
 
                 print("EVENTS:", events)
                 #commentary = generate_commentary(last_status_message, batsmen, bowler, score_data, team_a, team_b)
-                commentary = generate_continuous_commentary(events, batsmen, bowler, score_data, team_a, team_b, last_status_message)
+                commentary = generate_continuous_commentary(events, batsmen, bowler, score_data, STATE["data"]["team_a"], STATE["data"]["team_b"], last_status_message)
                 #speak_bangla(commentary)    
                 if commentary:
                     speak_bangla(commentary) 
@@ -966,9 +1034,7 @@ def scrape_loop():
                     #speak_bangla(commentary)
                     message = last_status_message   """
 
-                new_data = {
-                    "team_a": team_a,
-                    "team_b": team_b,
+                new_data = {                    
                     "score": score,
                     "overs": overs,
                     "status": status,
@@ -985,8 +1051,15 @@ def scrape_loop():
                 #STATE["data"] = new_data
                 PREV_DATA = new_data
 
-                STATE["data"]["last_status"] = last_status_message
-                
+                overs_timeline = parse_overs(text)
+                print("Check Message")
+                print(last_status_message)
+
+                STATE["data"]["overs_timeline"] = overs_timeline
+
+                #STATE["data"]["last_status"] = last_status_message
+                STATE["data"]["commentary"] = last_status_message
+                print(STATE["data"]["commentary"])
                 STATE["data"]["event"] = detect_run_event(last_status_message)     
                 #print(STATE)
                 # =========================
@@ -1013,21 +1086,146 @@ def scrape_loop():
             print("❌ SCRAPER ERROR:", e)
 
         time.sleep(2)
+def game_engine2():
+    #global STATE, PREV_DATA
+    global STATE, PREV_DATA, SCRAPER_RUNNING
+    
+    while True:
+        url = STATE["url"]
+
+        # 🛑 HARD STOP
+        if not SCRAPER_RUNNING:
+            time.sleep(1)
+            continue
+
+        if not url:
+            time.sleep(2)
+            continue        
+        
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                print("🌐 VISITING:", url)
+                
+                page.goto(url, timeout=60000)
+                page.wait_for_load_state("domcontentloaded")
+                page.wait_for_timeout(3000)
+                
+                # ✅ GET FULL HTML
+                #scrape_players(url)
+                text = page.inner_text("body")
+                lines = text.splitlines()
+                
+                parsed = parse_crex_data(lines)
+                
+                # SCORE
+                score_data = parsed["score"]
+
+                """if score_data:
+                    runs, wickets, over, ball = score_data
+                    score = f"{runs}/{wickets}"
+                    overs = f"{over}.{ball}"
+                else:
+                    score = "0/0"
+                    overs = "0.0"""
+
+                # STATUS
+                status = lines[16] if len(lines) > 16 else "LIVE"
+
+                last_status_message =""
+                
+                last_status_message = get_over_before_crr(lines)
+                
+                
+                has_alpha = any(c.isalpha() for c in last_status_message)
+
+                # ---------------------------------------
+                        # PARSE BATSMEN
+                        # ---------------------------------------
+                
+                batsmen = parse_batsmen(text)
+                bowler = parse_bowler(text)
+   
+                # SCENE
+                scene = scene_logic(text)
+                
+                events = detect_event(last_status_message)
+                if not events:
+                    #time.sleep(REFRESH_INTERVAL)
+                    continue
+
+                
+                #commentary = generate_commentary(last_status_message, batsmen, bowler, score_data, team_a, team_b)
+                commentary = generate_continuous_commentary(events, batsmen, bowler, score_data, STATE["data"]["team_a"], STATE["data"]["team_b"], last_status_message)
+                #speak_bangla(commentary)    
+                if commentary:
+                    speak_bangla(commentary) 
+                    #print(commentary)
+                """if last_status_message and message != last_status_message:
+                            
+                    #commentary = generate_commentary(last_status_message, bowler, batsmen)
+                    #if commentary:
+                    #    speak_bangla(commentary) 
+                    print(commentary)
+                    #speak_bangla(commentary)
+                    message = last_status_message   """
+
+                """new_data = {                    
+                    "score": score_data,
+                    "overs": overs,
+                    "status": status,
+                    "scene": scene,
+                    "commentary": ""
+                }"""
+                status = last_status_message.upper()
+                # COMMENTARY + VOICE
+                #speak(commentary)   # 🔥 DIRECT CALL (FIXED)
+                
+                
+               
+                STATE["data"] = parsed
+                #STATE["data"] = new_data
+                #PREV_DATA = new_data
+
+                overs_timeline = parse_overs(text)
+                
+
+                STATE["data"]["overs_timeline"] = overs_timeline
+                print("Check")
+                print(last_status_message)
+                STATE["data"]["commentary"] = last_status_message
+                print(STATE["data"]["commentary"])
+                STATE["data"]["event"] = detect_run_event(last_status_message)     
+                #print(STATE)
+                # =========================
+                # 🔥 EVENT DETECTION (CRITICAL FIX)
+                # =========================                
+                parsed["event_time"] = int(time.time() * 1000)
+                
+                switch_scene(scene)
+                # =========================
+                # 🎬 OBS SCENE SWITCH
+                # =========================
+                if last_status_message == "SIX":
+                    switch_scene("CROWD")
+                elif last_status_message == "FOUR":
+                    switch_scene("REPLAY")               
+
+                #print(STATE)
+
+                print("📊 UPDATED:", parsed)
+
+                browser.close()
+
+        except Exception as e:
+            print("❌ SCRAPER ERROR:", e)
+
+        time.sleep(2)
 
 # =========================
 # SCRAPER FUNCTION
 # =========================
-# =========================
-# SAMPLE SCRAPER FUNCTION
-# replace with your real get_live_matches()
-# =========================
-async def get_live_matches2():
-    # TODO: replace with crex scraper
-    return [
-        {"text": "Live (3)", "url": "https://crex.com/cricket-live-score"},
-        {"text": "LSG vs MI Live", "url": "https://crex.com"},
-        {"text": "RCB vs CSK Live", "url": "https://crex.com"}
-    ]
 
 # =========================
 # REQUEST MODEL
@@ -1179,7 +1377,7 @@ async def get_live_matches():
 # INIT
 # =========================
 init_obs()
-threading.Thread(target=scrape_loop, daemon=True).start()
+threading.Thread(target=game_engine, daemon=True).start()
 
 # =========================
 # API
@@ -1203,30 +1401,6 @@ def set_url(payload: dict):
     return {"status": "ok"}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-# =========================
-# WEBSOCKET
-# =========================
-@app.websocket("/ws")
-async def ws(websocket: WebSocket):
-    await websocket.accept()
-    print("🔌 WS CONNECTED")
-
-    try:
-        while True:
-            print("TESTEST")
-            data = await scrape_players(STATE["url"])
-            print(data)
-            #print("Final Test")
-            #print(STATE["data"])
-            await websocket.send_json({
-                **STATE["data"],
-                "flags": STATE["flags"],
-                "live_players":data
-            })
-            #await websocket.send_json(STATE["data"])
-            await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        print("❌ WS CLOSED")
 
 # =========================
 # OVERLAY
@@ -1290,28 +1464,41 @@ def stop():
 # =========================
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):
+
     await websocket.accept()
-    print("WS CONNECTED")
+
+    print("🔌 WS CONNECTED")
 
     try:
+
+        # =========================
+        # LOAD FLAGS ONLY ONCE
+        # =========================
+        await ensure_flags_loaded()
+
         while True:
-            #try:
-            print("TESTEST")
-            data = await scrape_players(STATE["url"])
-            print(data)
-            #except Exception as e:
-            #    return {"error": str(e)}
-            # 🔥 send raw data (NO WRAPPING)
+
+            # =========================
+            # LIVE PLAYERS
+            # =========================
+            live_players = await scrape_players(
+                STATE["url"]
+            )
+
+            # =========================
+            # SEND DATA
+            # =========================
             await websocket.send_json({
+
                 **STATE["data"],
+
                 "flags": STATE["flags"],
-                "live_players":data
+
+                "live_players": live_players
             })
 
-            # reset event AFTER sending (important)
-            STATE["data"]["event"] = None
-
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
 
     except WebSocketDisconnect:
-        print("WS DISCONNECTED")
+
+        print("❌ WS CLOSED")
