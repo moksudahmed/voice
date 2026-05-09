@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Ultra Live Cricket Broadcast</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+:root{
+  --cyan:#00eaff;
+  --gold:#ffd84d;
+  --red:#ff1744;
+  --dark:#050b14;
+}
+
+body{
+  background:#000;
+  overflow:hidden;
+  font-family:'Segoe UI',sans-serif;
+}
+
+/* =====================================================
+BACKGROUND
+===================================================== */
+
+.bg-video-overlay{
+  position:fixed;
+  inset:0;
+  z-index:-3;
+  overflow:hidden;
+}
+
+.bg-video-overlay img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  filter:brightness(.45) saturate(1.2);
+  transform:scale(1.08);
+  animation:stadiumZoom 18s linear infinite alternate;
+}
+
+@keyframes stadiumZoom{
+  from{
+    transform:scale(1.08);
+  }
+  to{
+    transform:scale(1.18);
+  }
+}
+
+.bg-dark{
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(circle at center,
+    rgba(0,234,255,.08),
+    transparent 40%),
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.65),
+      rgba(0,0,0,.2),
+      rgba(0,0,0,.85)
+    );
+  z-index:-2;
+}
+
+/* =====================================================
+LIVE PARTICLES
+===================================================== */
+
+.particles{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  z-index:-1;
+}
+
+.particle{
+  position:absolute;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:rgba(255,255,255,.5);
+  animation:floatParticle linear infinite;
+}
+
+@keyframes floatParticle{
+  from{
+    transform:translateY(100vh);
+    opacity:0;
+  }
+  10%{
+    opacity:1;
+  }
+  to{
+    transform:translateY(-100px);
+    opacity:0;
+  }
+}
+
+/* =====================================================
+CONTAINER
+===================================================== */
+
+.broadcast-container{
+  width:100%;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+
+/* =====================================================
+TOP BAR
+===================================================== */
+
+.top{
+  height:110px;
+  padding:0 35px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:linear-gradient(
+    180deg,
+    rgba(3,10,18,.96),
+    rgba(3,10,18,.72)
+  );
+  border-bottom:2px solid rgba(0,234,255,.3);
+  backdrop-filter:blur(18px);
+  position:relative;
+  overflow:hidden;
+}
+
+.top::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(0,234,255,.08),
+      transparent
+    );
+  animation:scanline 6s linear infinite;
+}
+
+@keyframes scanline{
+  from{
+    transform:translateX(-100%);
+  }
+  to{
+    transform:translateX(100%);
+  }
+}
+
+.top-left{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  z-index:2;
+}
+
+.team{
+  color:#fff;
+  font-size:38px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+.match-info{
+  color:var(--cyan);
+  font-size:15px;
+  font-weight:700;
+}
+
+.meta{
+  color:#cbd5e1;
+  font-size:15px;
+}
+
+/* =====================================================
+LIVE SCORE
+===================================================== */
+
+.center-score{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+
+.score{
+  font-family:'Orbitron',sans-serif;
+  color:var(--gold);
+  font-size:72px;
+  font-weight:900;
+  text-shadow:
+    0 0 15px rgba(255,216,77,.8),
+    0 0 50px rgba(255,216,77,.35);
+  animation:scorePulse 2s infinite;
+}
+
+@keyframes scorePulse{
+  0%,100%{
+    transform:scale(1);
+  }
+  50%{
+    transform:scale(1.03);
+  }
+}
+
+.live-pill{
+  background:linear-gradient(
+    135deg,
+    #ff0033,
+    #ff5c5c
+  );
+  padding:10px 18px;
+  border-radius:40px;
+  color:#fff;
+  font-weight:900;
+  letter-spacing:2px;
+  box-shadow:0 0 25px rgba(255,0,0,.45);
+  animation:liveBlink 1s infinite;
+}
+
+@keyframes liveBlink{
+  0%,100%{
+    opacity:1;
+  }
+  50%{
+    opacity:.5;
+  }
+}
+
+/* =====================================================
+RIGHT STATS
+===================================================== */
+
+.top-stats{
+  display:flex;
+  gap:15px;
+  z-index:2;
+}
+
+.top-stat{
+  min-width:120px;
+  padding:12px 16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(0,234,255,.18);
+  backdrop-filter:blur(10px);
+}
+
+.top-stat-label{
+  color:#9ca3af;
+  font-size:11px;
+  letter-spacing:2px;
+  margin-bottom:5px;
+}
+
+.top-stat-value{
+  color:var(--cyan);
+  font-size:24px;
+  font-weight:900;
+}
+
+/* =====================================================
+MIDDLE
+===================================================== */
+
+.middle{
+  flex:1;
+  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* =====================================================
+VS SECTION
+===================================================== */
+
+.vs-container{
+  position:absolute;
+  top:60px;
+  display:flex;
+  align-items:center;
+  gap:120px;
+  z-index:10;
+}
+
+.team-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+}
+
+.team-flag-wrap{
+  position:relative;
+}
+
+.team-flag-wrap::before{
+  content:"";
+  position:absolute;
+  inset:-10px;
+  border-radius:50%;
+  border:2px solid rgba(0,234,255,.5);
+  animation:rotateRing 8s linear infinite;
+}
+
+@keyframes rotateRing{
+  from{
+    transform:rotate(0deg);
+  }
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+.team-flag{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  object-fit:cover;
+  border:5px solid rgba(255,255,255,.2);
+  box-shadow:
+    0 0 35px rgba(0,234,255,.45),
+    0 0 80px rgba(0,234,255,.12);
+}
+
+.team-label{
+  color:#fff;
+  font-size:30px;
+  font-weight:900;
+}
+
+.vs{
+  color:var(--gold);
+  font-size:80px;
+  font-weight:900;
+  font-family:'Orbitron',sans-serif;
+  text-shadow:0 0 30px rgba(255,216,77,.45);
+}
+
+/* =====================================================
+COMMENTARY
+===================================================== */
+
+.commentary-wrapper{
+  position:absolute;
+  bottom:170px;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  z-index:20;
+}
+
+.commentary-box{
+  width:70%;
+  padding:22px 30px;
+  border-radius:24px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(8,15,25,.95),
+      rgba(18,30,45,.88)
+    );
+  border:1px solid rgba(0,234,255,.18);
+  backdrop-filter:blur(18px);
+  box-shadow:
+    0 0 35px rgba(0,0,0,.55),
+    0 0 55px rgba(0,234,255,.08);
+  position:relative;
+  overflow:hidden;
+}
+
+.commentary-box::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,.06),
+      transparent
+    );
+  animation:commentaryShine 4s linear infinite;
+}
+
+@keyframes commentaryShine{
+  from{
+    transform:translateX(-100%);
+  }
+  to{
+    transform:translateX(100%);
+  }
+}
+
+.commentary-top{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:12px;
+}
+
+.live-dot{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#ff0033;
+  box-shadow:0 0 18px #ff0033;
+  animation:liveDot 1s infinite;
+}
+
+@keyframes liveDot{
+  0%,100%{
+    transform:scale(1);
+  }
+  50%{
+    transform:scale(.7);
+  }
+}
+
+.commentary-label{
+  color:var(--cyan);
+  font-size:13px;
+  letter-spacing:3px;
+  font-weight:900;
+}
+
+.commentary{
+  color:#fff;
+  font-size:28px;
+  font-weight:800;
+  line-height:1.5;
+  min-height:50px;
+}
+
+/* =====================================================
+EVENT SCREEN FX
+===================================================== */
+
+.event-screen{
+  position:absolute;
+  inset:0;
+  z-index:30;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.event-text{
+  display:none;
+  font-size:170px;
+  font-weight:900;
+  font-family:'Orbitron',sans-serif;
+  animation:eventZoom 1s ease forwards;
+}
+
+@keyframes eventZoom{
+  0%{
+    transform:scale(.1) rotate(-12deg);
+    opacity:0;
+    filter:blur(15px);
+  }
+  40%{
+    opacity:1;
+    filter:blur(0px);
+  }
+  100%{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+.four{
+  color:#00f7ff;
+  text-shadow:
+    0 0 25px #00f7ff,
+    0 0 90px #00f7ff;
+}
+
+.six{
+  color:#ffd84d;
+  text-shadow:
+    0 0 25px #ffd84d,
+    0 0 90px orange;
+}
+
+.wicket{
+  color:#ff1744;
+  text-shadow:
+    0 0 25px #ff1744,
+    0 0 90px darkred;
+}
+
+/* =====================================================
+WICKET FLASH
+===================================================== */
+
+.red-flash{
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,0,0,.25),
+      rgba(120,0,0,.75)
+    );
+  opacity:0;
+  pointer-events:none;
+  z-index:25;
+}
+
+.red-flash.active{
+  animation:redFlash .9s ease;
+}
+
+@keyframes redFlash{
+  0%{opacity:0;}
+  20%{opacity:1;}
+  50%{opacity:.25;}
+  80%{opacity:1;}
+  100%{opacity:0;}
+}
+
+/* =====================================================
+BOTTOM BAR
+===================================================== */
+
+.bottom{
+  height:190px;
+  padding:22px 30px;
+  background:
+    linear-gradient(
+      to top,
+      rgba(2,8,15,.98),
+      rgba(2,8,15,.82)
+    );
+  border-top:2px solid rgba(0,234,255,.25);
+  backdrop-filter:blur(20px);
+}
+
+.players{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.player-card{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:14px 22px;
+  border-radius:24px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  min-width:330px;
+  transition:.3s;
+}
+
+.player-card:hover{
+  transform:translateY(-3px);
+}
+
+.player-img{
+  width:95px;
+  height:95px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid rgba(0,234,255,.4);
+}
+
+.player-name{
+  color:#fff;
+  font-size:24px;
+  font-weight:900;
+}
+
+.player-score{
+  color:var(--gold);
+  font-size:28px;
+  font-family:'Orbitron',sans-serif;
+  font-weight:900;
+}
+
+.status{
+  position:absolute;
+  bottom:18px;
+  right:30px;
+  color:var(--cyan);
+  font-size:15px;
+  font-weight:700;
+}
+
+/* =====================================================
+TIMELINE
+===================================================== */
+
+.timeline{
+  position:absolute;
+  bottom:15px;
+  left:50%;
+  transform:translateX(-50%);
+  width:96%;
+  display:flex;
+  gap:14px;
+  overflow-x:auto;
+  z-index:15;
+}
+
+.timeline::-webkit-scrollbar{
+  display:none;
+}
+
+.over-card{
+  min-width:220px;
+  padding:16px;
+  border-radius:22px;
+  background:rgba(8,15,25,.82);
+  border:1px solid rgba(0,234,255,.18);
+  backdrop-filter:blur(10px);
+}
+
+.over-head{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:14px;
+}
+
+.over-title{
+  color:var(--cyan);
+  font-weight:900;
+}
+
+.over-total{
+  color:var(--gold);
+  font-weight:900;
+}
+
+.balls{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.ball{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:900;
+  animation:ballPop .4s ease;
+}
+
+@keyframes ballPop{
+  from{
+    transform:scale(.2);
+    opacity:0;
+  }
+  to{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+.ball-0{background:#334155;}
+.ball-1,.ball-2,.ball-3{background:#2563eb;}
+.ball-4{
+  background:#00b894;
+  box-shadow:0 0 18px rgba(0,255,170,.5);
+}
+.ball-6{
+  background:#f59e0b;
+  box-shadow:0 0 18px rgba(255,170,0,.5);
+}
+.ball-W{
+  background:#ff1744;
+  box-shadow:0 0 18px rgba(255,0,60,.5);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="bg-video-overlay">
+  <img src="/static/stadium.jpg">
+</div>
+
+<div class="bg-dark"></div>
+
+<div class="particles" id="particles"></div>
+
+<div class="broadcast-container">
+
+  <!-- TOP -->
+  <div class="top">
+
+    <div class="top-left">
+      <div class="team" id="teams">
+        TEAM A vs TEAM B
+      </div>
+
+      <div class="match-info" id="match_info">
+        IPL 2026
+      </div>
+
+      <div class="meta" id="overs">
+        0.0 Overs
+      </div>
+    </div>
+
+    <div class="center-score">
+      <div class="score" id="score">0/0</div>
+      <div class="live-pill">LIVE</div>
+    </div>
+
+    <div class="top-stats">
+
+      <div class="top-stat">
+        <div class="top-stat-label">CRR</div>
+        <div class="top-stat-value" id="crr">
+          0.00
+        </div>
+      </div>
+
+      <div class="top-stat">
+        <div class="top-stat-label">PARTNERSHIP</div>
+        <div class="top-stat-value" id="partnership">
+          0 (0)
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- MIDDLE -->
+  <div class="middle">
+
+    <div class="red-flash" id="redFlash"></div>
+
+    <!-- VS -->
+    <div class="vs-container">
+
+      <div class="team-box">
+
+        <div class="team-flag-wrap">
+          <img
+            id="flag_a"
+            class="team-flag"
+            src="/static/default_a.png"
+          >
+        </div>
+
+        <div class="team-label" id="team_a_mid">
+          TEAM A
+        </div>
+
+      </div>
+
+      <div class="vs">VS</div>
+
+      <div class="team-box">
+
+        <div class="team-flag-wrap">
+          <img
+            id="flag_b"
+            class="team-flag"
+            src="/static/default_b.png"
+          >
+        </div>
+
+        <div class="team-label" id="team_b_mid">
+          TEAM B
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- COMMENTARY -->
+    <div class="commentary-wrapper">
+
+      <div class="commentary-box">
+
+        <div class="commentary-top">
+
+          <div class="live-dot"></div>
+
+          <div class="commentary-label">
+            LIVE COMMENTARY
+          </div>
+
+        </div>
+
+        <div class="commentary" id="commentary">
+          Match Starting...
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- EVENTS -->
+    <div class="event-screen">
+
+      <div id="four" class="event-text four">
+        FOUR!
+      </div>
+
+      <div id="six" class="event-text six">
+        SIX!
+      </div>
+
+      <div id="wicket" class="event-text wicket">
+        WICKET!
+      </div>
+
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="timeline" id="timeline"></div>
+
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+
+    <div class="players">
+
+      <!-- STRIKER -->
+      <div class="player-card">
+
+        <img
+          id="striker_img"
+          class="player-img"
+          src="/static/player.png"
+        >
+
+        <div>
+          <div class="player-name" id="striker">
+            -
+          </div>
+
+          <div class="player-score" id="s_runs">
+            0 (0)
+          </div>
+        </div>
+
+      </div>
+
+      <!-- NON STRIKER -->
+      <div class="player-card">
+
+        <img
+          id="non_striker_img"
+          class="player-img"
+          src="/static/player.png"
+        >
+
+        <div>
+          <div class="player-name" id="non_striker">
+            -
+          </div>
+
+          <div class="player-score" id="ns_runs">
+            0 (0)
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOWLER -->
+      <div class="player-card">
+
+        <img
+          id="bowler_img"
+          class="player-img"
+          src="/static/player.png"
+        >
+
+        <div>
+          <div class="player-name" id="bowler">
+            -
+          </div>
+
+          <div class="player-score" id="bowler_fig">
+            0-0
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- AUDIO -->
+<audio id="crowdShock" src="/static/crowd_shock.mp3"></audio>
+<audio id="batCrack" src="/static/bat_crack.mp3"></audio>
+<audio id="crowdCheer" src="/static/crowd_cheer.mp3"></audio>
+
+<script>
+
+/* =====================================================
+WEBSOCKET
+===================================================== */
+
+const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+/* =====================================================
+STATE
+===================================================== */
+
+let lastEventTime = 0;
+
+/* =====================================================
+HELPERS
+===================================================== */
+
+function setText(id,value){
+
+  const el = document.getElementById(id);
+
+  if(el){
+    el.innerText = value ?? "-";
+  }
+
+}
+
+function setImg(id,src){
+
+  const el = document.getElementById(id);
+
+  if(el){
+    el.src = src || "/static/player.png";
+  }
+
+}
+
+/* =====================================================
+PARTICLES
+===================================================== */
+
+function createParticles(){
+
+  const container = document.getElementById("particles");
+
+  for(let i=0;i<50;i++){
+
+    const p = document.createElement("div");
+
+    p.className = "particle";
+
+    p.style.left = Math.random()*100 + "%";
+
+    p.style.animationDuration =
+      (5 + Math.random()*12) + "s";
+
+    p.style.animationDelay =
+      Math.random()*5 + "s";
+
+    p.style.opacity = Math.random();
+
+    container.appendChild(p);
+
+  }
+
+}
+
+createParticles();
+
+/* =====================================================
+TIMELINE
+===================================================== */
+
+function renderTimeline(overs){
+
+  const box = document.getElementById("timeline");
+
+  box.innerHTML = "";
+
+  if(!overs) return;
+
+  overs.slice(-5).forEach(over=>{
+
+    const card = document.createElement("div");
+
+    card.className = "over-card";
+
+    const balls = (over.balls || []).map(ball=>{
+
+      return `
+        <div class="ball ball-${ball}">
+          ${ball}
+        </div>
+      `;
+
+    }).join("");
+
+    card.innerHTML = `
+      <div class="over-head">
+
+        <div class="over-title">
+          OVER ${over.over}
+        </div>
+
+        <div class="over-total">
+          ${over.total}
+        </div>
+
+      </div>
+
+      <div class="balls">
+        ${balls}
+      </div>
+    `;
+
+    box.appendChild(card);
+
+  });
+
+}
+
+/* =====================================================
+SOUNDS
+===================================================== */
+
+function playSound(id){
+
+  const audio = document.getElementById(id);
+
+  if(!audio) return;
+
+  audio.currentTime = 0;
+
+  audio.play().catch(()=>{});
+
+}
+
+/* =====================================================
+EVENT FX
+===================================================== */
+
+function redFlash(){
+
+  const flash = document.getElementById("redFlash");
+
+  flash.classList.remove("active");
+
+  void flash.offsetWidth;
+
+  flash.classList.add("active");
+
+}
+
+function showEvent(type){
+
+  const el =
+    document.getElementById(type.toLowerCase());
+
+  if(!el) return;
+
+  el.style.display = "block";
+
+  el.style.animation = "none";
+
+  void el.offsetWidth;
+
+  el.style.animation =
+    "eventZoom 1s ease forwards";
+
+  if(type === "FOUR"){
+
+    playSound("crowdCheer");
+
+  }
+
+  if(type === "SIX"){
+
+    playSound("crowdCheer");
+
+  }
+
+  if(type === "WICKET"){
+
+    redFlash();
+
+    playSound("crowdShock");
+
+    setTimeout(()=>{
+
+      playSound("batCrack");
+
+    },120);
+
+  }
+
+  setTimeout(()=>{
+
+    el.style.display = "none";
+
+  },2600);
+
+}
+
+/* =====================================================
+WEBSOCKET DATA
+===================================================== */
+
+ws.onmessage = (e)=>{
+
+  const d = JSON.parse(e.data);
+
+  /* TOP */
+
+  setText(
+    "teams",
+    `${d.team_a || "TEAM A"} vs ${d.team_b || "TEAM B"}`
+  );
+
+  setText(
+    "match_info",
+    d.flags?.match_info || ""
+  );
+
+  setText(
+    "score",
+    d.score || "0/0"
+  );
+
+  setText(
+    "overs",
+    `${d.overs || "0.0"} Overs`
+  );
+
+  setText(
+    "crr",
+    d.crr || "0.00"
+  );
+
+  setText(
+    "partnership",
+    d.partnership || "0 (0)"
+  );
+
+  /* COMMENTARY */
+
+  setText(
+    "commentary",
+    d.commentary || "Live Match Starting..."
+  );
+
+  /* TEAM */
+
+  setText(
+    "team_a_mid",
+    d.team_a || "TEAM A"
+  );
+
+  setText(
+    "team_b_mid",
+    d.team_b || "TEAM B"
+  );
+
+  if(d.flags){
+
+    setImg(
+      "flag_a",
+      d.flags.team_a_flag
+    );
+
+    setImg(
+      "flag_b",
+      d.flags.team_b_flag
+    );
+
+  }
+
+  /* PLAYERS */
+
+  const batsmen =
+    d.live_players?.batsmen || [];
+
+  const bowler =
+    d.live_players?.bowler;
+
+  if(batsmen[0]){
+
+    setText(
+      "striker",
+      batsmen[0].name
+    );
+
+    setText(
+      "s_runs",
+      `${batsmen[0].runs} (${batsmen[0].balls})`
+    );
+
+    setImg(
+      "striker_img",
+      batsmen[0].image
+    );
+
+  }
+
+  if(batsmen[1]){
+
+    setText(
+      "non_striker",
+      batsmen[1].name
+    );
+
+    setText(
+      "ns_runs",
+      `${batsmen[1].runs} (${batsmen[1].balls})`
+    );
+
+    setImg(
+      "non_striker_img",
+      batsmen[1].image
+    );
+
+  }
+
+  if(bowler){
+
+    setText(
+      "bowler",
+      bowler.name
+    );
+
+    setText(
+      "bowler_fig",
+      `${bowler.runs} (${bowler.balls})`
+    );
+
+    setImg(
+      "bowler_img",
+      bowler.image
+    );
+
+  }
+
+  /* TIMELINE */
+
+  renderTimeline(
+    d.overs_timeline || []
+  );
+
+  /* EVENTS */
+
+  const eventTime =
+    d.event_time || Date.now();
+
+  if(
+    d.event &&
+    eventTime !== lastEventTime
+  ){
+
+    lastEventTime = eventTime;
+
+    showEvent(d.event);
+
+  }
+
+};
+
+/* =====================================================
+SOCKET STATUS
+===================================================== */
+
+ws.onopen = ()=>{
+
+  console.log("CONNECTED");
+
+};
+
+ws.onclose = ()=>{
+
+  console.log("DISCONNECTED");
+
+};
+
+ws.onerror = (err)=>{
+
+  console.log(err);
+
+};
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Cricket Live Controller</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#0f172a;
+    color:white;
+    font-family:Segoe UI;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.container{
+    width:700px;
+    background:#111827;
+    padding:40px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.1);
+}
+
+.title{
+    font-size:38px;
+    font-weight:900;
+    margin-bottom:30px;
+    text-align:center;
+    color:#00e5ff;
+}
+
+.input-group{
+    display:flex;
+    gap:15px;
+}
+
+input{
+    flex:1;
+    padding:18px;
+    border:none;
+    border-radius:12px;
+    background:#1e293b;
+    color:white;
+    font-size:16px;
+}
+
+button{
+    padding:18px 30px;
+    border:none;
+    border-radius:12px;
+    background:#00e5ff;
+    color:black;
+    font-weight:900;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+.status{
+    margin-top:20px;
+    font-size:18px;
+    color:#94a3b8;
+}
+
+.overlay-btn{
+    margin-top:25px;
+    width:100%;
+    background:#22c55e;
+    color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="title">
+        LIVE CRICKET CONTROLLER
+    </div>
+
+    <div class="input-group">
+
+        <input
+            type="text"
+            id="url"
+            placeholder="Paste CREX live match URL..."
+        >
+
+        <button onclick="startMatch()">
+            START
+        </button>
+
+    </div>
+
+    <button
+        class="overlay-btn"
+        onclick="openOverlay()"
+    >
+        OPEN OVERLAY
+    </button>
+
+    <div class="status" id="status">
+        Waiting...
+    </div>
+
+</div>
+
+<script>
+
+async function startMatch(){
+
+    const url = document.getElementById("url").value;
+
+    if(!url){
+
+        alert("Enter match URL");
+        return;
+    }
+
+    document.getElementById("status").innerText =
+        "Starting scraper...";
+
+    try{
+
+        const res = await fetch("/set-url",{
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify({
+                url:url
+            })
+
+        });
+
+        const data = await res.json();
+
+        if(data.success){
+
+            document.getElementById("status").innerText =
+                "Live scraping started.";
+
+        }
+
+    }catch(err){
+
+        console.log(err);
+
+        document.getElementById("status").innerText =
+            "Failed to start.";
+    }
+
+}
+
+function openOverlay(){
+
+    window.open(
+        "/overlay",
+        "_blank",
+        "width=1920,height=1080"
+    );
+
+}
+
+</script>
+
+</body>
+</html>

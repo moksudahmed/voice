@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Pro Cricket Scoreboard</title>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:'Segoe UI',sans-serif;
+  background:#000;
+  overflow:hidden;
+}
+
+/* =========================================
+MAIN CONTAINER
+========================================= */
+
+.broadcast-container{
+  width:100%;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+
+/* =========================================
+TOP BAR
+========================================= */
+
+.top{
+  height:100px;
+  background:linear-gradient(135deg,#111827,#0f172a);
+  border-bottom:3px solid #00f0ff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 35px;
+  position:relative;
+  z-index:50;
+}
+
+.top-left{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.team{
+  font-size:32px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:1px;
+}
+
+.meta{
+  color:#cbd5e1;
+  font-size:16px;
+}
+
+/* =========================================
+TOP STATS
+========================================= */
+
+.top-stats{
+  position:absolute;
+  right:250px;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.top-stat-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:100px;
+  padding:8px 14px;
+  border-radius:16px;
+  background:linear-gradient(
+    135deg,
+    rgba(255,255,255,.08),
+    rgba(255,255,255,.03)
+  );
+  border:1px solid rgba(0,240,255,.18);
+  backdrop-filter:blur(8px);
+  box-shadow:0 0 16px rgba(0,240,255,.08);
+}
+
+.top-stat-label{
+  color:#cbd5e1;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:2px;
+  margin-bottom:3px;
+}
+
+.top-stat-value{
+  font-size:18px;
+  font-weight:900;
+  color:#00f0ff;
+}
+
+.score{
+  font-size:62px;
+  font-weight:900;
+  color:#ffd966;
+  font-family:monospace;
+  text-shadow:0 0 20px rgba(255,217,102,.4);
+}
+
+.live{
+  background:#00f0ff;
+  color:#000;
+  padding:10px 18px;
+  border-radius:40px;
+  font-weight:900;
+  letter-spacing:1px;
+  animation:livePulse 1.2s infinite;
+}
+
+@keyframes livePulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.08);}
+  100%{transform:scale(1);}
+}
+
+/* =========================================
+MIDDLE SECTION
+========================================= */
+
+.middle{
+  flex:1;
+  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+}
+
+.bg-img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.middle::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(0,0,0,.85),
+    rgba(0,0,0,.15),
+    rgba(0,0,0,.90)
+  );
+  z-index:1;
+}
+
+/* =========================================
+RED STADIUM FLASH
+========================================= */
+
+.red-flash{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(
+    circle,
+    rgba(255,0,0,.45),
+    rgba(120,0,0,.75)
+  );
+  z-index:6;
+  opacity:0;
+  pointer-events:none;
+}
+
+.red-flash.active{
+  animation:redFlash .9s ease;
+}
+
+@keyframes redFlash{
+  0%{opacity:0;}
+  15%{opacity:1;}
+  35%{opacity:.2;}
+  55%{opacity:1;}
+  100%{opacity:0;}
+}
+
+/* =========================================
+VS SECTION
+========================================= */
+
+.vs-container{
+  position:absolute;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  gap:100px;
+  top:60px;
+}
+
+.team-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+
+.team-flag{
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid #00f0ff;
+  background:#111;
+  box-shadow:
+    0 0 25px rgba(0,240,255,.7),
+    0 0 60px rgba(0,240,255,.2);
+}
+
+.team-label{
+  color:#fff;
+  font-size:28px;
+  font-weight:900;
+}
+
+.vs-text{
+  font-size:58px;
+  font-weight:900;
+  color:#ffd966;
+}
+
+/* =========================================
+COMMENTARY
+========================================= */
+
+.commentary-wrapper{
+  position:absolute;
+  bottom:180px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:10;
+  width:82%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+
+.commentary-live{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:linear-gradient(
+    135deg,
+    rgba(255,0,0,.9),
+    rgba(255,80,80,.9)
+  );
+  color:#fff;
+  padding:8px 18px;
+  border-radius:40px;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:2px;
+  box-shadow:0 0 20px rgba(255,0,0,.45);
+  backdrop-filter:blur(6px);
+}
+
+.live-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#fff;
+  animation:liveBlink 1s infinite;
+}
+
+@keyframes liveBlink{
+  0%{
+    opacity:1;
+    transform:scale(1);
+  }
+
+  50%{
+    opacity:.3;
+    transform:scale(.7);
+  }
+
+  100%{
+    opacity:1;
+    transform:scale(1);
+  }
+}
+
+.center-text{
+  position:relative;
+  width:50%;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:16px 22px;
+  border-radius:20px;
+  overflow:hidden;
+  background:linear-gradient(
+    135deg,
+    rgba(10,15,25,.92),
+    rgba(17,24,39,.88)
+  );
+  border:2px solid rgba(0,240,255,.25);
+  backdrop-filter:blur(12px);
+  box-shadow:
+    0 0 25px rgba(0,0,0,.55),
+    0 0 40px rgba(0,240,255,.10);
+}
+
+.commentary-glow{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(0,240,255,.08),
+    transparent
+  );
+  animation:commentaryGlow 4s linear infinite;
+}
+
+@keyframes commentaryGlow{
+  0%{transform:translateX(-100%);}
+  100%{transform:translateX(100%);}
+}
+
+.commentary-icon{
+  min-width:56px;
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:linear-gradient(135deg,#00f0ff,#2563eb);
+  font-size:26px;
+  box-shadow:0 0 20px rgba(0,240,255,.45);
+  position:relative;
+  z-index:2;
+  animation:micPulse 2s infinite;
+}
+
+@keyframes micPulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.06);}
+  100%{transform:scale(1);}
+}
+
+.commentary-content{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  position:relative;
+  z-index:2;
+}
+
+.commentary-label{
+  color:#00f0ff;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+
+.commentary-message{
+  color:#fff;
+  font-size:22px;
+  font-weight:900;
+  line-height:1.3;
+}
+
+/* =========================================
+EVENTS
+========================================= */
+
+.event{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:130px;
+  font-weight:900;
+  z-index:100;
+  display:none;
+  pointer-events:none;
+}
+
+.four{
+  color:#00f0ff;
+  text-shadow:
+    0 0 20px #00f0ff,
+    0 0 60px #00f0ff;
+}
+
+.six{
+  color:gold;
+  text-shadow:
+    0 0 30px gold,
+    0 0 80px orange,
+    0 0 120px red;
+}
+
+.wicket{
+  color:#ff0033;
+  text-shadow:
+    0 0 25px #ff0033,
+    0 0 80px darkred;
+}
+
+.animate{
+  animation:pop .4s ease, glow 1s infinite alternate;
+}
+
+@keyframes pop{
+  0%{
+    transform:translate(-50%,-50%) scale(.2);
+    opacity:0;
+  }
+
+  100%{
+    transform:translate(-50%,-50%) scale(1);
+    opacity:1;
+  }
+}
+
+@keyframes glow{
+  0%{filter:brightness(1);}
+  100%{filter:brightness(1.7);}
+}
+
+/* =========================================
+BROKEN STUMP
+========================================= */
+
+.stump-wrapper{
+  position:absolute;
+  inset:0;
+  z-index:90;
+  pointer-events:none;
+}
+
+.stump{
+  position:absolute;
+  width:14px;
+  height:150px;
+  background:linear-gradient(#fff,#d9d9d9);
+  border-radius:20px;
+  bottom:28%;
+  left:50%;
+  opacity:0;
+}
+
+.stump.left{
+  margin-left:-40px;
+}
+
+.stump.middle{
+  margin-left:-7px;
+}
+
+.stump.right{
+  margin-left:26px;
+}
+
+.stump.active.left{
+  animation:stumpLeft 1.3s ease forwards;
+}
+
+.stump.active.middle{
+  animation:stumpMiddle 1.3s ease forwards;
+}
+
+.stump.active.right{
+  animation:stumpRight 1.3s ease forwards;
+}
+
+@keyframes stumpLeft{
+  0%{
+    opacity:1;
+    transform:rotate(0);
+  }
+
+  100%{
+    opacity:0;
+    transform:
+      translate(-170px,-240px)
+      rotate(-130deg);
+  }
+}
+
+@keyframes stumpMiddle{
+  0%{
+    opacity:1;
+    transform:rotate(0);
+  }
+
+  100%{
+    opacity:0;
+    transform:
+      translateY(-280px)
+      rotate(180deg);
+  }
+}
+
+@keyframes stumpRight{
+  0%{
+    opacity:1;
+    transform:rotate(0);
+  }
+
+  100%{
+    opacity:0;
+    transform:
+      translate(170px,-240px)
+      rotate(130deg);
+  }
+}
+
+/* =========================================
+TIMELINE
+========================================= */
+
+.timeline-wrapper{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:20px;
+  width:96%;
+  z-index:10;
+}
+
+.timeline{
+  display:flex;
+  gap:16px;
+  overflow-x:auto;
+  padding-bottom:8px;
+}
+
+.timeline::-webkit-scrollbar{
+  display:none;
+}
+
+.over-card{
+  min-width:220px;
+  background:rgba(10,15,25,.88);
+  border:1px solid rgba(0,240,255,.25);
+  border-radius:18px;
+  padding:14px;
+  backdrop-filter:blur(10px);
+}
+
+.over-header{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+
+.over-title{
+  color:#00f0ff;
+  font-size:17px;
+  font-weight:800;
+}
+
+.over-total{
+  color:#ffd966;
+  font-size:16px;
+  font-weight:900;
+}
+
+.balls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.ball{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  font-weight:900;
+  color:#fff;
+  background:#1f2937;
+}
+
+.ball-4{background:#10b981;}
+.ball-6{background:#f59e0b;}
+.ball-W{background:#ef4444;}
+.ball-1,.ball-2,.ball-3{background:#2563eb;}
+.ball-0{background:#374151;}
+
+/* =========================================
+BOTTOM
+========================================= */
+
+.bottom{
+  height:180px;
+  background:linear-gradient(
+    to right,
+    rgba(8,15,28,.96),
+    rgba(17,24,39,.96)
+  );
+  border-top:3px solid #00f0ff;
+  padding:18px 30px;
+  color:#fff;
+  position:relative;
+  z-index:50;
+}
+
+.players-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.batter{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  min-width:320px;
+}
+
+.player-img{
+  width:95px;
+  height:95px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid #00f0ff;
+  box-shadow:0 0 25px rgba(0,240,255,.4);
+}
+
+.player-details{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.name{
+  font-size:24px;
+  font-weight:900;
+}
+
+.runs{
+  font-size:26px;
+  font-weight:900;
+  color:#ffd966;
+  font-family:monospace;
+}
+
+.bowler{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  background:rgba(255,255,255,.05);
+  padding:16px 24px;
+  border-radius:20px;
+}
+
+.bowler-name{
+  font-size:22px;
+  font-weight:900;
+}
+
+.bowler-fig{
+  font-size:24px;
+  color:#ffd966;
+  font-family:monospace;
+}
+
+.status{
+  position:absolute;
+  right:30px;
+  bottom:15px;
+  color:#00f0ff;
+  font-size:15px;
+  font-weight:700;
+}
+/* Only adding small style for match_info */
+.match-info-box{
+  position:absolute;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:20;
+  background:rgba(0,0,0,.6);
+  padding:10px 20px;
+  border-radius:12px;
+  border:1px solid rgba(0,240,255,.4);
+  color:#00f0ff;
+  font-weight:900;
+  font-size:18px;
+  text-align:center;
+  backdrop-filter:blur(8px);
+}
+/* ✅ MATCH INFO ADDED UNDER TEAM NAME */
+.match-info-top{
+  font-size:16px;
+  font-weight:800;
+  color:#00f0ff;
+  opacity:0.9;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="broadcast-container">
+
+  <!-- TOP -->
+  <div class="top">
+
+     <div class="top-left">
+      <div class="team" id="teams">TEAM A vs TEAM B</div>
+      <div class="match-info-top" id="match_info">Match Info</div>
+      <div class="meta" id="overs">0.0 Overs</div>
+    </div>
+
+    <div class="top-stats">
+
+      <div class="top-stat-box">
+        <span class="top-stat-label">CRR</span>
+        <span class="top-stat-value" id="crr">0.00</span>
+      </div>
+
+      <div class="top-stat-box">
+        <span class="top-stat-label">P'SHIP</span>
+        <span class="top-stat-value" id="partnership">0 (0)</span>
+      </div>
+
+    </div>
+
+    <div class="score" id="score">0/0</div>
+
+    <div class="live">LIVE</div>
+
+  </div>
+
+  <!-- MIDDLE -->
+  <div class="middle">
+
+    <img id="bg" class="bg-img" src="/static/stadium.jpg">
+
+    <!-- RED FLASH -->
+    <div class="red-flash" id="redFlash"></div>
+
+    <!-- STUMPS -->
+    <div class="stump-wrapper">
+      <div class="stump left" id="stumpLeft"></div>
+      <div class="stump middle" id="stumpMiddle"></div>
+      <div class="stump right" id="stumpRight"></div>
+    </div>
+
+    <!-- VS -->
+    <div class="vs-container">
+
+      <div class="team-box">
+        <img id="flag_a" class="team-flag" src="/static/default_a.png">
+        <div class="team-label" id="team_a_mid">TEAM A</div>
+      </div>
+
+      <div class="vs-text">VS</div>
+
+      <div class="team-box">
+        <img id="flag_b" class="team-flag" src="/static/default_b.png">
+        <div class="team-label" id="team_b_mid">TEAM B</div>
+      </div>
+     
+    </div>
+
+    <!-- COMMENTARY -->
+    <div class="commentary-wrapper">
+
+      <div class="commentary-live">
+        <span class="live-dot"></span>
+        LIVE COMMENTARY
+      </div>
+
+      <div class="center-text">
+
+        <div class="commentary-glow"></div>
+
+        <div class="commentary-icon">🎙️</div>
+
+        <div class="commentary-content">
+          <div class="commentary-label">MATCH UPDATE</div>
+          <div class="commentary-message" id="commentary">
+            Live Match Starting...
+          </div>
+        </div>
+
+      </div>
+
+      <!-- EVENTS -->
+      <div id="four" class="event four">FOUR!</div>
+      <div id="six" class="event six">SIX!</div>
+      <div id="wicket" class="event wicket">WICKET!</div>
+
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="timeline-wrapper">
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+
+    <div class="players-row">
+
+      <!-- STRIKER -->
+      <div class="batter">
+
+        <img
+          id="striker_img"
+          class="player-img"
+          src="/static/player.png"
+        >
+
+        <div class="player-details">
+          <div class="name" id="striker">-</div>
+          <div class="runs" id="s_runs">0 (0)</div>
+        </div>
+
+      </div>
+
+      <!-- NON STRIKER -->
+      <div class="batter">
+
+        <img
+          id="non_striker_img"
+          class="player-img"
+          src="/static/player.png"
+        >
+
+        <div class="player-details">
+          <div class="name" id="non_striker">-</div>
+          <div class="runs" id="ns_runs">0 (0)</div>
+        </div>
+
+      </div>
+
+      <!-- BOWLER -->
+      <div class="bowler">
+
+        <img
+          id="bowler_img"
+          class="player-img"
+          src="/static/player.png"
+        >
+
+        <div>
+          <div class="bowler-name" id="bowler">-</div>
+          <div class="bowler-fig" id="bowler_fig">0-0 (0)</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="status" id="status">
+      Match Starting...
+    </div>
+
+  </div>
+
+</div>
+
+<!-- AUDIO -->
+<audio id="crowdShock" src="/static/crowd_shock.mp3" preload="auto"></audio>
+<audio id="batCrack" src="/static/bat_crack.mp3" preload="auto"></audio>
+
+<script>
+
+/* =========================================
+WEBSOCKET
+========================================= */
+
+const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+/* =========================================
+STATE
+========================================= */
+
+let lastEventTime = 0;
+
+/* =========================================
+HELPERS
+========================================= */
+
+function setText(id,value){
+  const el = document.getElementById(id);
+
+  if(el){
+    el.innerText = value ?? "-";
+  }
+}
+
+function setImg(id,src){
+  const el = document.getElementById(id);
+
+  if(el){
+    el.src = src || "/static/player.png";
+  }
+}
+
+/* =========================================
+TIMELINE
+========================================= */
+
+function renderTimeline(overs){
+
+  const box = document.getElementById("timeline");
+
+  box.innerHTML = "";
+
+  if(!overs || !Array.isArray(overs)) return;
+
+  overs.slice(-5).forEach(overData=>{
+
+    const card = document.createElement("div");
+    card.className = "over-card";
+
+    const balls = (overData.balls || []).map(ball=>{
+
+      return `
+        <div class="ball ball-${ball}">
+          ${ball}
+        </div>
+      `;
+
+    }).join("");
+
+    card.innerHTML = `
+      <div class="over-header">
+        <div class="over-title">
+          OVER ${overData.over}
+        </div>
+
+        <div class="over-total">
+          ${overData.total}
+        </div>
+      </div>
+
+      <div class="balls">
+        ${balls}
+      </div>
+    `;
+
+    box.appendChild(card);
+
+  });
+
+}
+
+/* =========================================
+RED FLASH
+========================================= */
+
+function triggerRedFlash(){
+
+  const flash = document.getElementById("redFlash");
+
+  flash.classList.remove("active");
+
+  void flash.offsetWidth;
+
+  flash.classList.add("active");
+
+}
+
+/* =========================================
+BROKEN STUMPS
+========================================= */
+
+function triggerBrokenStumps(){
+
+  const left = document.getElementById("stumpLeft");
+  const middle = document.getElementById("stumpMiddle");
+  const right = document.getElementById("stumpRight");
+
+  left.classList.remove("active");
+  middle.classList.remove("active");
+  right.classList.remove("active");
+
+  void left.offsetWidth;
+
+  left.classList.add("active");
+  middle.classList.add("active");
+  right.classList.add("active");
+
+}
+
+/* =========================================
+AUDIO
+========================================= */
+
+function playSound(id){
+
+  const audio = document.getElementById(id);
+
+  if(!audio) return;
+
+  audio.currentTime = 0;
+
+  audio.play().catch(()=>{});
+
+}
+
+/* =========================================
+EVENTS
+========================================= */
+
+function showEvent(type){
+
+  const el = document.getElementById(type.toLowerCase());
+
+  if(!el) return;
+
+  el.style.display = "block";
+
+  el.classList.remove("animate");
+
+  void el.offsetWidth;
+
+  el.classList.add("animate");
+
+  if(type === "WICKET"){
+
+    triggerRedFlash();
+
+    triggerBrokenStumps();
+
+    playSound("crowdShock");
+
+    setTimeout(()=>{
+      playSound("batCrack");
+    },120);
+
+  }
+
+  setTimeout(()=>{
+
+    el.style.display = "none";
+
+  },3000);
+
+}
+
+/* =========================================
+WEBSOCKET MESSAGE
+========================================= */
+
+ws.onmessage = (e)=>{
+
+  const d = JSON.parse(e.data);
+
+  console.log(d);
+
+  /* =====================================
+  TOP
+  ===================================== */
+
+  setText(
+    "teams",
+    `${d.team_a || "TEAM A"} vs ${d.team_b || "TEAM B"}`
+  );
+  setText(
+    "match_info",
+    `${d.flags.match_info || " "}`
+  );
+
+  setText(
+    "score",
+    d.score || "0/0"
+  );
+
+  setText(
+    "overs",
+    `${d.overs || "0.0"} Overs`
+  );
+
+  setText(
+    "crr",
+    d.crr || "0.00"
+  );
+
+  setText(
+    "partnership",
+    d.partnership || "0 (0)"
+  );
+
+  /* =====================================
+  COMMENTARY
+  ===================================== */
+
+  setText(
+    "commentary",
+    d.commentary || "Live Match Starting..."
+  );
+
+  setText(
+    "status",
+    d.status || "Match Starting..."
+  );
+
+  /* =====================================
+  TEAM FLAGS
+  ===================================== */
+
+  setText("team_a_mid", d.team_a || "TEAM A");
+  setText("team_b_mid", d.team_b || "TEAM B");
+
+  if(d.flags){
+
+    setImg(
+      "flag_a",
+      d.flags.team_a_flag || "/static/default_a.png"
+    );
+
+    setImg(
+      "flag_b",
+      d.flags.team_b_flag || "/static/default_b.png"
+    );
+
+  }
+
+  /* =====================================
+  PLAYERS
+  ===================================== */
+
+  const batsmen = d.live_players?.batsmen || [];
+  const bowler = d.live_players?.bowler;
+
+  /* STRIKER */
+
+  if(batsmen[0]){
+
+    setText(
+      "striker",
+      batsmen[0].name
+    );
+
+    setText(
+      "s_runs",
+      `${batsmen[0].runs} (${batsmen[0].balls})`
+    );
+
+    setImg(
+      "striker_img",
+      batsmen[0].image
+    );
+
+  }
+
+  /* NON STRIKER */
+
+  if(batsmen[1]){
+
+    setText(
+      "non_striker",
+      batsmen[1].name
+    );
+
+    setText(
+      "ns_runs",
+      `${batsmen[1].runs} (${batsmen[1].balls})`
+    );
+
+    setImg(
+      "non_striker_img",
+      batsmen[1].image
+    );
+
+  }
+
+  /* BOWLER */
+
+  if(bowler){
+
+    setText(
+      "bowler",
+      bowler.name
+    );
+
+    setText(
+      "bowler_fig",
+      `${bowler.runs} (${bowler.balls})`
+    );
+
+    setImg(
+      "bowler_img",
+      bowler.image
+    );
+
+  }
+
+  /* =====================================
+  TIMELINE
+  ===================================== */
+
+  renderTimeline(
+    d.overs_timeline || []
+  );
+
+  /* =====================================
+  EVENTS
+  ===================================== */
+
+  const eventTime = d.event_time || Date.now();
+
+  if(d.event && eventTime !== lastEventTime){
+
+    lastEventTime = eventTime;
+
+    if(d.event === "FOUR"){
+      showEvent("FOUR");
+    }
+
+    if(d.event === "SIX"){
+      showEvent("SIX");
+    }
+
+    if(d.event === "WICKET"){
+      showEvent("WICKET");
+    }
+
+  }
+
+};
+
+/* =========================================
+WEBSOCKET STATUS
+========================================= */
+
+ws.onopen = ()=>{
+
+  console.log("WebSocket Connected");
+
+};
+
+ws.onclose = ()=>{
+
+  console.log("WebSocket Disconnected");
+
+};
+
+ws.onerror = (err)=>{
+
+  console.log("WebSocket Error",err);
+
+};
+
+</script>
+
+</body>
+</html>

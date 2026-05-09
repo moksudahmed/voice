@@ -434,7 +434,7 @@ COMMENTARY
 }
 
 .commentary-box{
-  width:50%;
+  width:72%;
 
   padding:24px 30px;
 
@@ -1511,12 +1511,12 @@ ws.onmessage = (event) => {
     /* =====================================================
     SAFE DEFAULTS
     ===================================================== */
-    console.log(d.flags.team_a_name)
+
     const teamA =
-      d.flags.team_a_name || "TEAM A";
+      d.team_a || "TEAM A";
 
     const teamB =
-      d.flags.team_b_name || "TEAM B";
+      d.team_b || "TEAM B";
 
     const score =
       d.score || "0/0";
@@ -1552,7 +1552,7 @@ ws.onmessage = (event) => {
 
     setText(
       "teams",
-      `${flags.team_a_name} vs ${flags.team_b_name}`
+      `${teamA} vs ${teamB}`
     );
 
     setText(
