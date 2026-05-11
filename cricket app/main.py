@@ -677,7 +677,16 @@ def remove_first_part(name):
     parts = name.split(" ", 1)
     return parts[1] if len(parts) > 1 else name
 
+def is_valid_flags(flags):
+    return (
+        flags
+        and flags.get("team_a_name")
+        and flags.get("team_b_name")
+    )
 
+def swap_teams(flags: dict):
+    flags["team_a_name"], flags["team_b_name"] = flags.get("team_b_name"), flags.get("team_a_name")
+    flags["team_a_flag"], flags["team_b_flag"] = flags.get("team_b_flag"), flags.get("team_a_flag")
 
 def parse_batsmen(data):
     """
@@ -708,7 +717,7 @@ async def scraper():
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch(headless=True)
     page = await browser.new_page()
-    innings = 1
+    innings_state = False
     last_state = None
     last_event = ""
     while True:
@@ -1262,7 +1271,7 @@ async def scraper():
                 event = parsed["result_boxes"][0]
                 #batsmen = parsed["result_boxes"][0]
                 print("Hello check")
-                #print(event)
+                print(event)
                 batsman = parse_batsmen(parsed)
                 print(batsman)
                 bowler = ""
@@ -1273,17 +1282,12 @@ async def scraper():
                     speak_bangla(commentary) 
                     last_event = event
                 dead = []
-                
-                if event == "INNINGS_BREAK":              
-                    team_a = STATE["flags"]["team_a_name"]
-                    team_a_f = STATE["flags"]["team_a_flag"]
-                    
-                    STATE["flags"]["team_a_name"]= STATE["flags"]["team_b_name"]
-                    STATE["flags"]["team_a_flag"]= STATE["flags"]["team_b_flag"]
 
-                    STATE["flags"]["team_b_name"]= team_a
-                    STATE["flags"]["team_b_flag"]= team_a_f
-                    print(STATE["flags"])
+                if event == "Innings Break" and not innings_state and is_valid_flags(STATE.get("flags")):                
+                    print("Check innings break")
+                    swap_teams(STATE["flags"])
+                    print("State Changed:", STATE["flags"])
+                    innings_state = True
                 for ws in list(clients):
                     try:
                        # await ws.send_json(parsed)
@@ -1466,8 +1470,12 @@ async def get_live_matches():
         await browser.close()
 
     return matches
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static"
+)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
 # =========================
 # INIT
 # =========================
