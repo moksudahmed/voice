@@ -1269,15 +1269,15 @@ async def scraper():
                 last_state = parsed
                 STATE["data"] = parsed
                 event = parsed["result_boxes"][0]
+                STATE["data"]["commentary"]= event
                 #batsmen = parsed["result_boxes"][0]
-                print("Hello check")
-                print(event)
+                
                 batsman = parse_batsmen(parsed)
                 print(batsman)
                 bowler = ""
                 #commentary = generate_continuous_commentary(event, batsman, bowler, STATE["data"]["score"][0], STATE["flags"]["team_a_name"], STATE["flags"]["team_b_name"], event)
                 commentary = get_bangla_commentary(event)
-                #print(commentary)
+                
                 if commentary and event != last_event:
                     speak_bangla(commentary) 
                     last_event = event

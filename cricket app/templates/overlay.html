@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Ultra Cinematic Cricket Broadcast</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
+
+/* =========================================================
+RESET
+========================================================= */
 
 *{
     margin:0;
@@ -17,205 +21,143 @@
 }
 
 :root{
-
     --cyan:#00e5ff;
     --yellow:#ffd84d;
     --green:#00ff88;
     --red:#ff1744;
     --white:#ffffff;
-
 }
 
 body{
-
     width:100%;
     height:100vh;
-
     overflow:hidden;
-
     font-family:'Poppins',sans-serif;
-
     background:#000;
-
-    color:white;
-
+    color:#fff;
 }
 
 /* =========================================================
-CINEMATIC VIDEO BACKGROUND
+BACKGROUND
 ========================================================= */
 
 .video-bg{
-
     position:fixed;
     inset:0;
-
-    z-index:-20;
-
+    z-index:-30;
     overflow:hidden;
-
 }
 
 .video-bg video{
-
     width:100%;
     height:100%;
-
     object-fit:cover;
 
     filter:
     brightness(.35)
-    saturate(1.25)
+    saturate(1.2)
     contrast(1.15);
 
-    transform:scale(1.08);
-
+    transform:scale(1.06);
 }
 
-/* =========================================================
-DARK OVERLAY
-========================================================= */
-
 .video-overlay{
-
     position:fixed;
     inset:0;
-
-    z-index:-19;
+    z-index:-29;
 
     background:
-
     linear-gradient(
         to bottom,
         rgba(0,0,0,.35),
         rgba(0,0,0,.15),
-        rgba(0,0,0,.7)
+        rgba(0,0,0,.85)
     ),
-
     radial-gradient(
         circle at center,
-        rgba(0,229,255,.15),
-        transparent 45%
+        rgba(0,229,255,.12),
+        transparent 50%
     );
-
 }
 
 /* =========================================================
-MOVING LIGHTS
+LIGHTS
 ========================================================= */
 
 .light{
-
     position:fixed;
-
-    width:500px;
-    height:500px;
-
+    width:550px;
+    height:550px;
     border-radius:50%;
-
     filter:blur(140px);
-
-    opacity:.35;
-
-    z-index:-18;
-
-    animation:moveLight 12s infinite alternate ease-in-out;
-
+    opacity:.30;
+    z-index:-28;
+    animation:lightMove 12s infinite alternate ease-in-out;
 }
 
 .light1{
-
     background:#00e5ff;
-
-    top:-100px;
-    left:-100px;
-
+    top:-120px;
+    left:-120px;
 }
 
 .light2{
-
-    background:#ff2f92;
-
-    bottom:-100px;
-    right:-100px;
-
+    background:#ff0080;
+    bottom:-120px;
+    right:-120px;
     animation-delay:2s;
-
 }
 
 .light3{
-
     background:#ffd84d;
-
-    top:35%;
-    left:40%;
-
+    top:30%;
+    left:38%;
     animation-delay:4s;
-
 }
 
-@keyframes moveLight{
-
+@keyframes lightMove{
     from{
         transform:translateY(0) scale(1);
     }
-
     to{
-        transform:translateY(45px) scale(1.1);
+        transform:translateY(40px) scale(1.08);
     }
-
 }
 
 /* =========================================================
-FLOATING PARTICLES
+PARTICLES
 ========================================================= */
 
 #particles{
-
     position:fixed;
     inset:0;
-
     overflow:hidden;
-
-    z-index:-17;
-
+    z-index:-27;
 }
 
 .particle{
-
     position:absolute;
-
     width:4px;
     height:4px;
-
     border-radius:50%;
-
-    background:white;
-
-    opacity:.6;
-
+    background:#fff;
+    opacity:.55;
     animation:floatParticle linear infinite;
-
 }
 
 @keyframes floatParticle{
 
     from{
-
         transform:
         translateY(100vh)
         scale(0);
-
     }
 
     to{
-
         transform:
         translateY(-10vh)
         scale(1);
-
     }
-
 }
 
 /* =========================================================
@@ -223,16 +165,13 @@ LAYOUT
 ========================================================= */
 
 .broadcast{
-
     width:100%;
     height:100vh;
-
     padding:18px;
 
     display:flex;
     flex-direction:column;
-    justify-content:space-between;
-
+    gap:18px;
 }
 
 /* =========================================================
@@ -240,17 +179,16 @@ TOP BAR
 ========================================================= */
 
 .top-bar{
-
     width:100%;
-    height:120px;
-
-    padding:0 35px;
+    min-height:135px;
 
     display:flex;
     align-items:center;
     justify-content:space-between;
 
-    border-radius:35px;
+    padding:0 35px;
+
+    border-radius:34px;
 
     background:rgba(255,255,255,.08);
 
@@ -260,54 +198,50 @@ TOP BAR
 
     box-shadow:
     0 10px 40px rgba(0,0,0,.4);
-
 }
 
 .left-top{
-
     display:flex;
     flex-direction:column;
-    gap:6px;
-
+    gap:5px;
 }
 
 .teams{
-
     font-size:42px;
     font-weight:900;
-
     text-transform:uppercase;
-
 }
 
 .match-info{
-
-    color:var(--cyan);
-
     font-size:15px;
     font-weight:700;
-
+    color:var(--cyan);
 }
 
 .overs{
-
     font-size:14px;
     color:#ddd;
+}
 
+/* =========================================================
+CENTER SCORE
+========================================================= */
+
+.center-wrapper{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
 }
 
 .center-score{
-
     display:flex;
     align-items:center;
     gap:18px;
-
 }
 
 .score{
-
     font-size:95px;
-
     font-weight:900;
 
     font-family:'Orbitron',sans-serif;
@@ -327,7 +261,6 @@ TOP BAR
     0 0 30px rgba(255,200,0,.45);
 
     animation:pulse 2s infinite;
-
 }
 
 @keyframes pulse{
@@ -337,13 +270,11 @@ TOP BAR
     }
 
     50%{
-        transform:scale(1.04);
+        transform:scale(1.03);
     }
-
 }
 
 .live{
-
     padding:14px 24px;
 
     border-radius:50px;
@@ -352,19 +283,17 @@ TOP BAR
     linear-gradient(
         135deg,
         #ff1744,
-        #ff6b6b
+        #ff5d5d
     );
 
     font-size:18px;
     font-weight:900;
-
     letter-spacing:2px;
 
     box-shadow:
-    0 0 25px rgba(255,0,80,.5);
+    0 0 25px rgba(255,0,80,.55);
 
     animation:blink 1s infinite;
-
 }
 
 @keyframes blink{
@@ -376,56 +305,91 @@ TOP BAR
     50%{
         opacity:.65;
     }
-
 }
 
-.right-top{
+/* =========================================================
+TARGET BOX
+========================================================= */
 
-    display:flex;
-    gap:18px;
+.target-box{
+    padding:10px 26px;
 
-}
-
-.stat{
-
-    min-width:150px;
-
-    padding:16px 20px;
-
-    border-radius:22px;
+    border-radius:50px;
 
     background:
     linear-gradient(
         135deg,
-        rgba(255,255,255,.16),
-        rgba(255,255,255,.06)
+        rgba(255,216,77,.20),
+        rgba(255,152,0,.10)
+    );
+
+    border:1px solid rgba(255,216,77,.30);
+
+    backdrop-filter:blur(12px);
+
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:1px;
+
+    color:#fff;
+
+    box-shadow:
+    0 0 25px rgba(255,216,77,.15);
+}
+
+#targetScore{
+    color:var(--yellow);
+
+    font-size:28px;
+
+    font-family:'Orbitron',sans-serif;
+    font-weight:900;
+
+    margin-left:8px;
+
+    text-shadow:
+    0 0 20px rgba(255,216,77,.55);
+}
+
+/* =========================================================
+RIGHT STATS
+========================================================= */
+
+.right-top{
+    display:flex;
+    gap:18px;
+}
+
+.stat{
+    min-width:150px;
+
+    padding:16px 20px;
+
+    border-radius:24px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.15),
+        rgba(255,255,255,.05)
     );
 
     border:1px solid rgba(255,255,255,.08);
 
     text-align:center;
-
 }
 
 .stat-label{
-
     font-size:12px;
-
     letter-spacing:2px;
-
     color:#ddd;
-
     margin-bottom:8px;
-
 }
 
 .stat-value{
-
     font-size:28px;
     font-weight:900;
-
     color:var(--cyan);
-
 }
 
 /* =========================================================
@@ -433,15 +397,13 @@ MIDDLE
 ========================================================= */
 
 .middle{
-
     flex:1;
-
     position:relative;
 
     display:flex;
-    justify-content:center;
+    flex-direction:column;
     align-items:center;
-
+    justify-content:center;
 }
 
 /* =========================================================
@@ -449,30 +411,30 @@ VERSUS
 ========================================================= */
 
 .versus{
+    position:relative;
+
+    top:-70px;
 
     display:flex;
     align-items:center;
-    gap:130px;
+    gap:170px;
 
+    z-index:2;
 }
 
 .team{
-
     display:flex;
     flex-direction:column;
     align-items:center;
     gap:18px;
-
 }
 
 .team-logo{
-
     width:180px;
     height:180px;
 
-    border-radius:50%;
-
     object-fit:cover;
+    border-radius:50%;
 
     border:6px solid rgba(255,255,255,.22);
 
@@ -480,11 +442,10 @@ VERSUS
     0 0 40px rgba(255,255,255,.2),
     0 0 90px rgba(0,229,255,.18);
 
-    animation:floatLogo 4s infinite ease-in-out;
-
+    animation:logoFloat 4s infinite ease-in-out;
 }
 
-@keyframes floatLogo{
+@keyframes logoFloat{
 
     0%,100%{
         transform:translateY(0);
@@ -493,18 +454,14 @@ VERSUS
     50%{
         transform:translateY(-10px);
     }
-
 }
 
 .team-name{
-
     font-size:34px;
     font-weight:900;
-
 }
 
 .vs{
-
     font-size:120px;
 
     font-family:'Orbitron',sans-serif;
@@ -520,7 +477,6 @@ VERSUS
 
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
-
 }
 
 /* =========================================================
@@ -528,63 +484,57 @@ COMMENTARY
 ========================================================= */
 
 .commentary-wrap{
-
     position:absolute;
 
-    bottom:170px;
+    bottom:140px;
 
     width:100%;
 
     display:flex;
     justify-content:center;
 
+    z-index:1;
 }
 
 .commentary-box{
+    width:72%;
 
-    width:65%;
+    padding:28px 36px;
 
-    padding:28px 35px;
-
-    border-radius:35px;
+    border-radius:34px;
 
     background:
     linear-gradient(
         135deg,
         rgba(255,255,255,.16),
-        rgba(255,255,255,.06)
+        rgba(255,255,255,.05)
     );
 
     border:1px solid rgba(255,255,255,.1);
 
     backdrop-filter:blur(20px);
 
+    box-shadow:
+    0 10px 40px rgba(0,0,0,.35);
 }
 
 .commentary-head{
-
     display:flex;
     align-items:center;
     gap:12px;
-
     margin-bottom:14px;
-
 }
 
 .live-dot{
-
     width:14px;
     height:14px;
-
     border-radius:50%;
-
     background:#ff1744;
 
     box-shadow:
     0 0 18px #ff1744;
 
     animation:dotBlink 1s infinite;
-
 }
 
 @keyframes dotBlink{
@@ -596,27 +546,19 @@ COMMENTARY
     50%{
         transform:scale(.7);
     }
-
 }
 
 .commentary-label{
-
-    color:var(--cyan);
-
     font-size:14px;
     font-weight:900;
-
     letter-spacing:3px;
-
+    color:var(--cyan);
 }
 
 .commentary{
-
-    font-size:36px;
+    font-size:34px;
     font-weight:800;
-
-    line-height:1.4;
-
+    line-height:1.5;
 }
 
 /* =========================================================
@@ -624,31 +566,26 @@ BOTTOM PLAYERS
 ========================================================= */
 
 .bottom{
-
     width:100%;
-    height:210px;
+    min-height:210px;
 
-    border-radius:35px;
+    padding:22px;
+
+    border-radius:34px;
 
     background:rgba(255,255,255,.12);
 
     border:1px solid rgba(255,255,255,.08);
 
     backdrop-filter:blur(20px);
-
-    padding:22px;
-
 }
 
 .players{
-
     display:flex;
     gap:20px;
-
 }
 
 .player{
-
     flex:1;
 
     display:flex;
@@ -665,30 +602,23 @@ BOTTOM PLAYERS
         rgba(255,255,255,.16),
         rgba(255,255,255,.05)
     );
-
 }
 
 .player img{
-
     width:110px;
     height:110px;
 
     border-radius:50%;
-
     object-fit:cover;
 
     border:4px solid rgba(255,255,255,.2);
-
 }
 
 .player-details{
-
     flex:1;
-
 }
 
 .player-role{
-
     display:inline-block;
 
     padding:6px 14px;
@@ -703,18 +633,14 @@ BOTTOM PLAYERS
     font-weight:900;
 
     margin-bottom:10px;
-
 }
 
 .player-name{
-
     font-size:28px;
     font-weight:900;
-
 }
 
 .player-score{
-
     margin-top:6px;
 
     font-size:38px;
@@ -723,17 +649,12 @@ BOTTOM PLAYERS
     font-weight:900;
 
     color:var(--yellow);
-
 }
 
 .player-extra{
-
     margin-top:6px;
-
     font-size:14px;
-
     color:#eee;
-
 }
 
 /* =========================================================
@@ -741,7 +662,6 @@ EVENT POPUP
 ========================================================= */
 
 .event-screen{
-
     position:absolute;
     inset:0;
 
@@ -750,17 +670,14 @@ EVENT POPUP
     align-items:center;
 
     pointer-events:none;
-
 }
 
 .event-popup{
-
     font-size:200px;
     font-family:'Orbitron',sans-serif;
     font-weight:900;
 
     animation:eventAnim 1s ease forwards;
-
 }
 
 @keyframes eventAnim{
@@ -776,7 +693,6 @@ EVENT POPUP
         opacity:1;
         filter:blur(0);
     }
-
 }
 
 /* =========================================================
@@ -784,31 +700,28 @@ TIMELINE
 ========================================================= */
 
 .timeline{
-
     position:absolute;
 
-    bottom:10px;
+    bottom:15px;
     left:50%;
 
     transform:translateX(-50%);
 
-    width:95%;
+    width:96%;
 
     display:flex;
     gap:15px;
 
     overflow-x:auto;
 
+    padding-bottom:4px;
 }
 
 .timeline::-webkit-scrollbar{
-
     display:none;
-
 }
 
 .timeline-card{
-
     min-width:230px;
 
     padding:18px;
@@ -825,42 +738,32 @@ TIMELINE
     border:1px solid rgba(255,255,255,.08);
 
     backdrop-filter:blur(15px);
-
 }
 
 .timeline-head{
-
     display:flex;
     justify-content:space-between;
 
     margin-bottom:12px;
 
     font-weight:800;
-
 }
 
 .timeline-over{
-
     color:var(--cyan);
-
 }
 
 .timeline-total{
-
     color:var(--yellow);
-
 }
 
 .timeline-balls{
-
     display:flex;
     flex-wrap:wrap;
     gap:8px;
-
 }
 
 .ball{
-
     width:38px;
     height:38px;
 
@@ -871,9 +774,35 @@ TIMELINE
     align-items:center;
 
     font-weight:900;
+    color:#fff;
+}
 
-    color:white;
+/* =========================================================
+RESPONSIVE
+========================================================= */
 
+@media(max-width:1400px){
+
+    .versus{
+        gap:120px;
+    }
+
+    .team-logo{
+        width:150px;
+        height:150px;
+    }
+
+    .vs{
+        font-size:90px;
+    }
+
+    .commentary{
+        font-size:28px;
+    }
+
+    .score{
+        font-size:70px;
+    }
 }
 
 </style>
@@ -882,18 +811,13 @@ TIMELINE
 <body>
 
 <!-- =========================================================
-CINEMATIC STADIUM VIDEO BACKGROUND
+VIDEO BG
 ========================================================= -->
 
 <div class="video-bg">
-
     <video autoplay muted loop playsinline>
-
-        <!-- Replace with your own stadium video -->
-        <source src="/static/stadium.mp4" type="video/mp4">
-
+        <source src="/static/11755921-uhd_4096_2160.mp4" type="video/mp4">
     </video>
-
 </div>
 
 <div class="video-overlay"></div>
@@ -910,7 +834,8 @@ MAIN
 
 <div class="broadcast">
 
-    <!-- TOP -->
+    <!-- TOP BAR -->
+
     <div class="top-bar">
 
         <div class="left-top">
@@ -929,17 +854,36 @@ MAIN
 
         </div>
 
-        <div class="center-score">
+        <!-- CENTER -->
 
-            <div class="score">
-                0/0
+        <div class="center-wrapper">
+
+            <div class="center-score">
+
+                <div class="score">
+                    0/0
+                </div>
+
+                <div class="live">
+                    LIVE
+                </div>
+
             </div>
 
-            <div class="live">
-                LIVE
+            <!-- TARGET IMPLEMENTED -->
+
+            <div class="target-box">
+
+                TARGET:
+                <span id="targetScore">
+                    210
+                </span>
+
             </div>
 
         </div>
+
+        <!-- RIGHT -->
 
         <div class="right-top">
 
@@ -972,6 +916,7 @@ MAIN
     </div>
 
     <!-- MIDDLE -->
+
     <div class="middle">
 
         <div class="versus">
@@ -1009,6 +954,7 @@ MAIN
         </div>
 
         <!-- COMMENTARY -->
+
         <div class="commentary-wrap">
 
             <div class="commentary-box">
@@ -1032,19 +978,23 @@ MAIN
         </div>
 
         <!-- EVENT -->
+
         <div class="event-screen"></div>
 
         <!-- TIMELINE -->
+
         <div class="timeline"></div>
 
     </div>
 
     <!-- BOTTOM -->
+
     <div class="bottom">
 
         <div class="players">
 
             <!-- STRIKER -->
+
             <div class="player">
 
                 <img id="strikerImg" src="/static/player.png">
@@ -1072,6 +1022,7 @@ MAIN
             </div>
 
             <!-- NON STRIKER -->
+
             <div class="player">
 
                 <img id="nonStrikerImg" src="/static/player.png">
@@ -1099,6 +1050,7 @@ MAIN
             </div>
 
             <!-- BOWLER -->
+
             <div class="player">
 
                 <img id="bowlerImg" src="/static/player.png">
@@ -1131,197 +1083,160 @@ MAIN
 
 </div>
 
-<!-- AUDIO -->
+<!-- =========================================================
+AUDIO
+========================================================= -->
+
 <audio id="crowdCheer" src="/static/crowd_cheer.mp3"></audio>
 <audio id="crowdShock" src="/static/crowd_shock.mp3"></audio>
 
+<!-- =========================================================
+SCRIPT
+========================================================= -->
 <script>
-
 /* =========================================================
-PARTICLES
+PARTICLES GENERATION
 ========================================================= */
 
-const particles =
-document.getElementById("particles");
+const particlesContainer = document.getElementById("particles");
 
-for(let i=0;i<80;i++){
+function createParticles(count = 80) {
 
-    const p =
-    document.createElement("div");
+    if (!particlesContainer) return;
 
-    p.className = "particle";
+    for (let i = 0; i < count; i++) {
 
-    p.style.left =
-    Math.random()*100 + "%";
+        const p = document.createElement("div");
+        p.className = "particle";
 
-    p.style.animationDuration =
-    (6 + Math.random()*10) + "s";
+        p.style.left = Math.random() * 100 + "%";
+        p.style.animationDuration = (6 + Math.random() * 10) + "s";
+        p.style.animationDelay = Math.random() * 5 + "s";
 
-    p.style.animationDelay =
-    Math.random()*5 + "s";
-
-    particles.appendChild(p);
-
+        particlesContainer.appendChild(p);
+    }
 }
 
+createParticles();
+
 /* =========================================================
-WEBSOCKET
+WEBSOCKET CONNECTION
 ========================================================= */
 
-const ws =
-new WebSocket("ws://127.0.0.1:8000/ws");
+const ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
 let lastEventTime = 0;
 
 /* =========================================================
-HELPERS
+DOM HELPERS
 ========================================================= */
 
-function setText(selector,value){
+function setText(selector, value) {
 
-    const el =
-    document.querySelector(selector);
+    const el = document.querySelector(selector);
+    if (!el) return;
 
-    if(el){
-
-        el.innerText =
-        value ?? "-";
-
-    }
-
+    el.innerText = (value !== undefined && value !== null) ? value : "-";
 }
 
-function setImage(selector,src){
+function setImage(selector, src, fallback = "/static/player.png") {
 
-    const el =
-    document.querySelector(selector);
+    const el = document.querySelector(selector);
+    if (!el) return;
 
-    if(el){
-
-        el.src =
-        src || "/static/player.png";
-
-    }
-
+    el.src = src || fallback;
 }
 
-function playSound(id){
+function playSound(id) {
 
-    const audio =
-    document.getElementById(id);
-
-    if(!audio) return;
+    const audio = document.getElementById(id);
+    if (!audio) return;
 
     audio.currentTime = 0;
-
-    audio.play().catch(()=>{});
-
+    audio.play().catch(() => {});
 }
 
 /* =========================================================
-SHOW EVENT
+EVENT DISPLAY SYSTEM
 ========================================================= */
 
-function showEvent(type){
+function showEvent(type) {
 
-    const screen =
-    document.querySelector(".event-screen");
+    const screen = document.querySelector(".event-screen");
+    if (!screen) return;
 
     let color = "#00e5ff";
 
-    if(type === "SIX"){
-
+    if (type === "SIX") {
         color = "#ffd84d";
-
         playSound("crowdCheer");
-
     }
 
-    if(type === "WICKET"){
+    if (type === "FOUR") {
+        color = "#00ff88";
+        playSound("crowdCheer");
+    }
 
+    if (type === "WICKET") {
         color = "#ff1744";
-
         playSound("crowdShock");
-
     }
 
     screen.innerHTML = `
-
-        <div
-        class="event-popup"
-        style="
-            color:${color};
-            text-shadow:
-            0 0 30px ${color},
-            0 0 90px ${color};
-        ">
-            ${type}!
+        <div class="event-popup"
+            style="
+                color:${color};
+                text-shadow:0 0 30px ${color}, 0 0 90px ${color};
+            ">
+            ${type}
         </div>
-
     `;
 
-    setTimeout(()=>{
-
+    setTimeout(() => {
         screen.innerHTML = "";
-
-    },2500);
-
+    }, 2000);
 }
 
 /* =========================================================
-TIMELINE
+TIMELINE RENDER
 ========================================================= */
 
-function renderTimeline(overs){
+function renderTimeline(overs = []) {
 
-    const timeline =
-    document.querySelector(".timeline");
+    const timeline = document.querySelector(".timeline");
+    if (!timeline) return;
 
     timeline.innerHTML = "";
 
-    if(!Array.isArray(overs))
-        return;
+    if (!Array.isArray(overs)) return;
 
-    overs.slice(-5).forEach(over=>{
+    const lastOvers = overs.slice(-5);
+
+    lastOvers.forEach(over => {
 
         let ballsHTML = "";
 
-        (over.balls || []).forEach(ball=>{
+        (over.balls || []).forEach(ball => {
 
             let bg = "#374151";
 
-            if(ball == 4)
-                bg = "#00c853";
-
-            if(ball == 6)
-                bg = "#ff9800";
-
-            if(ball == "W")
-                bg = "#ff1744";
+            if (ball == 4) bg = "#00c853";
+            if (ball == 6) bg = "#ff9800";
+            if (ball === "W") bg = "#ff1744";
 
             ballsHTML += `
-                <div class="ball"
-                style="background:${bg}">
+                <div class="ball" style="background:${bg}">
                     ${ball}
                 </div>
             `;
-
         });
 
         timeline.innerHTML += `
-
             <div class="timeline-card">
 
                 <div class="timeline-head">
-
-                    <div class="timeline-over">
-                        ${over.over || ""}
-                    </div>
-
-                    <div class="timeline-total">
-                        ${over.total || ""}
-                    </div>
-
+                    <div class="timeline-over">${over.over || ""}</div>
+                    <div class="timeline-total">${over.total || ""}</div>
                 </div>
 
                 <div class="timeline-balls">
@@ -1329,284 +1244,169 @@ function renderTimeline(overs){
                 </div>
 
             </div>
-
         `;
-
     });
-
 }
 
 /* =========================================================
-DETECT EVENT
+EVENT DETECTOR (FOUR / SIX / WICKET)
 ========================================================= */
 
-function detectEvent(boxes){
+function detectEvent(boxes) {
 
-    if(!boxes)
-        return null;
+    if (!boxes || !Array.isArray(boxes)) return null;
 
-    const text =
-    boxes.join(" ").toUpperCase();
+    const text = boxes.join(" ").toUpperCase();
 
-    if(
-        text.includes("WICKET") ||
-        text.includes("BOWLED")
-    ){
-        return "WICKET";
-    }
+    if (text.includes("WICKET") || text.includes("BOWLED")) return "WICKET";
 
-    if(
-        text.includes("SIX") ||
-        text.includes(" 6 ")
-    ){
-        return "SIX";
-    }
+    if (text.includes("SIX") || text.includes(" 6 ")) return "SIX";
 
-    if(
-        text.includes("FOUR") ||
-        text.includes(" 4 ")
-    ){
-        return "FOUR";
-    }
+    if (text.includes("FOUR") || text.includes(" 4 ")) return "FOUR";
 
     return null;
-
 }
 
 /* =========================================================
-WEBSOCKET DATA
+WEBSOCKET MESSAGE HANDLER
 ========================================================= */
 
-ws.onmessage = (event)=>{
+ws.onmessage = (event) => {
 
-    try{
+    try {
 
-        const d =
-        JSON.parse(event.data);
+        const d = JSON.parse(event.data);
 
-        console.log(d);
+        const flags = d.flags || {};
+        const livePlayers = d.live_players || {};
 
-        const flags =
-        d.flags || {};
+        const batsmen = livePlayers.batsmen || [];
+        const bowler = livePlayers.bowler || null;
 
-        const livePlayers =
-        d.live_players || {};
+        /* =========================
+        TOP BAR
+        ========================= */
 
-        const batsmen =
-        livePlayers.batsmen || [];
-
-        const bowler =
-        livePlayers.bowler || null;
-
-        /* TOP */
-
-        setText(
-            ".teams",
+        setText(".teams",
             `${flags.team_a_name || "TEAM A"} vs ${flags.team_b_name || "TEAM B"}`
         );
 
-        setText(
-            ".match-info",
-            flags.match_info || "LIVE MATCH"
+        setText(".match-info", flags.match_info || "LIVE MATCH");
+        setText(".overs", `${d.overs || "0.0"} Overs`);
+        setText(".score", d.score || "0/0");
+
+        setText("#crr", d.crr || "0.00");
+        setText("#partnership", d.partnership || "0(0)");
+
+        /* =========================
+        TARGET
+        ========================= */
+
+        setText("#targetScore", d.target || d.target_score || "210");
+
+        /* =========================
+        TEAM FLAGS
+        ========================= */
+
+        setText("#teamA", flags.team_a_name || "TEAM A");
+        setText("#teamB", flags.team_b_name || "TEAM B");
+
+        setImage("#teamAFlag", flags.team_a_flag);
+        setImage("#teamB", flags.team_b_flag);
+
+        /* =========================
+        COMMENTARY
+        ========================= */
+
+        setText("#commentary",
+            d.commentary || "LIVE MATCH IN PROGRESS"
         );
 
-        setText(
-            ".overs",
-            `${d.overs || "0.0"} Overs`
-        );
+        /* =========================
+        STRIKER
+        ========================= */
 
-        setText(
-            ".score",
-            d.score || "0/0"
-        );
+        if (batsmen[0]) {
 
-        setText(
-            "#crr",
-            d.crr || "0.00"
-        );
-
-        setText(
-            "#partnership",
-            d.partnership || "0(0)"
-        );
-
-        /* TEAMS */
-
-        setText(
-            "#teamA",
-            flags.team_a_name || "TEAM A"
-        );
-
-        setText(
-            "#teamB",
-            flags.team_b_name || "TEAM B"
-        );
-
-        setImage(
-            "#teamAFlag",
-            flags.team_a_flag
-        );
-
-        setImage(
-            "#teamBFlag",
-            flags.team_b_flag
-        );
-
-        /* COMMENTARY */
-
-        let commentary =
-        "LIVE MATCH IN PROGRESS";
-
-        if(d.commentary){
-
-            commentary =
-            d.commentary;
-
-        }
-
-        setText(
-            "#commentary",
-            commentary
-        );
-
-        /* STRIKER */
-
-        if(batsmen[0]){
-
-            setText(
-                "#strikerName",
-                batsmen[0].name
-            );
-
-            setText(
-                "#strikerScore",
+            setText("#strikerName", batsmen[0].name);
+            setText("#strikerScore",
                 `${batsmen[0].runs || 0} (${batsmen[0].balls || 0})`
             );
 
-            setImage(
-                "#strikerImg",
-                batsmen[0].image
-            );
-
+            setImage("#strikerImg", batsmen[0].image);
         }
 
-        /* NON STRIKER */
+        /* =========================
+        NON STRIKER
+        ========================= */
 
-        if(batsmen[1]){
+        if (batsmen[1]) {
 
-            setText(
-                "#nonStrikerName",
-                batsmen[1].name
-            );
-
-            setText(
-                "#nonStrikerScore",
+            setText("#nonStrikerName", batsmen[1].name);
+            setText("#nonStrikerScore",
                 `${batsmen[1].runs || 0} (${batsmen[1].balls || 0})`
             );
 
-            setImage(
-                "#nonStrikerImg",
-                batsmen[1].image
-            );
-
+            setImage("#nonStrikerImg", batsmen[1].image);
         }
 
-        /* BOWLER */
+        /* =========================
+        BOWLER
+        ========================= */
 
-        if(bowler){
+        if (bowler) {
 
-            setText(
-                "#bowlerName",
-                bowler.name
-            );
-
-            setText(
-                "#bowlerScore",
+            setText("#bowlerName", bowler.name);
+            setText("#bowlerScore",
                 `${bowler.wickets || 0}/${bowler.runs || 0}`
             );
 
-            setImage(
-                "#bowlerImg",
-                bowler.image
-            );
-
+            setImage("#bowlerImg", bowler.image);
         }
 
-        /* TIMELINE */
+        /* =========================
+        TIMELINE
+        ========================= */
 
-        renderTimeline(
-            d.overs_timeline || []
-        );
+        renderTimeline(d.overs_timeline || []);
 
-        /* EVENT */
+        /* =========================
+        EVENT DETECTION
+        ========================= */
 
-        let eventType =
-        d.event || null;
+        let eventType = d.event || null;
 
-        if(!eventType){
-
-            eventType =
-            detectEvent(
-                d.result_boxes || []
-            );
-
+        if (!eventType) {
+            eventType = detectEvent(d.result_boxes || []);
         }
 
-        const eventTime =
-        d.event_time ||
-        d.updated ||
-        Date.now();
+        const eventTime = d.event_time || d.updated || Date.now();
 
-        if(
-            eventType &&
-            eventTime !== lastEventTime
-        ){
+        if (eventType && eventTime !== lastEventTime) {
 
-            lastEventTime =
-            eventTime;
-
-            showEvent(
-                eventType
-            );
-
+            lastEventTime = eventTime;
+            showEvent(eventType);
         }
 
+    } catch (err) {
+        console.error("WS ERROR:", err);
     }
-    catch(err){
-
-        console.error(err);
-
-    }
-
 };
 
 /* =========================================================
-SOCKET STATUS
+WEBSOCKET STATUS
 ========================================================= */
 
-ws.onopen = ()=>{
-
-    console.log(
-        "WEBSOCKET CONNECTED"
-    );
-
+ws.onopen = () => {
+    console.log("WEBSOCKET CONNECTED");
 };
 
-ws.onclose = ()=>{
-
-    console.log(
-        "WEBSOCKET DISCONNECTED"
-    );
-
+ws.onclose = () => {
+    console.log("WEBSOCKET DISCONNECTED");
 };
 
-ws.onerror = (err)=>{
-
-    console.log(
-        "SOCKET ERROR:",
-        err
-    );
-
+ws.onerror = (err) => {
+    console.log("SOCKET ERROR:", err);
 };
 
 </script>
