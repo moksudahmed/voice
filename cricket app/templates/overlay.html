@@ -12,6 +12,10 @@
 
 /* =========================================================
 RESET
+=
+
+/* =========================================================
+RESET
 ========================================================= */
 
 *{
@@ -411,13 +415,13 @@ VERSUS
 ========================================================= */
 
 .versus{
-    position:relative;
+    position:inherit;
 
-    top:-70px;
+    bottom:150px;
 
     display:flex;
-    align-items:center;
-    gap:170px;
+    align-items:flex-start;
+    gap:354px;
 
     z-index:2;
 }
@@ -462,7 +466,7 @@ VERSUS
 }
 
 .vs{
-    font-size:120px;
+    font-size:84px;
 
     font-family:'Orbitron',sans-serif;
     font-weight:900;
@@ -486,9 +490,9 @@ COMMENTARY
 .commentary-wrap{
     position:absolute;
 
-    bottom:140px;
+    bottom:150px;
 
-    width:100%;
+    width:150%;
 
     display:flex;
     justify-content:center;
@@ -497,7 +501,7 @@ COMMENTARY
 }
 
 .commentary-box{
-    width:72%;
+    width:26%;
 
     padding:28px 36px;
 
@@ -805,6 +809,7 @@ RESPONSIVE
     }
 }
 
+
 </style>
 </head>
 
@@ -874,9 +879,9 @@ MAIN
 
             <div class="target-box">
 
-                TARGET:
+                
                 <span id="targetScore">
-                    210
+                   
                 </span>
 
             </div>
@@ -1282,7 +1287,7 @@ ws.onmessage = (event) => {
 
         const batsmen = livePlayers.batsmen || [];
         const bowler = livePlayers.bowler || null;
-
+        console.log(d)
         /* =========================
         TOP BAR
         ========================= */
@@ -1302,7 +1307,7 @@ ws.onmessage = (event) => {
         TARGET
         ========================= */
 
-        setText("#targetScore", d.target || d.target_score || "210");
+        setText("#targetScore", d.target || d.target_score || "");
 
         /* =========================
         TEAM FLAGS
@@ -1312,7 +1317,7 @@ ws.onmessage = (event) => {
         setText("#teamB", flags.team_b_name || "TEAM B");
 
         setImage("#teamAFlag", flags.team_a_flag);
-        setImage("#teamB", flags.team_b_flag);
+        setImage("#teamBFlag", flags.team_b_flag);
 
         /* =========================
         COMMENTARY
@@ -1358,7 +1363,7 @@ ws.onmessage = (event) => {
 
             setText("#bowlerName", bowler.name);
             setText("#bowlerScore",
-                `${bowler.wickets || 0}/${bowler.runs || 0}`
+                `${bowler.figures}`
             );
 
             setImage("#bowlerImg", bowler.image);

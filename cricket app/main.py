@@ -194,6 +194,7 @@ RUN_EVENT_MAP = {
 }
 
 EXTRA_EVENT_MAP = {
+    "Ball":"BOWLER_RUNUP",
     "Wide": "WIDE",
     "No Ball": "NO_BALL",
     "Bye": "BYE"
@@ -278,7 +279,7 @@ def get_milestone_comment(name, runs):
         return f"🔥 অসাধারণ ইনিংস! {name} সেঞ্চুরি (১০০ রান) পূর্ণ করেছে! গ্যালারি উল্লাসে ফেটে পড়ছে!"
     return None
 
-def generate_continuous_commentary(events, batsmen, bowler, score, team1=None, team2=None, context=None):
+def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=None, team2=None, context=None):
     """
     Generate a smooth, human-like cricket commentary for a sequence of events
     - events: list of strings (SIX, FOUR, WICKET, DOUBLE, SINGLE, DOT, WIDE, NO_BALL, OVER_COMPLETE)
@@ -288,16 +289,24 @@ def generate_continuous_commentary(events, batsmen, bowler, score, team1=None, t
     - over: current over (float)
     - team1, team2: optional team names for updates
     """
-    has_alpha = any(c.isalpha() for c in context)
+    """has_alpha = any(c.isalpha() for c in context)
     #has_digit = any(c.isdigit() for c in context)
-    runs, wickets, over, ball = score
+    
     status = None
     if has_alpha:
         status = context
-        print("Context", context)
+        print("Context", context)"""
     
+    runs, wickets = map(int, score.split("/"))
+    print(runs, wickets)
+    print(team1, team2)
     
     parts = []
+    print(bowler['name'])
+    if events == "BOWLER_RUNUP":  
+        print(bowler['name'])
+        #comment = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler['bowler']) 
+        #parts.append(comment)                                   
 
     # 1️⃣ WICKET has highest priority
     if "WICKET" in events:
@@ -352,7 +361,7 @@ def generate_continuous_commentary(events, batsmen, bowler, score, team1=None, t
                 f"এই সময় {team1} বনাম {team2} ম্যাচে স্কোর {number_to_bangla_words(runs)} রানে {number_to_bangla_words(wickets)} উইকেট। "
                 f"{number_to_bangla_words(over)} ওভার শেষ হয়েছে, দলের সংগ্রহ ভালোভাবে এগুচ্ছে। ম্যাচে উত্তেজনা অব্যাহত!"
             )
-            parts.append(welcome_msg)     
+            parts.append(welcome_msg)    
 
     # Combine all commentary parts naturally
     return " ".join(parts)
@@ -360,7 +369,7 @@ def generate_continuous_commentary(events, batsmen, bowler, score, team1=None, t
 # 🎯 EVENT DETECTION (FAST + SAFE FALLBACK)
 # =====================================================
 
-"""def detect_event(event):
+def detect_event(event):
 
     # normalize input (helps avoid mismatch like "wide " or "WIDE")
     if event is None:
@@ -374,7 +383,7 @@ def generate_continuous_commentary(events, batsmen, bowler, score, team1=None, t
         or EXTRA_EVENT_MAP.get(key)
         or BREAK_EVENT_MAP.get(key)
         or "UNKNOWN_EVENT"
-    )"""
+    )
 def detect_run_event(event):
     if event == "6":
         return "SIX"
@@ -646,7 +655,7 @@ async def ensure_flags_loaded():
     global FLAGS_LOADED, FLAGS_URL
 
     url = STATE["url"]
-    print("Hello World")
+    
     if not url:
         return
 
@@ -677,6 +686,9 @@ def remove_first_part(name):
     parts = name.split(" ", 1)
     return parts[1] if len(parts) > 1 else name
 
+def get_last_name(name):
+    return name.strip().split()[-1]
+
 def is_valid_flags(flags):
     return (
         flags
@@ -688,92 +700,63 @@ def swap_teams(flags: dict):
     flags["team_a_name"], flags["team_b_name"] = flags.get("team_b_name"), flags.get("team_a_name")
     flags["team_a_flag"], flags["team_b_flag"] = flags.get("team_b_flag"), flags.get("team_a_flag")
 
+
+def parse_bowler(data):
+    """
+    Extract exactly 2 batsmen (clean & accurate)
+    """
+  
+    bowler = data["name"]
+    bowler_fig = data["figures"]
+    
+       
+    match = re.search(r'(\d+)-(\d+)\s*\((\d+\.\d)\)', bowler_fig)
+    wickets = 0
+    runs = 0
+    overs = 0
+    if match:
+        wickets = int(match.group(1))
+        runs = int(match.group(2))
+        overs = match.group(3)
+
+        print("Wickets:", wickets)
+        print("Runs:", runs)
+        print("Overs:", overs)
+        print("Test Name", bowler)
+    
+    return {
+            "name": remove_first_part(bowler),
+            "runs_conceded": runs,
+            "wickets": wickets,
+            "overs": overs
+        }
+
 def parse_batsmen(data):
     """
     Extract exactly 2 batsmen (clean & accurate)
     """
-    striker = data["striker"][0]
-    striker_balls = data["striker_balls"][0]
-    striker_runs = data["striker_runs"][0]
-    non_striker = data["non_striker"][0]
-    non_striker_balls = data["non_striker_balls"][0]
-    non_striker_runs = data["non_striker_runs"][0]
-    
+    striker = data["striker"]
+    striker_balls = data["striker_balls"]
+    striker_runs = data["striker_runs"]
+    non_striker = data["non_striker"]
+    non_striker_balls = data["non_striker_balls"]
+    non_striker_runs = data["non_striker_runs"]
+    print(striker, striker_balls, striker_runs)
+    print(non_striker, non_striker_balls, non_striker_runs)
     return [
             {
-                "name": remove_first_part(striker),
+                "name": get_last_name(striker),
                 "runs": int(striker_runs),
                 "balls": int(striker_balls),
             },
              {
-                "name": remove_first_part(non_striker),
+                "name": get_last_name(non_striker),
                 "runs": int(non_striker_runs),
                 "balls": int(non_striker_balls),
             },
         ]
-
-async def scraper():
-
-    playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch(headless=True)
-    page = await browser.new_page()
-    innings_state = False
-    last_state = None
-    last_event = ""
-    while True:
-
-        try:
-
-            if not STATE["url"]:
-                await asyncio.sleep(0.15)
-                continue
-
-            # =====================================================
-            # FIRST LOAD ONLY
-            # =====================================================
-            if not STATE["connected"]:
-
-                await page.goto(
-                    STATE["url"],
-                    wait_until="domcontentloaded"
-                )
-
-                await page.wait_for_timeout(2000)
-
-                # 🔥 fast mutation flag
-                await page.evaluate("""
-                    window.__dirty = true;
-
-                    const obs = new MutationObserver(() => {
-                        window.__dirty = true;
-                    });
-
-                    obs.observe(document.body, {
-                        childList: true,
-                        subtree: true,
-                        characterData: true
-                    });
-                """)
-
-                STATE["connected"] = True
-
-            # =====================================================
-            # SKIP IF NO CHANGE
-            # =====================================================
-            if not await page.evaluate("window.__dirty"):
-                await asyncio.sleep(0.12)
-                continue
-
-            await page.evaluate("window.__dirty = false")
-
-            # =====================================================
-            # 🔥 FULL HYBRID DOM + TEXT ENGINE
-            # =====================================================
-            # =====================================================
-            # 🔥 FULL HYBRID DOM + TEXT ENGINE (REWRITTEN)
-            # =====================================================
-
-            parsed = await page.evaluate("""
+async def scrap_page(page):
+    return await page.evaluate("""
             () => {
 
                 // =================================================
@@ -848,6 +831,9 @@ async def scraper():
 
                     // RESULT
                     result_boxes: [],
+                                         
+                    //Target Run
+                    target: "",
 
                     // PLAYERS
                     live_players: {
@@ -1254,6 +1240,35 @@ async def scraper():
                         data.overs_timeline.push(overData);
                     });
 
+                                         
+
+                    // =================================================
+                    // RESULT / MATCH STATUS
+                    // =================================================
+
+                    // final result text
+                    const finalResultEl =
+                        document.querySelector(
+                            ".final-result.m-none"
+                        );
+
+                    if (finalResultEl) {
+
+                        const resultText =
+                            clean(finalResultEl.innerText);
+
+                        if (resultText) {
+
+                            // main status
+                            //data.status = resultText;
+
+                            // separate field
+                            data.target = resultText;
+
+                            // push to result boxes
+                            //data.result_boxes.push(resultText);
+                        }
+                    }
                 // =================================================
                 // RETURN
                 // =================================================
@@ -1261,6 +1276,69 @@ async def scraper():
                 return data;
             }
             """)
+
+async def scraper():
+
+    playwright = await async_playwright().start()
+    browser = await playwright.chromium.launch(headless=True)
+    page = await browser.new_page()
+    innings_state = False
+    last_state = None
+    last_event = ""
+    while True:
+
+        try:
+
+            if not STATE["url"]:
+                await asyncio.sleep(0.15)
+                continue
+
+            # =====================================================
+            # FIRST LOAD ONLY
+            # =====================================================
+            if not STATE["connected"]:
+
+                await page.goto(
+                    STATE["url"],
+                    wait_until="domcontentloaded"
+                )
+
+                await page.wait_for_timeout(2000)
+
+                # 🔥 fast mutation flag
+                await page.evaluate("""
+                    window.__dirty = true;
+
+                    const obs = new MutationObserver(() => {
+                        window.__dirty = true;
+                    });
+
+                    obs.observe(document.body, {
+                        childList: true,
+                        subtree: true,
+                        characterData: true
+                    });
+                """)
+
+                STATE["connected"] = True
+
+            # =====================================================
+            # SKIP IF NO CHANGE
+            # =====================================================
+            if not await page.evaluate("window.__dirty"):
+                await asyncio.sleep(0.12)
+                continue
+
+            await page.evaluate("window.__dirty = false")
+
+            # =====================================================
+            # 🔥 FULL HYBRID DOM + TEXT ENGINE
+            # =====================================================
+            # =====================================================
+            # 🔥 FULL HYBRID DOM + TEXT ENGINE (REWRITTEN)
+            # =====================================================
+
+            parsed = await scrap_page(page)
             # =====================================================
             # SEND ONLY IF CHANGED (FAST HASH STYLE OPTIONAL)
             # =====================================================
@@ -1269,14 +1347,18 @@ async def scraper():
                 last_state = parsed
                 STATE["data"] = parsed
                 event = parsed["result_boxes"][0]
+                print(event)
                 STATE["data"]["commentary"]= event
                 #batsmen = parsed["result_boxes"][0]
                 
                 batsman = parse_batsmen(parsed)
-                print(batsman)
-                bowler = ""
-                #commentary = generate_continuous_commentary(event, batsman, bowler, STATE["data"]["score"][0], STATE["flags"]["team_a_name"], STATE["flags"]["team_b_name"], event)
-                commentary = get_bangla_commentary(event)
+                
+                bowler = parse_bowler(parsed["live_players"]['bowler'])
+                #print("Score Card")
+                #print(STATE["data"]["score"])
+                commentary = generate_continuous_commentary(detect_event(event), batsman, bowler, parsed["score"], parsed["overs"], STATE["flags"]["team_a_name"], STATE["flags"]["team_b_name"], event)
+                #commentary = get_bangla_commentary(event)
+                print(commentary)
                 
                 if commentary and event != last_event:
                     speak_bangla(commentary) 
