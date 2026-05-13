@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from playwright.sync_api import sync_playwright
 from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary
-from voice import speak
+#from voice import speak
 
 def detect_game_status(data):
     """
@@ -189,7 +189,7 @@ def handle_break_period(status, page, browser, team=None, runs= None, wickets=No
                     #write_json(runs, wickets, over, ball, event)
                     #print(event)
                     # Speak once (IMPORTANT FIX ✅)
-                    speak("TEA_BREAK", line)
+                   #speak("TEA_BREAK", line)
             time.sleep(30)
         
         print(f"\n   🔄 Checking if match has resumed...")

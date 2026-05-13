@@ -4,20 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from playwright.async_api import async_playwright
 from fastapi.staticfiles import StaticFiles
 import asyncio
-import threading
-import edge_tts
 import random
 from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary, generate_full_commentary
 from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY
 from utill import number_to_bangla_words
-import sounddevice as sd
-import soundfile as sf
 import re
-import pyttsx3
-import time
 from pydantic import BaseModel
+from voice import speak_bangla 
 # =========================================================
 # APP
 # =========================================================
@@ -42,8 +37,10 @@ STATE = {
     "flags": {
         "team_a_flag": "",
         "team_a_name":"",
+        "team_a_full_name": "TEAM A",        
         "team_b_flag": "",
         "team_b_name":"",
+        "team_b_full_name": "TEAM B",
         "match_info": ""
     },
     "data": {}
@@ -59,64 +56,6 @@ match_state = {
     "innings": 1
 }
 clients = set()
-speech_lock = threading.Lock()
-
-def get_bangla_voice(engine):
-    voices = engine.getProperty('voices')
-
-    for v in voices:
-        name = (v.name or "").lower()
-        vid = (v.id or "").lower()
-
-        # Try matching Bengali/Bangla
-        if "bengali" in name or "bangla" in name or "bn" in vid:
-            return v.id
-
-    return None  # fallback
-
-def speak_bangla(text: str):
-    def run():
-        with speech_lock:
-            try:
-                print("🎙 AI SPEAK (BN):", text)
-
-                async def _run():
-                    tts = edge_tts.Communicate(
-                        text,
-                        "bn-BD-NabanitaNeural"   # 🔥 Real Bangla voice
-                    )
-                    await tts.save("temp_bn.wav")
-
-                asyncio.run(_run())
-
-                data, fs = sf.read("temp_bn.wav")
-                sd.play(data, fs)
-                sd.wait()
-
-            except Exception as e:
-                print("❌ TTS ERROR:", e)
-
-    threading.Thread(target=run, daemon=True).start()
-
-
-def speak(text: str):
-    def run():
-        with speech_lock:
-            try:
-                print("🎙 SPEAKING:", text)
-
-                engine = pyttsx3.init()   # 🔥 NEW ENGINE EVERY TIME
-                engine.setProperty("rate", 170)
-                engine.setProperty("volume", 1.0)                
-
-                engine.say(text)
-                engine.runAndWait()
-
-            except Exception as e:
-                print("TTS ERROR:", e)
-
-    threading.Thread(target=run, daemon=True).start()
-
 # =========================
 # GLOBALS
 # =========================
@@ -298,15 +237,14 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
         print("Context", context)"""
     
     runs, wickets = map(int, score.split("/"))
-    print(runs, wickets)
-    print(team1, team2)
+    #print(runs, wickets)   
     
     parts = []
-    print(bowler['name'])
-    if events == "BOWLER_RUNUP":  
-        print(bowler['name'])
-        #comment = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler['bowler']) 
-        #parts.append(comment)                                   
+    
+    if events == "BOWLER_RUNUP":
+        bowler_name = bowler.get("name", "বোলার")
+        comment = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler=bowler_name)
+        parts.append(comment)                      
 
     # 1️⃣ WICKET has highest priority
     if "WICKET" in events:
@@ -346,7 +284,7 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
 
     # 5️⃣ Over complete summary
     if "OVER_COMPLETE" in events:
-        over_comment = ""
+        over_comment = ""        
         if context == "MAIDEN OVER":
             commentary_text = random.choice(COMMENTARY["MAIDEN_OVER"])
             over_comment = commentary_text + f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
@@ -361,7 +299,7 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
                 f"এই সময় {team1} বনাম {team2} ম্যাচে স্কোর {number_to_bangla_words(runs)} রানে {number_to_bangla_words(wickets)} উইকেট। "
                 f"{number_to_bangla_words(over)} ওভার শেষ হয়েছে, দলের সংগ্রহ ভালোভাবে এগুচ্ছে। ম্যাচে উত্তেজনা অব্যাহত!"
             )
-            parts.append(welcome_msg)    
+            parts.append(welcome_msg)
 
     # Combine all commentary parts naturally
     return " ".join(parts)
@@ -479,30 +417,41 @@ async def extract_result_and_ball(page):
 # =========================
 # UPDATE FLAGS
 # =========================
-
 async def extract_team_flags(url):
 
     result = {
         "team_a_name": "TEAM A",
         "team_b_name": "TEAM B",
+
+        "team_a_full_name": "TEAM A",
+        "team_b_full_name": "TEAM B",
+
         "team_a_flag": "",
         "team_b_flag": "",
+
         "match_info": ""
     }
 
+    # ==========================================
+    # VALIDATE URL
+    # ==========================================
     if not url:
         return result
 
     browser = None
 
     try:
-        # =========================
+
+        # ==========================================
         # MATCH DETAILS URL
-        # =========================
+        # ==========================================
         url = url.rstrip("/") + "/match-details"
 
         async with async_playwright() as p:
 
+            # ==========================================
+            # BROWSER
+            # ==========================================
             browser = await p.chromium.launch(
                 headless=True
             )
@@ -511,40 +460,39 @@ async def extract_team_flags(url):
 
             print("🌐 OPENING:", url)
 
+            # ==========================================
+            # OPEN PAGE
+            # ==========================================
             await page.goto(
                 url,
                 timeout=60000,
                 wait_until="domcontentloaded"
             )
 
-            # =========================
-            # WAIT FOR CONTENT
-            # =========================
+            # ==========================================
+            # WAIT FOR MAIN CONTENT
+            # ==========================================
             await page.wait_for_selector(
-                ".team-header-card",
+                "#recent-matches",
                 timeout=30000
             )
 
-            # =========================
-            # EXTRACT MATCH TITLE
-            # =========================
+            # ==========================================
+            # MATCH INFO
+            # ==========================================
             try:
-                raw_match_info = await page.locator(
+
+                match_info_locator = page.locator(
                     ".series-name.mob-none h1.name-wrapper span"
-                ).inner_text()
+                ).first
 
-                raw_match_info = raw_match_info.strip()
+                raw_match_info = (
+                    await match_info_locator.inner_text()
+                ).strip()
 
-                # ====================================
-                # REMOVE EXTRA TEXT
-                # Example:
-                # "LSG vs RCB, 50th T20, IPL 2026 Info,
-                #  Weather Report, Pitch Report & Playing XI"
-                #
-                # OUTPUT:
-                # "LSG vs RCB, 50th T20, IPL 2026"
-                # ====================================
-
+                # ======================================
+                # REMOVE "Info" PART
+                # ======================================
                 clean_match_info = re.split(
                     r"\s+Info\s*,|\s+Info\b",
                     raw_match_info,
@@ -554,58 +502,125 @@ async def extract_team_flags(url):
                 result["match_info"] = clean_match_info
 
             except Exception as e:
+
                 print("❌ MATCH INFO ERROR:", e)
-                result["match_info"] = ""
 
-            # =========================
-            # TEAM CARD
-            # =========================
-            card = page.locator(".team-header-card").first
+            # ==========================================
+            # RECENT MATCHES SECTION
+            # ==========================================
+            recent_section = page.locator(
+                "#recent-matches"
+            )
 
-            # =========================
-            # TEAM 1
-            # =========================
-            team1 = card.locator(".team1").first
+            # ==========================================
+            # TEAM BLOCKS
+            # ==========================================
+            team_blocks = recent_section.locator(
+                ".format-match"
+            )
 
-            team1_name = (
-                await team1.locator(".team-name").inner_text()
+            total_teams = await team_blocks.count()
+
+            if total_teams < 2:
+
+                print("❌ LESS THAN 2 TEAMS FOUND")
+
+                return result
+
+            # ==========================================
+            # TEAM A BLOCK
+            # ==========================================
+            team1_block = team_blocks.nth(0)
+
+            # FULL NAME
+            team1_full_name = (
+                await team1_block.locator(
+                    ".form-team-name"
+                ).first.inner_text()
             ).strip()
 
-            team1_flag = await team1.locator("img").get_attribute("src")
+            # SHORT NAME FROM IMAGE ALT
+            team1_short_name = (
+                await team1_block.locator(
+                    ".form-match-team img"
+                ).first.get_attribute("alt")
+            )
 
-            # =========================
-            # TEAM 2
-            # =========================
-            team2 = card.locator(".team2").first
+            # FLAG
+            team1_flag = (
+                await team1_block.locator(
+                    ".form-match-team img"
+                ).first.get_attribute("src")
+            )
 
-            team2_name = (
-                await team2.locator(".team-name").inner_text()
+            # ==========================================
+            # TEAM B BLOCK
+            # ==========================================
+            team2_block = team_blocks.nth(1)
+
+            # FULL NAME
+            team2_full_name = (
+                await team2_block.locator(
+                    ".form-team-name"
+                ).first.inner_text()
             ).strip()
 
-            team2_flag = await team2.locator("img").get_attribute("src")
+            # SHORT NAME FROM IMAGE ALT
+            team2_short_name = (
+                await team2_block.locator(
+                    ".form-match-team img"
+                ).first.get_attribute("alt")
+            )
 
-            # =========================
-            # FINAL RESULT
-            # =========================
+            # FLAG
+            team2_flag = (
+                await team2_block.locator(
+                    ".form-match-team img"
+                ).first.get_attribute("src")
+            )
+
+            # ==========================================
+            # SAVE DATA
+            # ==========================================
             result.update({
-                "team_a_name": team1_name,
-                "team_b_name": team2_name,
+
+                # SHORT NAMES
+                "team_a_name": (
+                    team1_short_name or team1_full_name
+                ).strip(),
+
+                "team_b_name": (
+                    team2_short_name or team2_full_name
+                ).strip(),
+
+                # FULL NAMES
+                "team_a_full_name": team1_full_name,
+                "team_b_full_name": team2_full_name,
+
+                # FLAGS
                 "team_a_flag": team1_flag or "",
-                "team_b_flag": team2_flag or "",
+                "team_b_flag": team2_flag or ""
             })
+
+            print("✅ TEAM A:", result["team_a_name"])
+            print("✅ TEAM B:", result["team_b_name"])
 
             return result
 
     except Exception as e:
+
         print("❌ FLAG ERROR:", e)
+
         return result
 
     finally:
+
         try:
             if browser:
                 await browser.close()
         except:
             pass
+
 
 async def update_team_flags(url):
 
@@ -622,6 +637,8 @@ async def update_team_flags(url):
             "team_b_flag": data.get("team_b_flag", ""),
             "team_a_name": data.get("team_a_name", ""),
             "team_b_name": data.get("team_b_name", ""),
+            "team_a_full_name": data.get("team_a_full_name", ""),
+            "team_b_full_name": data.get("team_b_full_name", ""),
             "match_info": data.get("match_info", ""),
         }
 
@@ -637,7 +654,7 @@ async def update_team_flags(url):
         )
         #print("Check")
         #print(STATE["data"])
-        print("🏏 FLAGS UPDATED:", STATE["flags"])
+        #print("🏏 FLAGS UPDATED:", STATE["flags"])
 
         return True
 
@@ -698,6 +715,7 @@ def is_valid_flags(flags):
 
 def swap_teams(flags: dict):
     flags["team_a_name"], flags["team_b_name"] = flags.get("team_b_name"), flags.get("team_a_name")
+    flags["team_a_full_name"], flags["team_b_full_name"] = flags.get("team_b_full_name"), flags.get("team_a_full_name")
     flags["team_a_flag"], flags["team_b_flag"] = flags.get("team_b_flag"), flags.get("team_a_flag")
 
 
@@ -719,10 +737,10 @@ def parse_bowler(data):
         runs = int(match.group(2))
         overs = match.group(3)
 
-        print("Wickets:", wickets)
-        print("Runs:", runs)
-        print("Overs:", overs)
-        print("Test Name", bowler)
+        #print("Wickets:", wickets)
+        #print("Runs:", runs)
+        #print("Overs:", overs)
+        #print("Test Name", bowler)
     
     return {
             "name": remove_first_part(bowler),
@@ -741,8 +759,6 @@ def parse_batsmen(data):
     non_striker = data["non_striker"]
     non_striker_balls = data["non_striker_balls"]
     non_striker_runs = data["non_striker_runs"]
-    print(striker, striker_balls, striker_runs)
-    print(non_striker, non_striker_balls, non_striker_runs)
     return [
             {
                 "name": get_last_name(striker),
@@ -1353,22 +1369,25 @@ async def scraper():
                 
                 batsman = parse_batsmen(parsed)
                 
-                bowler = parse_bowler(parsed["live_players"]['bowler'])
-                #print("Score Card")
-                #print(STATE["data"]["score"])
-                commentary = generate_continuous_commentary(detect_event(event), batsman, bowler, parsed["score"], parsed["overs"], STATE["flags"]["team_a_name"], STATE["flags"]["team_b_name"], event)
-                #commentary = get_bangla_commentary(event)
-                print(commentary)
+                bowler = parse_bowler(parsed["live_players"]['bowler'])                          
                 
-                if commentary and event != last_event:
-                    speak_bangla(commentary) 
+                full_over = int(parsed["overs"].split(".")[0])
+                
+                if event != last_event:
+                    
+                    commentary = generate_continuous_commentary(detect_event(event), batsman, bowler, parsed["score"], full_over, STATE["flags"].get("team_a_full_name"), STATE["flags"].get("team_b_full_name"), event)
+                    #commentary = get_bangla_commentary(event)  
+                    print(commentary)                  
+                    if commentary:
+                        speak_bangla(commentary) 
+                        print(commentary)
                     last_event = event
                 dead = []
 
                 if event == "Innings Break" and not innings_state and is_valid_flags(STATE.get("flags")):                
-                    print("Check innings break")
+                    #print("Check innings break")
                     swap_teams(STATE["flags"])
-                    print("State Changed:", STATE["flags"])
+                    #print("State Changed:", STATE["flags"])
                     innings_state = True
                 for ws in list(clients):
                     try:
@@ -1383,7 +1402,7 @@ async def scraper():
                 for d in dead:
                     clients.remove(d)
                
-                print("📡 UPDATE:", parsed["score"], parsed["overs"])
+                #print("📡 UPDATE:", parsed["score"], parsed["overs"])
             
            
 
@@ -1416,7 +1435,7 @@ async def get_live_matches():
         # match cards (CREX structure)
         #cards = await page.locator(".match-card, .match-box, .scorecard, a").all()
         cards = await page.locator("app-live-matches .live-card").all()
-        print(cards)
+        #print(cards)
         for card in cards:
             try:
                 text = await card.inner_text()
@@ -1552,6 +1571,190 @@ async def get_live_matches():
         await browser.close()
 
     return matches
+
+from playwright.async_api import async_playwright
+
+
+async def scrape_playing_xi(page):
+
+    result = {
+        "team_a": {
+            "name": "",
+            "players": []
+        },
+        "team_b": {
+            "name": "",
+            "players": []
+        }
+    }
+
+    try:
+
+        await page.wait_for_selector(
+            "app-playingxi-card",
+            timeout=20000
+        )
+
+        team_buttons = page.locator(
+            "button.playingxi-button"
+        )
+
+        total_teams = await team_buttons.count()
+
+        if total_teams < 2:
+            return result
+
+        async def extract_players():
+
+            players = []
+
+            rows = page.locator(
+                "div.playingxi-card-row"
+            )
+
+            count = await rows.count()
+
+            for i in range(count):
+
+                row = rows.nth(i)
+
+                try:
+
+                    full_name = await row.locator(
+                        "a"
+                    ).get_attribute("title")
+
+                    short_name = await row.locator(
+                        ".p-name"
+                    ).inner_text()
+
+                    role = ""
+
+                    role_locator = row.locator(
+                        ".bat-ball-type div"
+                    )
+
+                    if await role_locator.count() > 0:
+                        role = await role_locator.inner_text()
+
+                    tag = ""
+
+                    flex_div = row.locator(".flex")
+
+                    texts = await flex_div.locator(
+                        "div"
+                    ).all_inner_texts()
+
+                    if len(texts) > 1:
+                        tag = texts[1].strip()
+
+                    image = ""
+
+                    img_locator = row.locator(
+                        "img[title]"
+                    ).first
+
+                    if await img_locator.count() > 0:
+                        image = await img_locator.get_attribute(
+                            "src"
+                        )
+
+                    profile = await row.locator(
+                        "a"
+                    ).get_attribute("href")
+
+                    players.append({
+                        "full_name": full_name,
+                        "short_name": short_name.strip(),
+                        "role": role.strip(),
+                        "tag": tag,
+                        "image": image,
+                        "profile": profile
+                    })
+
+                except Exception as e:
+                    print("PLAYER ERROR:", e)
+
+            return players
+
+        # ==========================================
+        # TEAM A
+        # ==========================================
+
+        team_a_btn = team_buttons.nth(0)
+
+        result["team_a"]["name"] = (
+            await team_a_btn.inner_text()
+        ).strip()
+
+        await team_a_btn.click()
+
+        await page.wait_for_timeout(1000)
+
+        result["team_a"]["players"] = (
+            await extract_players()
+        )
+
+        # ==========================================
+        # TEAM B
+        # ==========================================
+
+        team_b_btn = team_buttons.nth(1)
+
+        result["team_b"]["name"] = (
+            await team_b_btn.inner_text()
+        ).strip()
+
+        await team_b_btn.click()
+
+        await page.wait_for_timeout(1000)
+
+        result["team_b"]["players"] = (
+            await extract_players()
+        )
+
+        return result
+
+    except Exception as e:
+
+        print("SCRAPE ERROR:", e)
+
+        return result
+
+
+# ==========================================================
+# MAIN
+# ==========================================================
+
+async def players_list():
+
+    url = STATE["url"]
+
+    url = url.rstrip("/") + "/match-details"
+
+    async with async_playwright() as p:
+
+        browser = await p.chromium.launch(
+            headless=True
+        )
+
+        page = await browser.new_page()
+
+        # IMPORTANT
+        await page.goto(
+            url,
+            wait_until="networkidle",
+            timeout=60000
+        )
+
+        # NOW SCRAPE
+        print("Player List")
+        playing_xi = await scrape_playing_xi(page)
+
+        print(playing_xi)
+
+        await browser.close()
+
 app.mount(
     "/static",
     StaticFiles(directory="static"),
@@ -1619,7 +1822,7 @@ async def ws(websocket: WebSocket):
         # LOAD FLAGS ONLY ONCE
         # =========================
         await ensure_flags_loaded()    
-        
+        await players_list
 
         while True:
             await asyncio.sleep(1)

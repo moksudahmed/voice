@@ -1,63 +1,863 @@
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #0b1220;
-    color: white;
+/* =========================================================
+RESET
+=
+
+/* =========================================================
+RESET
+========================================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-.container {
-    text-align: center;
-    margin-top: 100px;
+:root{
+    --cyan:#00e5ff;
+    --yellow:#ffd84d;
+    --green:#00ff88;
+    --red:#ff1744;
+    --white:#ffffff;
 }
 
-button {
-    padding: 10px 20px;
-    margin: 10px;
-    background: #00ffcc;
-    border: none;
-    cursor: pointer;
+body{
+    width:100%;
+    height:100vh;
+    overflow:hidden;
+    font-family:'Poppins',sans-serif;
+    background:#000;
+    color:#fff;
 }
 
-/* OVERLAY */
-.overlay-body {
-    background: transparent;
+/* =========================================================
+BACKGROUND
+========================================================= */
+
+.video-bg{
+    position:fixed;
+    inset:0;
+    z-index:-30;
+    overflow:hidden;
 }
 
-/* SCOREBAR */
-.scorebar {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+.video-bg video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
 
-    display: flex;
-    gap: 40px;
+    filter:
+    brightness(.35)
+    saturate(1.2)
+    contrast(1.15);
 
-    background: red;
-    padding: 10px 20px;
-    border-radius: 10px;
+    transform:scale(1.06);
 }
 
-/* BALLS */
-.balls {
-    position: absolute;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 6px;
+.video-overlay{
+    position:fixed;
+    inset:0;
+    z-index:-29;
+
+    background:
+    linear-gradient(
+        to bottom,
+        rgba(0,0,0,.35),
+        rgba(0,0,0,.15),
+        rgba(0,0,0,.85)
+    ),
+    radial-gradient(
+        circle at center,
+        rgba(0,229,255,.12),
+        transparent 50%
+    );
 }
 
-.ball {
-    width: 25px;
-    height: 25px;
-    background: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
+/* =========================================================
+LIGHTS
+========================================================= */
+
+.light{
+    position:fixed;
+    width:550px;
+    height:550px;
+    border-radius:50%;
+    filter:blur(140px);
+    opacity:.30;
+    z-index:-28;
+    animation:lightMove 12s infinite alternate ease-in-out;
 }
 
-.b4 { background: blue; }
-.b6 { background: green; }
-.bW { background: red; }
+.light1{
+    background:#00e5ff;
+    top:-120px;
+    left:-120px;
+}
+
+.light2{
+    background:#ff0080;
+    bottom:-120px;
+    right:-120px;
+    animation-delay:2s;
+}
+
+.light3{
+    background:#ffd84d;
+    top:30%;
+    left:38%;
+    animation-delay:4s;
+}
+
+@keyframes lightMove{
+    from{
+        transform:translateY(0) scale(1);
+    }
+    to{
+        transform:translateY(40px) scale(1.08);
+    }
+}
+
+/* =========================================================
+PARTICLES
+========================================================= */
+
+#particles{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    z-index:-27;
+}
+
+.particle{
+    position:absolute;
+    width:4px;
+    height:4px;
+    border-radius:50%;
+    background:#fff;
+    opacity:.55;
+    animation:floatParticle linear infinite;
+}
+
+@keyframes floatParticle{
+
+    from{
+        transform:
+        translateY(100vh)
+        scale(0);
+    }
+
+    to{
+        transform:
+        translateY(-10vh)
+        scale(1);
+    }
+}
+
+/* =========================================================
+LAYOUT
+========================================================= */
+
+.broadcast{
+    width:100%;
+    height:100vh;
+    padding:18px;
+
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+/* =========================================================
+TOP BAR
+========================================================= */
+
+.top-bar{
+    width:100%;
+    min-height:135px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 35px;
+
+    border-radius:34px;
+
+    background:rgba(255,255,255,.08);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(18px);
+
+    box-shadow:
+    0 10px 40px rgba(0,0,0,.4);
+}
+
+.left-top{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
+
+.teams{
+    font-size:42px;
+    font-weight:900;
+    text-transform:uppercase;
+}
+
+.match-info{
+    font-size:15px;
+    font-weight:700;
+    color:var(--cyan);
+}
+
+.overs{
+    font-size:14px;
+    color:#ddd;
+}
+
+/* =========================================================
+CENTER SCORE
+========================================================= */
+
+.center-wrapper{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+}
+
+.center-score{
+    display:flex;
+    align-items:center;
+    gap:18px;
+}
+
+.score{
+    font-size:95px;
+    font-weight:900;
+
+    font-family:'Orbitron',sans-serif;
+
+    background:
+    linear-gradient(
+        90deg,
+        #fff,
+        #ffe600,
+        #ff9800
+    );
+
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+
+    text-shadow:
+    0 0 30px rgba(255,200,0,.45);
+
+    animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+
+    0%,100%{
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(1.03);
+    }
+}
+
+.live{
+    padding:14px 24px;
+
+    border-radius:50px;
+
+    background:
+    linear-gradient(
+        135deg,
+        #ff1744,
+        #ff5d5d
+    );
+
+    font-size:18px;
+    font-weight:900;
+    letter-spacing:2px;
+
+    box-shadow:
+    0 0 25px rgba(255,0,80,.55);
+
+    animation:blink 1s infinite;
+}
+
+@keyframes blink{
+
+    0%,100%{
+        opacity:1;
+    }
+
+    50%{
+        opacity:.65;
+    }
+}
+
+/* =========================================================
+TARGET BOX
+========================================================= */
+
+.target-box{
+    padding:10px 26px;
+
+    border-radius:50px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,216,77,.20),
+        rgba(255,152,0,.10)
+    );
+
+    border:1px solid rgba(255,216,77,.30);
+
+    backdrop-filter:blur(12px);
+
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:1px;
+
+    color:#fff;
+
+    box-shadow:
+    0 0 25px rgba(255,216,77,.15);
+}
+
+#targetScore{
+    color:var(--yellow);
+
+    font-size:28px;
+
+    font-family:'Orbitron',sans-serif;
+    font-weight:900;
+
+    margin-left:8px;
+
+    text-shadow:
+    0 0 20px rgba(255,216,77,.55);
+}
+
+/* =========================================================
+RIGHT STATS
+========================================================= */
+
+.right-top{
+    display:flex;
+    gap:18px;
+}
+
+.stat{
+    min-width:150px;
+
+    padding:16px 20px;
+
+    border-radius:24px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.15),
+        rgba(255,255,255,.05)
+    );
+
+    border:1px solid rgba(255,255,255,.08);
+
+    text-align:center;
+}
+
+.stat-label{
+    font-size:12px;
+    letter-spacing:2px;
+    color:#ddd;
+    margin-bottom:8px;
+}
+
+.stat-value{
+    font-size:28px;
+    font-weight:900;
+    color:var(--cyan);
+}
+
+/* =========================================================
+MIDDLE
+========================================================= */
+
+.middle{
+    flex:1;
+    position:relative;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+/* =========================================================
+VERSUS
+========================================================= */
+
+.versus{
+    position:inherit;
+
+    bottom:150px;
+
+    display:flex;
+    align-items:flex-start;
+    gap:354px;
+
+    z-index:2;
+}
+
+.team{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+}
+
+.team-logo{
+    width:180px;
+    height:180px;
+
+    object-fit:cover;
+    border-radius:50%;
+
+    border:6px solid rgba(255,255,255,.22);
+
+    box-shadow:
+    0 0 40px rgba(255,255,255,.2),
+    0 0 90px rgba(0,229,255,.18);
+
+    animation:logoFloat 4s infinite ease-in-out;
+}
+
+@keyframes logoFloat{
+
+    0%,100%{
+        transform:translateY(0);
+    }
+
+    50%{
+        transform:translateY(-10px);
+    }
+}
+
+.team-name{
+    font-size:34px;
+    font-weight:900;
+}
+
+.vs{
+    font-size:84px;
+
+    font-family:'Orbitron',sans-serif;
+    font-weight:900;
+
+    background:
+    linear-gradient(
+        180deg,
+        #fff,
+        #ffe600,
+        #ff9800
+    );
+
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+/* =========================================================
+COMMENTARY
+========================================================= */
+
+.commentary-wrap{
+    position:absolute;
+
+    bottom:150px;
+
+    width:150%;
+
+    display:flex;
+    justify-content:center;
+
+    z-index:1;
+}
+
+.commentary-box{
+    width:26%;
+
+    padding:28px 36px;
+
+    border-radius:34px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.16),
+        rgba(255,255,255,.05)
+    );
+
+    border:1px solid rgba(255,255,255,.1);
+
+    backdrop-filter:blur(20px);
+
+    box-shadow:
+    0 10px 40px rgba(0,0,0,.35);
+}
+
+.commentary-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.live-dot{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:#ff1744;
+
+    box-shadow:
+    0 0 18px #ff1744;
+
+    animation:dotBlink 1s infinite;
+}
+
+@keyframes dotBlink{
+
+    0%,100%{
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(.7);
+    }
+}
+
+.commentary-label{
+    font-size:14px;
+    font-weight:900;
+    letter-spacing:3px;
+    color:var(--cyan);
+}
+
+.commentary{
+    font-size:34px;
+    font-weight:800;
+    line-height:1.5;
+}
+
+/* =========================================================
+BOTTOM PLAYERS
+========================================================= */
+
+.bottom{
+    width:100%;
+    min-height:210px;
+
+    padding:22px;
+
+    border-radius:34px;
+
+    background:rgba(255,255,255,.12);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(20px);
+}
+
+.players{
+    display:flex;
+    gap:20px;
+}
+
+.player{
+    flex:1;
+
+    display:flex;
+    align-items:center;
+    gap:18px;
+
+    padding:20px;
+
+    border-radius:28px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.16),
+        rgba(255,255,255,.05)
+    );
+}
+
+.player img{
+    width:110px;
+    height:110px;
+
+    border-radius:50%;
+    object-fit:cover;
+
+    border:4px solid rgba(255,255,255,.2);
+}
+
+.player-details{
+    flex:1;
+}
+
+.player-role{
+    display:inline-block;
+
+    padding:6px 14px;
+
+    border-radius:20px;
+
+    background:var(--cyan);
+
+    color:#000;
+
+    font-size:12px;
+    font-weight:900;
+
+    margin-bottom:10px;
+}
+
+.player-name{
+    font-size:28px;
+    font-weight:900;
+}
+
+.player-score{
+    margin-top:6px;
+
+    font-size:38px;
+
+    font-family:'Orbitron',sans-serif;
+    font-weight:900;
+
+    color:var(--yellow);
+}
+
+.player-extra{
+    margin-top:6px;
+    font-size:14px;
+    color:#eee;
+}
+
+/* =========================================================
+EVENT POPUP
+========================================================= */
+
+.event-screen{
+    position:absolute;
+    inset:0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    pointer-events:none;
+}
+
+.event-popup{
+    font-size:200px;
+    font-family:'Orbitron',sans-serif;
+    font-weight:900;
+
+    animation:eventAnim 1s ease forwards;
+}
+
+@keyframes eventAnim{
+
+    0%{
+        transform:scale(.2);
+        opacity:0;
+        filter:blur(20px);
+    }
+
+    100%{
+        transform:scale(1);
+        opacity:1;
+        filter:blur(0);
+    }
+}
+
+/* =========================================================
+TIMELINE
+========================================================= */
+
+.timeline{
+    position:absolute;
+
+    bottom:15px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    width:96%;
+
+    display:flex;
+    gap:15px;
+
+    overflow-x:auto;
+
+    padding-bottom:4px;
+}
+
+.timeline::-webkit-scrollbar{
+    display:none;
+}
+
+.timeline-card{
+    min-width:230px;
+
+    padding:18px;
+
+    border-radius:24px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.16),
+        rgba(255,255,255,.05)
+    );
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(15px);
+}
+
+.timeline-head{
+    display:flex;
+    justify-content:space-between;
+
+    margin-bottom:12px;
+
+    font-weight:800;
+}
+
+.timeline-over{
+    color:var(--cyan);
+}
+
+.timeline-total{
+    color:var(--yellow);
+}
+
+.timeline-balls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+.ball{
+    width:38px;
+    height:38px;
+
+    border-radius:50%;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    font-weight:900;
+    color:#fff;
+}
+
+/* =========================================================
+RESPONSIVE
+========================================================= */
+
+@media(max-width:1400px){
+
+    .versus{
+        gap:120px;
+    }
+
+    .team-logo{
+        width:150px;
+        height:150px;
+    }
+
+    .vs{
+        font-size:90px;
+    }
+
+    .commentary{
+        font-size:28px;
+    }
+
+    .score{
+        font-size:70px;
+    }
+}
+
+/* =========================================================
+🔥 BONUS WICKET ANIMATION SYSTEM
+========================================================= */
+
+/* SCREEN SHAKE (stadium effect) */
+.shake {
+    animation: shake 0.4s linear 3;
+}
+
+@keyframes shake {
+    0% { transform: translate(0); }
+    25% { transform: translate(-5px, 5px); }
+    50% { transform: translate(5px, -5px); }
+    75% { transform: translate(-5px, 5px); }
+    100% { transform: translate(0); }
+}
+
+/* RED FLASH OVERLAY */
+.wicket-flash {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 0, 0, 0.35);
+    z-index: 9999;
+    animation: flashFade 0.6s ease-out;
+    pointer-events: none;
+}
+
+@keyframes flashFade {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* WICKET POPUP ANIMATION */
+.wicket-pop {
+    font-size: 180px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    color: #ff1744;
+
+    text-shadow:
+        0 0 40px #ff1744,
+        0 0 120px #ff0000;
+
+    animation: wicketZoom 0.6s ease-out;
+}
+
+@keyframes wicketZoom {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+        filter: blur(15px);
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+        filter: blur(0);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

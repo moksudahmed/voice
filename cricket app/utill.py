@@ -1,74 +1,37 @@
+
 def number_to_bangla_words(n):
-    """
-    Convert integer number to Bangla words
-    Example: 50 -> পঞ্চাশ
-    """
 
-    bn_units = [
-        "", "এক", "দুই", "তিন", "চার", "পাঁচ",
-        "ছয়", "সাত", "আট", "নয়"
-    ]
+    BN = {
+        0: "শূন্য",
+        1: "এক", 2: "দুই", 3: "তিন", 4: "চার", 5: "পাঁচ",
+        6: "ছয়", 7: "সাত", 8: "আট", 9: "নয়",
+        10: "দশ", 11: "এগারো", 12: "বারো", 13: "তেরো", 14: "চৌদ্দ",
+        15: "পনেরো", 16: "ষোল", 17: "সতেরো", 18: "আঠারো", 19: "উনিশ",
+        20: "বিশ",
 
-    bn_teens = [
-        "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ",
-        "পনেরো", "ষোল", "সতেরো", "আঠারো", "উনিশ"
-    ]
+        21: "একুশ", 22: "বাইশ", 23: "তেইশ", 24: "চব্বিশ",
+        25: "পঁচিশ", 26: "ছাব্বিশ", 27: "সাতাশ", 28: "আটাশ", 29: "ঊনত্রিশ",
+        30: "ত্রিশ", 31: "একত্রিশ", 32: "বত্রিশ", 33: "তেত্রিশ", 34: "চৌত্রিশ",
+        35: "পঁইত্রিশ", 36: "ছত্রিশ", 37: "সাঁইত্রিশ", 38: "আটত্রিশ", 39: "ঊনচল্লিশ",
+        40: "চল্লিশ", 41: "একচল্লিশ", 42: "বিয়াল্লিশ", 43: "তেতাল্লিশ", 44: "চুয়াল্লিশ",
+        45: "পঁয়তাল্লিশ", 46: "ছেচল্লিশ", 47: "সাতচল্লিশ", 48: "আটচল্লিশ", 49: "ঊনপঞ্চাশ",
+        50: "পঞ্চাশ",
 
-    bn_tens = [
-        "", "", "বিশ", "ত্রিশ", "চল্লিশ",
-        "পঞ্চাশ", "ষাট", "সত্তর", "আশি", "নব্বই"
-    ]
+        60: "ষাট",
+        70: "সত্তর",
+        80: "আশি",
+        90: "নব্বই",
 
-    def two_digit(num):
-        if num < 10:
-            return bn_units[num]
-        elif 10 <= num < 20:
-            return bn_teens[num - 10]
-        else:
-            t = num // 10
-            u = num % 10
-            return bn_tens[t] + (" " + bn_units[u] if u else "")
+        100: "একশ",
+        200: "দুইশ",
+        300: "তিনশ",
+        400: "চারশ",
+        500: "পাঁচশ"
+    }
 
-    def three_digit(num):
-        h = num // 100
-        r = num % 100
+    # direct match (MOST IMPORTANT)
+    if n in BN:
+        return BN[n]
 
-        if h == 0:
-            return two_digit(r)
-        elif r == 0:
-            return bn_units[h] + " শত"
-        else:
-            return bn_units[h] + " শত " + two_digit(r)
-
-    if n == 0:
-        return "শূন্য"
-
-    if n < 0:
-        return "ঋণ " + number_to_bangla_words(abs(n))
-
-    parts = []
-
-    crore = n // 10000000
-    n %= 10000000
-
-    lakh = n // 100000
-    n %= 100000
-
-    thousand = n // 1000
-    n %= 1000
-
-    if crore:
-        parts.append(two_digit(crore) + " কোটি")
-
-    if lakh:
-        parts.append(two_digit(lakh) + " লাখ")
-
-    if thousand:
-        parts.append(two_digit(thousand) + " হাজার")
-
-    if n:
-        parts.append(three_digit(n))
-
-    return " ".join(parts).strip()
-
-print(number_to_bangla_words(77))
+    # fallback safety (ONLY for unexpected values)
+    return str(n)
