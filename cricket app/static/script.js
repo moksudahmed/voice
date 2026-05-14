@@ -186,12 +186,12 @@ ws.onmessage = (msg) => {
     try {
 
         const d = JSON.parse(msg.data);
-
+        console.log(msg.data);
         const flags = d.flags || {};
         const livePlayers = d.live_players || {};
         const batsmen = livePlayers.batsmen || [];
         const bowler = livePlayers.bowler || null;
-
+        console.log(d);
         /* TOP */
         setText(".teams", `${flags.team_a_name || "TEAM A"} vs ${flags.team_b_name || "TEAM B"}`);
         setText(".match-info", flags.match_info || "LIVE MATCH");
@@ -215,16 +215,22 @@ ws.onmessage = (msg) => {
         if (batsmen[0]) {
             setText("#strikerName", batsmen[0].name);
             setText("#strikerScore", `${batsmen[0].runs} (${batsmen[0].balls})`);
+            setImage("#strikerImg", batsmen[0].image);
+            
+            
+            
         }
 
         if (batsmen[1]) {
             setText("#nonStrikerName", batsmen[1].name);
             setText("#nonStrikerScore", `${batsmen[1].runs} (${batsmen[1].balls})`);
+            setImage("#nonStrikerImg", batsmen[1].image);
         }
 
         if (bowler) {
             setText("#bowlerName", bowler.name);
             setText("#bowlerScore", bowler.figures);
+            setImage("#bowlerImg", bowler.image);
         }
 
         renderTimeline(d.overs_timeline || []);

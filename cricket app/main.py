@@ -3,8 +3,10 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from playwright.async_api import async_playwright
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse
 import asyncio
 import random
+from player_list import get_playing_xi, generate_team_html
 from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary, generate_full_commentary
 from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
@@ -654,7 +656,7 @@ async def update_team_flags(url):
         )
         #print("Check")
         #print(STATE["data"])
-        #print("🏏 FLAGS UPDATED:", STATE["flags"])
+        print("🏏 FLAGS UPDATED:", STATE["flags"])
 
         return True
 
@@ -1405,7 +1407,7 @@ async def scraper():
                 #print("📡 UPDATE:", parsed["score"], parsed["overs"])
             
            
-
+            
             await asyncio.sleep(0.12)
 
         except Exception as e:
@@ -1572,188 +1574,11 @@ async def get_live_matches():
 
     return matches
 
-from playwright.async_api import async_playwright
-
-
-async def scrape_playing_xi(page):
-
-    result = {
-        "team_a": {
-            "name": "",
-            "players": []
-        },
-        "team_b": {
-            "name": "",
-            "players": []
-        }
-    }
-
-    try:
-
-        await page.wait_for_selector(
-            "app-playingxi-card",
-            timeout=20000
-        )
-
-        team_buttons = page.locator(
-            "button.playingxi-button"
-        )
-
-        total_teams = await team_buttons.count()
-
-        if total_teams < 2:
-            return result
-
-        async def extract_players():
-
-            players = []
-
-            rows = page.locator(
-                "div.playingxi-card-row"
-            )
-
-            count = await rows.count()
-
-            for i in range(count):
-
-                row = rows.nth(i)
-
-                try:
-
-                    full_name = await row.locator(
-                        "a"
-                    ).get_attribute("title")
-
-                    short_name = await row.locator(
-                        ".p-name"
-                    ).inner_text()
-
-                    role = ""
-
-                    role_locator = row.locator(
-                        ".bat-ball-type div"
-                    )
-
-                    if await role_locator.count() > 0:
-                        role = await role_locator.inner_text()
-
-                    tag = ""
-
-                    flex_div = row.locator(".flex")
-
-                    texts = await flex_div.locator(
-                        "div"
-                    ).all_inner_texts()
-
-                    if len(texts) > 1:
-                        tag = texts[1].strip()
-
-                    image = ""
-
-                    img_locator = row.locator(
-                        "img[title]"
-                    ).first
-
-                    if await img_locator.count() > 0:
-                        image = await img_locator.get_attribute(
-                            "src"
-                        )
-
-                    profile = await row.locator(
-                        "a"
-                    ).get_attribute("href")
-
-                    players.append({
-                        "full_name": full_name,
-                        "short_name": short_name.strip(),
-                        "role": role.strip(),
-                        "tag": tag,
-                        "image": image,
-                        "profile": profile
-                    })
-
-                except Exception as e:
-                    print("PLAYER ERROR:", e)
-
-            return players
-
-        # ==========================================
-        # TEAM A
-        # ==========================================
-
-        team_a_btn = team_buttons.nth(0)
-
-        result["team_a"]["name"] = (
-            await team_a_btn.inner_text()
-        ).strip()
-
-        await team_a_btn.click()
-
-        await page.wait_for_timeout(1000)
-
-        result["team_a"]["players"] = (
-            await extract_players()
-        )
-
-        # ==========================================
-        # TEAM B
-        # ==========================================
-
-        team_b_btn = team_buttons.nth(1)
-
-        result["team_b"]["name"] = (
-            await team_b_btn.inner_text()
-        ).strip()
-
-        await team_b_btn.click()
-
-        await page.wait_for_timeout(1000)
-
-        result["team_b"]["players"] = (
-            await extract_players()
-        )
-
-        return result
-
-    except Exception as e:
-
-        print("SCRAPE ERROR:", e)
-
-        return result
-
 
 # ==========================================================
 # MAIN
 # ==========================================================
 
-async def players_list():
-
-    url = STATE["url"]
-
-    url = url.rstrip("/") + "/match-details"
-
-    async with async_playwright() as p:
-
-        browser = await p.chromium.launch(
-            headless=True
-        )
-
-        page = await browser.new_page()
-
-        # IMPORTANT
-        await page.goto(
-            url,
-            wait_until="networkidle",
-            timeout=60000
-        )
-
-        # NOW SCRAPE
-        print("Player List")
-        playing_xi = await scrape_playing_xi(page)
-
-        print(playing_xi)
-
-        await browser.close()
 
 app.mount(
     "/static",
@@ -1822,7 +1647,7 @@ async def ws(websocket: WebSocket):
         # LOAD FLAGS ONLY ONCE
         # =========================
         await ensure_flags_loaded()    
-        await players_list
+       
 
         while True:
             await asyncio.sleep(1)
@@ -1830,3 +1655,246 @@ async def ws(websocket: WebSocket):
     except WebSocketDisconnect:
         clients.remove(websocket)
         print("❌ CLIENT DISCONNECTED")
+
+
+# =========================================================
+# HTML PAGE
+# =========================================================
+
+@app.get("/players", response_class=HTMLResponse)
+async def home():
+    if STATE["url"]:
+        data = await get_playing_xi(STATE["url"])
+
+        team_a_html = generate_team_html(
+            data["team_a"],
+            "team-a"
+        )
+
+        team_b_html = generate_team_html(
+            data["team_b"],
+            "team-b"
+        )
+
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+
+        <meta charset="UTF-8">
+
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
+
+        <title>Playing XI</title>
+
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+        <style>
+
+        *{{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }}
+
+        body{{
+            background:#050505;
+            color:#fff;
+            font-family:'Poppins',sans-serif;
+            padding:30px;
+        }}
+
+        .main-title{{
+            text-align:center;
+            font-size:60px;
+            font-weight:900;
+            margin-bottom:40px;
+
+            background:linear-gradient(
+                90deg,
+                #fff,
+                #ffd84d,
+                #ff9800
+            );
+
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }}
+
+        .teams{{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:30px;
+        }}
+
+        .team-container{{
+            background:
+            linear-gradient(
+                135deg,
+                rgba(255,255,255,.08),
+                rgba(255,255,255,.03)
+            );
+
+            border:1px solid rgba(255,255,255,.08);
+
+            border-radius:30px;
+
+            overflow:hidden;
+        }}
+
+        .team-header{{
+            padding:22px;
+            font-size:32px;
+            font-weight:900;
+            text-align:center;
+        }}
+
+        .team-a{{
+            background:
+            linear-gradient(
+                135deg,
+                #ff003c,
+                #ff9800
+            );
+        }}
+
+        .team-b{{
+            background:
+            linear-gradient(
+                135deg,
+                #6a00ff,
+                #c400ff
+            );
+        }}
+
+        .players-grid{{
+            padding:20px;
+
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:18px;
+        }}
+
+        .player-card{{
+            display:flex;
+            align-items:center;
+            gap:15px;
+
+            padding:16px;
+
+            border-radius:20px;
+
+            background:
+            linear-gradient(
+                135deg,
+                rgba(255,255,255,.08),
+                rgba(255,255,255,.02)
+            );
+
+            transition:.3s;
+        }}
+
+        .player-card:hover{{
+            transform:translateY(-5px);
+        }}
+
+        .player-img{{
+            width:80px;
+            height:80px;
+
+            border-radius:50%;
+            object-fit:cover;
+
+            border:3px solid rgba(255,255,255,.15);
+        }}
+
+        .player-info{{
+            flex:1;
+        }}
+
+        .player-name{{
+            font-size:20px;
+            font-weight:800;
+            line-height:1.3;
+        }}
+
+        .tag{{
+            color:#ffd84d;
+            margin-left:6px;
+        }}
+
+        .player-role{{
+            margin-top:8px;
+
+            display:inline-block;
+
+            padding:5px 12px;
+
+            border-radius:30px;
+
+            background:rgba(0,229,255,.12);
+
+            border:1px solid rgba(0,229,255,.25);
+
+            color:#00e5ff;
+
+            font-size:12px;
+            font-weight:700;
+        }}
+
+        @media(max-width:1200px){{
+            .teams{{
+                grid-template-columns:1fr;
+            }}
+        }}
+
+        @media(max-width:700px){{
+            .players-grid{{
+                grid-template-columns:1fr;
+            }}
+
+            .main-title{{
+                font-size:38px;
+            }}
+        }}
+
+        </style>
+
+        </head>
+
+        <body>
+
+            <div class="main-title">
+                PLAYING XI
+            </div>
+
+            <div class="teams">
+
+                {team_a_html}
+
+                {team_b_html}
+
+            </div>
+
+        </body>
+
+        </html>
+        """
+
+    return HTMLResponse(content=html)
+
+
+# =========================================================
+# JSON API
+# =========================================================
+
+@app.get("/api/players")
+async def api_players():
+
+    data = await get_playing_xi()
+
+    return JSONResponse(content=data)
