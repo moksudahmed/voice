@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<title>Playing XI | OBS Broadcast | 1920x1080</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+/* ===== KEEP YOUR FULL CSS UNCHANGED (same as yours) ===== */
+</style>
+
+</head>
+
+<body>
+
+<!-- BACKGROUND -->
+<div class="bg-glow">
+    <div class="glow glow1"></div>
+    <div class="glow glow2"></div>
+    <div class="glow glow3"></div>
+</div>
+
+<!-- NAV -->
+<div class="nav-buttons">
+    <button class="nav-btn" id="prevBtn">‹</button>
+    <button class="nav-btn" id="nextBtn">›</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <div class="main-title">
+        PLAYING XI
+    </div>
+
+    <div class="slider-wrapper">
+
+        <div class="slides">
+
+            <!-- TEAM A -->
+            <div class="team-slide active" id="teamASlide">
+
+                <div class="slide-text">🔴 TEAM A</div>
+
+                <div class="team-header team-a">
+                    <img class="team-logo" id="teamALogo" src="" alt="Team A Logo">
+                    <div class="team-name" id="teamAName">TEAM A</div>
+                    <div class="team-sub">PLAYING XI • 11 PLAYERS</div>
+                </div>
+
+                <div class="players-grid" id="teamAPlayers"></div>
+
+            </div>
+
+            <!-- TEAM B -->
+            <div class="team-slide" id="teamBSlide">
+
+                <div class="slide-text">🔵 TEAM B</div>
+
+                <div class="team-header team-b">
+                    <img class="team-logo" id="teamBLogo" src="" alt="Team B Logo">
+                    <div class="team-name" id="teamBName">TEAM B</div>
+                    <div class="team-sub">PLAYING XI • 11 PLAYERS</div>
+                </div>
+
+                <div class="players-grid" id="teamBPlayers"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+/* =========================================================
+   STATE FROM FASTAPI
+========================================================= */
+const STATE = {{ state | tojson }};
+
+/* =========================================================
+   RENDER PLAYER CARD
+========================================================= */
+function createPlayerCard(player, index) {
+
+    const isCaptain = player.tag === "(C)";
+    const isWK = player.tag === "(WK)";
+
+    let badge = "";
+
+    if (isCaptain) {
+        badge = `<div class="player-badge badge-captain">🏆 CAPTAIN</div>`;
+    } else if (isWK) {
+        badge = `<div class="player-badge badge-wicketkeeper">🧤 WK</div>`;
+    }
+
+    let roleIcon = "";
+    if (player.role === "Batter") roleIcon = "🏏";
+    else if (player.role === "Bowler") roleIcon = "🎯";
+    else roleIcon = "⚡";
+
+    return `
+        <div class="player-card" style="--order:${index}">
+            <div class="player-number">${index + 1}</div>
+            ${badge}
+
+            <img class="player-img"
+                 src="${player.image || '/static/player.png'}"
+                 onerror="this.src='/static/player.png'">
+
+            <div class="player-info">
+                <div class="player-name">${player.full_name}</div>
+                <div class="player-short-name">${player.short_name || ""}</div>
+                <div class="player-role">${roleIcon} ${player.role}</div>
+            </div>
+        </div>
+    `;
+}
+
+/* =========================================================
+   RENDER TEAMS FROM STATE
+========================================================= */
+function renderTeams() {
+
+    const teamA = STATE.data.team_a;
+    const teamB = STATE.data.team_b;
+
+    // TEAM A
+    document.getElementById("teamAName").innerText =
+        STATE.flags.team_a_full_name || "TEAM A";
+
+    document.getElementById("teamALogo").src =
+        STATE.flags.team_a_flag || "/static/default_a.png";
+
+    const aBox = document.getElementById("teamAPlayers");
+    aBox.innerHTML = "";
+
+    (teamA?.players || []).forEach((p, i) => {
+        aBox.innerHTML += createPlayerCard(p, i);
+    });
+
+    // TEAM B
+    document.getElementById("teamBName").innerText =
+        STATE.flags.team_b_full_name || "TEAM B";
+
+    document.getElementById("teamBLogo").src =
+        STATE.flags.team_b_flag || "/static/default_b.png";
+
+    const bBox = document.getElementById("teamBPlayers");
+    bBox.innerHTML = "";
+
+    (teamB?.players || []).forEach((p, i) => {
+        bBox.innerHTML += createPlayerCard(p, i);
+    });
+}
+
+/* =========================================================
+   SLIDER
+========================================================= */
+let current = 0;
+
+function showSlide(i) {
+
+    const slides = document.querySelectorAll(".team-slide");
+
+    slides.forEach((s, idx) => {
+        s.classList.toggle("active", idx === i);
+    });
+
+    current = i;
+}
+
+document.getElementById("nextBtn").onclick = () => {
+    showSlide(current === 0 ? 1 : 0);
+};
+
+document.getElementById("prevBtn").onclick = () => {
+    showSlide(current === 0 ? 1 : 0);
+};
+
+/* =========================================================
+   INIT
+========================================================= */
+renderTeams();
+
+console.log("OBS PLAYING XI LOADED");
+</script>
+
+</body>
+</html>

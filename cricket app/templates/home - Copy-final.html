@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+/>
+
+<title>🏏 Cricket AI Broadcast Dashboard</title>
+
+<link
+  href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+:root{
+
+  --bg:#050b16;
+  --bg2:#08111f;
+
+  --panel:#111a2e;
+  --panel2:#18263d;
+
+  --cyan:#00eaff;
+  --cyan2:#00b7ff;
+
+  --green:#00ff99;
+  --red:#ff3b3b;
+
+  --gold:#ffd84d;
+  --purple:#9b5cff;
+
+  --text:#ffffff;
+  --muted:#8fa3c1;
+
+  --border:rgba(255,255,255,.08);
+}
+
+body{
+
+  min-height:100vh;
+
+  background:
+  radial-gradient(circle at top,#112447 0%,#08111f 55%,#050b16 100%);
+
+  color:var(--text);
+
+  font-family:'Poppins',sans-serif;
+
+  overflow-x:hidden;
+}
+
+/* =========================================================
+BACKGROUND FX
+========================================================= */
+
+.bg-effects{
+
+  position:fixed;
+  inset:0;
+
+  overflow:hidden;
+
+  z-index:-1;
+}
+
+.glow{
+
+  position:absolute;
+
+  border-radius:50%;
+
+  filter:blur(120px);
+
+  opacity:.16;
+
+  animation:floatGlow 10s infinite alternate ease-in-out;
+}
+
+.glow1{
+
+  width:500px;
+  height:500px;
+
+  background:#00eaff;
+
+  top:-120px;
+  left:-100px;
+}
+
+.glow2{
+
+  width:500px;
+  height:500px;
+
+  background:#ff0066;
+
+  right:-120px;
+  bottom:-100px;
+
+  animation-delay:2s;
+}
+
+.glow3{
+
+  width:400px;
+  height:400px;
+
+  background:#7b00ff;
+
+  left:40%;
+  top:25%;
+
+  animation-delay:4s;
+}
+
+@keyframes floatGlow{
+
+  from{
+    transform:translateY(0) scale(1);
+  }
+
+  to{
+    transform:translateY(50px) scale(1.08);
+  }
+}
+
+/* =========================================================
+HEADER
+========================================================= */
+
+.header{
+
+  height:90px;
+
+  padding:0 30px;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  position:sticky;
+  top:0;
+
+  z-index:999;
+
+  background:
+  rgba(7,12,24,.92);
+
+  backdrop-filter:blur(16px);
+
+  border-bottom:
+  1px solid rgba(255,255,255,.06);
+}
+
+.title-wrap{
+
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.title{
+
+  font-size:30px;
+  font-weight:900;
+
+  font-family:'Orbitron',sans-serif;
+
+  letter-spacing:1px;
+
+  background:
+  linear-gradient(
+    90deg,
+    #ffffff,
+    #00eaff,
+    #00a6ff
+  );
+
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.subtitle{
+
+  color:var(--muted);
+
+  font-size:13px;
+
+  letter-spacing:.5px;
+}
+
+.live-system{
+
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.live-dot{
+
+  width:14px;
+  height:14px;
+
+  border-radius:50%;
+
+  background:#ff0033;
+
+  box-shadow:
+  0 0 12px #ff0033,
+  0 0 24px #ff0033;
+
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+
+  0%,100%{
+    transform:scale(1);
+    opacity:1;
+  }
+
+  50%{
+    transform:scale(.75);
+    opacity:.5;
+  }
+}
+
+.badge{
+
+  padding:10px 18px;
+
+  border-radius:40px;
+
+  font-size:13px;
+  font-weight:800;
+
+  color:#000;
+
+  background:
+  linear-gradient(
+    135deg,
+    var(--cyan),
+    var(--cyan2)
+  );
+}
+
+/* =========================================================
+LAYOUT
+========================================================= */
+
+.container{
+
+  display:grid;
+
+  grid-template-columns:360px 1fr;
+
+  gap:22px;
+
+  padding:22px;
+}
+
+/* =========================================================
+PANEL
+========================================================= */
+
+.panel{
+
+  background:
+  linear-gradient(
+    180deg,
+    rgba(17,26,46,.96),
+    rgba(11,17,30,.96)
+  );
+
+  border-radius:28px;
+
+  border:1px solid var(--border);
+
+  padding:24px;
+
+  height:fit-content;
+
+  box-shadow:
+  0 20px 60px rgba(0,0,0,.35);
+}
+
+.panel h3{
+
+  font-size:22px;
+
+  color:var(--cyan);
+
+  margin-bottom:22px;
+}
+
+.section{
+
+  margin-bottom:22px;
+}
+
+.label{
+
+  font-size:13px;
+
+  color:#d6e0ee;
+
+  margin-bottom:10px;
+
+  font-weight:600;
+}
+
+input,
+textarea{
+
+  width:100%;
+
+  border:none;
+  outline:none;
+
+  border-radius:18px;
+
+  background:#1a2943;
+
+  color:white;
+
+  padding:16px;
+
+  font-size:14px;
+
+  border:1px solid transparent;
+
+  transition:.25s;
+}
+
+textarea{
+
+  min-height:180px;
+
+  resize:vertical;
+
+  line-height:1.6;
+}
+
+input:focus,
+textarea:focus{
+
+  border-color:var(--cyan);
+
+  box-shadow:
+  0 0 0 4px rgba(0,234,255,.14);
+}
+
+/* =========================================================
+BUTTONS
+========================================================= */
+
+.btn{
+
+  width:100%;
+
+  border:none;
+
+  padding:15px;
+
+  border-radius:18px;
+
+  cursor:pointer;
+
+  font-size:15px;
+  font-weight:900;
+
+  margin-bottom:12px;
+
+  transition:.25s;
+
+  font-family:'Poppins',sans-serif;
+}
+
+.btn:hover{
+
+  transform:translateY(-3px);
+}
+
+.start-btn{
+
+  background:
+  linear-gradient(
+    135deg,
+    var(--cyan),
+    #00a2ff
+  );
+
+  color:#000;
+}
+
+.commentary-btn{
+
+  background:
+  linear-gradient(
+    135deg,
+    #ffd84d,
+    #ff9800
+  );
+
+  color:#000;
+}
+
+.loop-btn{
+
+  background:
+  linear-gradient(
+    135deg,
+    #9b5cff,
+    #6a11cb
+  );
+
+  color:#fff;
+}
+
+.overlay-btn{
+
+  background:
+  linear-gradient(
+    135deg,
+    #22c55e,
+    #16a34a
+  );
+
+  color:white;
+}
+/* 🔥 NEW BUTTON */
+.players-btn{
+  background:linear-gradient(135deg,#00ff99,#00b7ff);
+  color:#000;
+}
+
+.stop-btn{
+
+  background:
+  linear-gradient(
+    135deg,
+    #ff3b3b,
+    #ff1744
+  );
+
+  color:#fff;
+}
+
+/* =========================================================
+STATUS
+========================================================= */
+
+.status-box{
+
+  margin-top:22px;
+
+  background:#0d1627;
+
+  border-radius:18px;
+
+  padding:16px;
+
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.status-title{
+
+  font-size:12px;
+
+  color:var(--muted);
+
+  margin-bottom:8px;
+
+  letter-spacing:1px;
+}
+
+#msg{
+
+  font-size:14px;
+
+  line-height:1.6;
+
+  color:var(--cyan);
+}
+
+/* =========================================================
+RIGHT SECTION
+========================================================= */
+
+.right{
+
+  min-width:0;
+}
+
+.right-top{
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  margin-bottom:22px;
+}
+
+.right-title{
+
+  font-size:28px;
+  font-weight:900;
+}
+
+.match-count{
+
+  color:var(--muted);
+}
+
+.match-count b{
+
+  color:var(--gold);
+}
+
+/* =========================================================
+GRID
+========================================================= */
+
+.grid{
+
+  display:grid;
+
+  grid-template-columns:
+  repeat(auto-fill,minmax(320px,1fr));
+
+  gap:18px;
+}
+
+/* =========================================================
+CARD
+========================================================= */
+
+.card{
+
+  position:relative;
+
+  overflow:hidden;
+
+  padding:22px;
+
+  border-radius:26px;
+
+  cursor:pointer;
+
+  border:1px solid rgba(255,255,255,.06);
+
+  background:
+  linear-gradient(
+    180deg,
+    rgba(17,26,46,.95),
+    rgba(10,16,30,.95)
+  );
+
+  transition:.3s;
+}
+
+.card:hover{
+
+  transform:
+  translateY(-6px);
+
+  box-shadow:
+  0 15px 40px rgba(0,234,255,.14);
+}
+
+.card.active{
+
+  border-color:rgba(255,0,85,.5);
+
+  box-shadow:
+  0 0 30px rgba(255,0,85,.2);
+}
+
+.card::before{
+
+  content:"";
+
+  position:absolute;
+  inset:0;
+
+  background:
+  linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.06),
+    transparent
+  );
+
+  transform:translateX(-120%);
+
+  animation:shine 5s linear infinite;
+}
+
+@keyframes shine{
+
+  from{
+    transform:translateX(-120%);
+  }
+
+  to{
+    transform:translateX(120%);
+  }
+}
+
+.card-top{
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  margin-bottom:16px;
+}
+
+.live-badge{
+
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  color:#ff6b6b;
+
+  font-size:13px;
+  font-weight:800;
+}
+
+.match-name{
+
+  font-size:19px;
+  font-weight:800;
+
+  line-height:1.5;
+}
+
+.score{
+
+  margin-top:12px;
+
+  font-size:14px;
+
+  color:#d6e0ee;
+}
+
+.flash{
+
+  color:var(--cyan);
+
+  transform:scale(1.03);
+}
+
+.links{
+
+  display:flex;
+  gap:12px;
+
+  margin-top:20px;
+}
+
+.links a{
+
+  flex:1;
+
+  text-align:center;
+
+  text-decoration:none;
+
+  padding:11px 12px;
+
+  border-radius:14px;
+
+  font-size:13px;
+  font-weight:800;
+
+  transition:.25s;
+}
+
+.main-link{
+
+  background:#1b2f4c;
+
+  color:var(--cyan);
+}
+
+.main-link:hover{
+
+  background:var(--cyan);
+
+  color:#000;
+}
+
+.overlay-link{
+
+  background:#173826;
+
+  color:#00ff99;
+}
+
+.overlay-link:hover{
+
+  background:#00ff99;
+
+  color:#000;
+}
+
+/* =========================================================
+NO MATCH
+========================================================= */
+
+.no-match{
+
+  padding:45px;
+
+  border-radius:24px;
+
+  text-align:center;
+
+  background:#111a2e;
+
+  color:#8ea2be;
+
+  font-size:18px;
+}
+
+/* =========================================================
+RESPONSIVE
+========================================================= */
+
+@media(max-width:1100px){
+
+  .container{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:700px){
+
+  .header{
+    padding:0 18px;
+  }
+
+  .title{
+    font-size:22px;
+  }
+
+  .container{
+    padding:15px;
+  }
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- =========================================================
+BACKGROUND
+========================================================= -->
+
+<div class="bg-effects">
+
+  <div class="glow glow1"></div>
+  <div class="glow glow2"></div>
+  <div class="glow glow3"></div>
+
+</div>
+
+<!-- =========================================================
+HEADER
+========================================================= -->
+
+<div class="header">
+
+  <div class="title-wrap">
+
+    <div class="title">
+      🏏 Cricket AI Broadcast Dashboard
+    </div>
+
+    <div class="subtitle">
+      Real-time AI Commentary • Overlay Control • Live Match Automation
+    </div>
+
+  </div>
+
+  <div class="live-system">
+
+    <div class="live-dot"></div>
+
+    <div class="badge">
+      SYSTEM LIVE
+    </div>
+
+  </div>
+
+</div>
+
+<!-- =========================================================
+MAIN
+========================================================= -->
+
+<div class="container">
+
+  <!-- LEFT PANEL -->
+
+  <div class="panel">
+
+    <h3>
+      🎮 Broadcast Control
+    </h3>
+
+    <!-- MATCH URL -->
+
+    <div class="section">
+
+      <div class="label">
+        MATCH URL
+      </div>
+
+      <input
+        type="text"
+        id="url"
+        placeholder="Paste CREX live match URL..."
+      >
+
+    </div>
+
+    <!-- WELCOME COMMENTARY -->
+
+    <div class="section">
+
+      <div class="label">
+        🎙️ WELCOME COMMENTARY
+      </div>
+
+      <textarea
+        id="welcomeCommentary"
+        placeholder="Enter welcome commentary speech..."
+      ></textarea>
+
+    </div>
+
+    <!-- BUTTONS -->
+
+    <button
+      class="btn start-btn"
+      onclick="startMatch()"
+    >
+      🚀 START BROADCAST
+    </button>
+
+    <button
+      class="btn commentary-btn"
+      onclick="playWelcomeCommentary()"
+    >
+      🎙️ PLAY COMMENTARY
+    </button>
+
+    <button
+      class="btn loop-btn"
+      id="loopBtn"
+      onclick="toggleLoop()"
+    >
+      🔁 START LOOP
+    </button>
+
+    <button
+      class="btn overlay-btn"
+      onclick="openOverlay()"
+    >
+      🎥 OPEN OVERLAY
+    </button>
+	<button class="btn players-btn" onclick="openPlayers()">
+    👥 OPEN PLAYING XI
+  </button>
+ <button
+      class="btn overlay-btn"
+      onclick="openOverlay()"
+    >
+       <!-- 🔥 NEW PLAYING XI BUTTON -->
+  
+      🛑 STOP ALL
+    </button>
+
+
+    <!-- STATUS -->
+
+    <div class="status-box">
+
+      <div class="status-title">
+        SYSTEM STATUS
+      </div>
+
+      <div id="msg">
+        Waiting for broadcast...
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+
+  <div class="right">
+
+    <div class="right-top">
+
+      <div class="right-title">
+        📡 Live Matches
+      </div>
+
+      <div class="match-count">
+
+        Total Matches:
+        <b id="count">0</b>
+
+      </div>
+
+    </div>
+
+    <div
+      class="grid"
+      id="matches"
+    ></div>
+
+  </div>
+
+</div>
+
+<script>
+
+/* =========================================================
+STATE
+========================================================= */
+
+let selectedCard = null;
+
+let prevScores = {};
+
+let commentaryLoop = null;
+
+let isLooping = false;
+
+const OVERLAY_URL = "/overlay";
+
+/* =========================================================
+STATUS MESSAGE
+========================================================= */
+
+function msg(text){
+
+  document.getElementById("msg").innerText = text;
+}
+
+/* =========================================================
+START MATCH
+========================================================= */
+
+async function startMatch(){
+
+  const url =
+    document.getElementById("url")
+    .value
+    .trim();
+
+  if(!url){
+
+    msg("⚠️ Please enter a match URL");
+    return;
+  }
+
+  msg("🚀 Starting live broadcast...");
+
+  try{
+
+    const res =
+      await fetch("/set-url",{
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+          url:url
+        })
+
+      });
+
+    const data =
+      await res.json();
+
+    if(data.success){
+
+      msg("✅ Broadcast started successfully");
+
+    }else{
+
+      msg("❌ Failed to start broadcast");
+    }
+
+  }catch(err){
+
+    console.error(err);
+
+    msg("❌ Server connection failed");
+  }
+}
+
+/* =========================================================
+PLAY COMMENTARY
+========================================================= */
+
+async function playWelcomeCommentary(){
+
+  const commentary =
+    document.getElementById(
+      "welcomeCommentary"
+    )
+    .value
+    .trim();
+
+  if(!commentary){
+
+    msg("⚠️ Please enter commentary text");
+    return;
+  }
+
+  msg("🎙️ Playing commentary...");
+
+  try{
+
+    const res =
+      await fetch("/play-welcome-commentary",{
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+          text:commentary
+        })
+
+      });
+
+    if(!res.ok){
+
+      throw new Error("Failed");
+    }
+
+    const data =
+      await res.json();
+
+    if(data.success){
+
+      msg("✅ Commentary played successfully");
+
+    }else{
+
+      msg("❌ Failed to play commentary");
+    }
+
+  }catch(err){
+
+    console.error(err);
+
+    msg("❌ Commentary server error");
+  }
+}
+
+/* =========================================================
+LOOP COMMENTARY
+========================================================= */
+
+function toggleLoop(){
+
+  if(isLooping){
+
+    stopLoop();
+    return;
+  }
+
+  const commentary =
+    document.getElementById(
+      "welcomeCommentary"
+    )
+    .value
+    .trim();
+
+  if(!commentary){
+
+    msg("⚠️ Please enter commentary first");
+    return;
+  }
+
+  isLooping = true;
+
+  document.getElementById(
+    "loopBtn"
+  ).innerText = "⏹️ STOP LOOP";
+
+  msg("🔁 Commentary loop started");
+
+  playWelcomeCommentary();
+
+  commentaryLoop =
+    setInterval(() => {
+
+      playWelcomeCommentary();
+
+    }, 30000);
+}
+
+/* =========================================================
+STOP LOOP
+========================================================= */
+
+function stopLoop(){
+
+  clearInterval(commentaryLoop);
+
+  commentaryLoop = null;
+
+  isLooping = false;
+
+  document.getElementById(
+    "loopBtn"
+  ).innerText = "🔁 START LOOP";
+
+  msg("⏹️ Commentary loop stopped");
+}
+
+/* =========================================================
+STOP ALL
+========================================================= */
+
+async function stopAll(){
+
+  try{
+
+    stopLoop();
+
+    await fetch("/set-url",{
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+        url:null
+      })
+
+    });
+
+    await fetch("/stop-commentary",{
+      method:"POST"
+    });
+
+    if(selectedCard){
+
+      selectedCard.classList.remove("active");
+
+      selectedCard = null;
+    }
+
+    msg("🛑 All systems stopped");
+
+  }catch(err){
+
+    console.error(err);
+
+    msg("❌ Failed stopping systems");
+  }
+}
+
+/* =========================================================
+OPEN OVERLAY
+========================================================= */
+
+function openOverlay(){
+
+  window.open(
+    OVERLAY_URL,
+    "_blank",
+    "width=1920,height=1080"
+  );
+}
+
+/* 🔥 NEW PLAYERS LINK */
+function openPlayers(){
+  window.open("http://127.0.0.1:8000/players","_blank");
+}
+/* =========================================================
+SELECT MATCH
+========================================================= */
+
+function selectMatch(url,el){
+
+  if(selectedCard){
+
+    selectedCard.classList.remove("active");
+  }
+
+  selectedCard = el;
+
+  selectedCard.classList.add("active");
+
+  document.getElementById("url").value =
+    url;
+
+  startMatch();
+}
+
+/* =========================================================
+LOAD MATCHES
+========================================================= */
+
+async function loadMatches(){
+
+  try{
+
+    const res =
+      await fetch("/api/matches");
+
+    if(!res.ok){
+
+      throw new Error("API Error");
+    }
+
+    const data =
+      await res.json();
+
+    document.getElementById("count")
+    .innerText =
+    data.count || 0;
+
+    const box =
+      document.getElementById("matches");
+
+    box.innerHTML = "";
+
+    if(
+      !data.matches ||
+      data.matches.length === 0
+    ){
+
+      box.innerHTML = `
+        <div class="no-match">
+          No live matches available
+        </div>
+      `;
+
+      return;
+    }
+
+    data.matches.forEach(match => {
+
+      const prev =
+        prevScores[match.url];
+
+      const flash =
+        prev &&
+        prev !== match.text
+        ? "flash"
+        : "";
+
+      prevScores[match.url] =
+        match.text;
+
+      const card =
+        document.createElement("div");
+
+      card.className = "card";
+
+      card.onclick =
+        () => selectMatch(
+          match.url,
+          card
+        );
+
+      card.innerHTML = `
+
+        <div class="card-top">
+
+          <div class="live-badge">
+
+            <span class="live-dot"></span>
+
+            LIVE
+
+          </div>
+
+          <div style="font-size:12px;color:#94a3b8;">
+            AUTO
+          </div>
+
+        </div>
+
+        <div class="match-name">
+          ${match.text || "Cricket Match"}
+        </div>
+
+        <div class="score ${flash}">
+          Real-time AI Commentary Ready
+        </div>
+
+        <div class="links">
+
+          <a
+            class="main-link"
+            href="${match.url}"
+            target="_blank"
+            onclick="event.stopPropagation()"
+          >
+            🌐 Match
+          </a>
+
+          <a
+            class="overlay-link"
+            href="${OVERLAY_URL}"
+            target="_blank"
+            onclick="event.stopPropagation()"
+          >
+            🎥 Overlay
+          </a>
+
+        </div>
+
+      `;
+
+      box.appendChild(card);
+
+    });
+
+  }catch(err){
+
+    console.error(
+      "Load Match Error:",
+      err
+    );
+
+    msg("❌ Failed loading matches");
+  }
+}
+
+/* =========================================================
+AUTO REFRESH
+========================================================= */
+
+loadMatches();
+
+setInterval(
+  loadMatches,
+  8000
+);
+
+</script>
+
+</body>
+</html>
