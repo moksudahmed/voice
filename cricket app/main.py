@@ -15,12 +15,6 @@ from utill import number_to_bangla_words
 import re
 from pydantic import BaseModel
 from voice import speak_bangla 
-from fastapi import FastAPI, Request, Body
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-
-
-
 # =========================================================
 # APP
 # =========================================================
@@ -51,8 +45,7 @@ STATE = {
         "team_b_full_name": "TEAM B",
         "match_info": ""
     },
-    "data": {},
-    "generated_commentary":""
+    "data": {}
 }
 
 match_state = {
@@ -271,7 +264,25 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
         if extra in events:
             parts.append(generate_event_commentary([extra]))
 
-    
+    # 4️⃣ Batsman status
+    if batsmen and len(batsmen) >= 2:
+        b1 = batsmen[0]
+        b2 = batsmen[1]
+
+        # Basic score update commentary
+        parts.append(
+            f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
+            f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
+        )
+
+        # Check milestones for both batsmen
+        for b in [b1, b2]:
+            milestone_comment = get_milestone_comment(b["name"], b["runs"])
+            if milestone_comment:
+                parts.append(milestone_comment)
+    elif batsmen and len(batsmen) == 1:
+        b1 = batsmen[0]
+        parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
 
     # 5️⃣ Over complete summary
     if "OVER_COMPLETE" in events:
@@ -283,25 +294,6 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
             over_comment = f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
         parts.append(over_comment)
         
-        # 4️⃣ Batsman status
-        if batsmen and len(batsmen) >= 2:
-            b1 = batsmen[0]
-            b2 = batsmen[1]
-
-            # Basic score update commentary
-            parts.append(
-                f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
-                f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
-            )
-
-            # Check milestones for both batsmen
-            for b in [b1, b2]:
-                milestone_comment = get_milestone_comment(b["name"], b["runs"])
-                if milestone_comment:
-                    parts.append(milestone_comment)
-        elif batsmen and len(batsmen) == 1:
-            b1 = batsmen[0]
-            parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
         # 6️⃣ Welcome message and quick update for new viewers
         if team1 and team2:
             welcome_msg = (
@@ -682,7 +674,7 @@ async def ensure_flags_loaded():
     global FLAGS_LOADED, FLAGS_URL
 
     url = STATE["url"]
-    print("test flag", url)
+    
     if not url:
         return
 
@@ -731,130 +723,54 @@ def swap_teams(flags: dict):
 
 def parse_bowler(data):
     """
-    Extract bowler info safely with proper error handling.
+    Extract exactly 2 batsmen (clean & accurate)
     """
+  
+    bowler = data["name"]
+    bowler_fig = data["figures"]
+    
+       
+    match = re.search(r'(\d+)-(\d+)\s*\((\d+\.\d)\)', bowler_fig)
+    wickets = 0
+    runs = 0
+    overs = 0
+    if match:
+        wickets = int(match.group(1))
+        runs = int(match.group(2))
+        overs = match.group(3)
 
-    try:
-
-        if not isinstance(data, dict):
-            return {
-                "name": "Unknown",
-                "runs_conceded": 0,
-                "wickets": 0,
-                "overs": "0.0"
-            }
-
-        bowler = data.get("name", "Unknown")
-        bowler_fig = str(data.get("figures", "")).strip()
-
-        wickets = 0
-        runs = 0
-        overs = "0.0"
-
-        try:
-            # Example:
-            # "2-25 (3.4)"
-
-            match = re.search(
-                r'(\d+)-(\d+)\s*\((\d+\.\d)\)',
-                bowler_fig
-            )
-
-            if match:
-
-                wickets = int(match.group(1))
-                runs = int(match.group(2))
-                overs = match.group(3)
-
-        except Exception as regex_error:
-
-            print(f"[parse_bowler REGEX ERROR] {regex_error}")
-
-        try:
-            bowler_name = remove_first_part(
-                str(bowler).strip()
-            )
-
-        except Exception:
-            bowler_name = str(bowler).strip()
-
-        return {
-            "name": bowler_name or "Unknown",
+        #print("Wickets:", wickets)
+        #print("Runs:", runs)
+        #print("Overs:", overs)
+        #print("Test Name", bowler)
+    
+    return {
+            "name": remove_first_part(bowler),
             "runs_conceded": runs,
             "wickets": wickets,
             "overs": overs
         }
 
-    except Exception as e:
-
-        print(f"[parse_bowler ERROR] {e}")
-
-        return {
-            "name": "Unknown",
-            "runs_conceded": 0,
-            "wickets": 0,
-            "overs": "0.0"
-        }
 def parse_batsmen(data):
     """
-    Extract exactly 2 batsmen safely with error handling.
+    Extract exactly 2 batsmen (clean & accurate)
     """
-
-    try:
-        if not isinstance(data, dict):
-            return []
-
-        def safe_int(value, default=0):
-            try:
-                if value is None or value == "":
-                    return default
-
-                # Handle values like "45*" or "12 "
-                value = str(value).replace("*", "").strip()
-
-                return int(value)
-
-            except (ValueError, TypeError):
-                return default
-
-        def safe_name(name):
-            try:
-                if not name:
-                    return "Unknown"
-
-                return get_last_name(str(name).strip())
-
-            except Exception:
-                return "Unknown"
-
-        striker = {
-            "name": safe_name(data.get("striker")),
-            "runs": safe_int(data.get("striker_runs")),
-            "balls": safe_int(data.get("striker_balls")),
-        }
-
-        non_striker = {
-            "name": safe_name(data.get("non_striker")),
-            "runs": safe_int(data.get("non_striker_runs")),
-            "balls": safe_int(data.get("non_striker_balls")),
-        }
-
-        return [striker, non_striker]
-
-    except Exception as e:
-
-        print(f"[parse_batsmen ERROR] {e}")
-
-        return [
+    striker = data["striker"]
+    striker_balls = data["striker_balls"]
+    striker_runs = data["striker_runs"]
+    non_striker = data["non_striker"]
+    non_striker_balls = data["non_striker_balls"]
+    non_striker_runs = data["non_striker_runs"]
+    return [
             {
-                "name": "Unknown",
-                "runs": 0,
-                "balls": 0,
+                "name": get_last_name(striker),
+                "runs": int(striker_runs),
+                "balls": int(striker_balls),
             },
-            {
-                "name": "Unknown",
-                "runs": 0,
-                "balls": 0,
+             {
+                "name": get_last_name(non_striker),
+                "runs": int(non_striker_runs),
+                "balls": int(non_striker_balls),
             },
         ]
 async def scrap_page(page):
@@ -904,6 +820,7 @@ async def scrap_page(page):
 
                     status: "",
                     commentary: "",
+                    batting:"",                            
 
                     // BOWLER
                     bowler: "",
@@ -1031,7 +948,7 @@ async def scrap_page(page):
                 // COMMENTARY
                 // =================================================
 
-                const commentaryEl =
+               /* const commentaryEl =
                     document.querySelector(
                         ".commentary-text, .live-commentary, .commentary"
                     );
@@ -1040,8 +957,30 @@ async def scrap_page(page):
 
                     data.commentary =
                         clean(commentaryEl.innerText);
-                }
+                }*/
 
+                const teamBlocks =
+                    document.querySelectorAll(
+                    ".team-content"
+                    );
+
+                    // TEAM A
+                    if (teamBlocks.length >= 1) {
+
+                    const team1 = teamBlocks[0];
+
+                    const team1Name =
+                        team1.querySelector(".team-name");
+                    
+
+                    if (team1Name) {
+
+                        data.batting =
+                            clean(team1Name.innerText);
+                    }                    
+
+                    }
+                    
                 // =================================================
                 // PARTNERSHIP
                 // =================================================
@@ -1387,7 +1326,6 @@ async def scraper():
     innings_state = False
     last_state = None
     last_event = ""
-    #swap_teams(STATE["flags"])
     while True:
 
         try:
@@ -1445,32 +1383,33 @@ async def scraper():
             # =====================================================
             # SEND ONLY IF CHANGED (FAST HASH STYLE OPTIONAL)
             # =====================================================
-            
+           
             if parsed != last_state:
                 last_state = parsed
                 STATE["data"] = parsed
                 event = parsed["result_boxes"][0]
-                #parsed["result_boxes"][0]="Wicket"
                 
-                STATE["data"]["commentary"]= event
-                #batsmen = parsed["result_boxes"][0]
-               
                 print(event)
+                
+                #STATE["data"]["commentary"]= event
+                #batsmen = parsed["result_boxes"][0]
+                
                 batsman = parse_batsmen(parsed)
                 
                 bowler = parse_bowler(parsed["live_players"]['bowler'])                          
                 
                 full_over = int(parsed["overs"].split(".")[0])
-               
+                
                 if event != last_event:
                     
                     commentary = generate_continuous_commentary(detect_event(event), batsman, bowler, parsed["score"], full_over, STATE["flags"].get("team_a_full_name"), STATE["flags"].get("team_b_full_name"), event)
                     #commentary = get_bangla_commentary(event)  
                     
-                    STATE["generated_commentary"]= commentary
-                    print(commentary)                  
                     if commentary:
-                        speak_bangla(commentary) 
+                        print("Testset")
+                        STATE["data"]["commentary"] = commentary
+                        
+                        #speak_bangla(commentary) 
                         print(commentary)
                     last_event = event
                 dead = []
@@ -1478,13 +1417,8 @@ async def scraper():
                 if event == "Innings Break" and not innings_state and is_valid_flags(STATE.get("flags")):                
                     #print("Check innings break")
                     swap_teams(STATE["flags"])
-                    commentary = generate_break_commentary(event, '', 0, 0)
-                    if commentary:
-                        speak_bangla(commentary) 
-                        print(commentary)
                     #print("State Changed:", STATE["flags"])
                     innings_state = True
-                
                 for ws in list(clients):
                     try:
                        # await ws.send_json(parsed)
@@ -1679,7 +1613,11 @@ app.mount(
     StaticFiles(directory="static"),
     name="static"
 )
-templates = Jinja2Templates(directory="templates")
+app.mount(
+    "/templates",
+    StaticFiles(directory="templates"),
+    name="templates"
+)
 # =========================
 # INIT
 # =========================
@@ -1751,136 +1689,237 @@ async def ws(websocket: WebSocket):
         print("❌ CLIENT DISCONNECTED")
 
 
-@app.post("/play-welcome-commentary")
-async def play_welcome_commentary(
-    payload: dict = Body(...)
-):
-
-    try:
-
-        text = payload.get("text", "").strip()
-
-        if not text:
-
-            return JSONResponse({
-                "success": False,
-                "message": "Empty speech"
-            })
-
-        # ==========================================
-        # YOUR AI TTS FUNCTION
-        # ==========================================
-
-        #await generate_and_play_commentary(text)
-        speak_bangla(text) 
-
-        return JSONResponse({
-            "success": True
-        })
-
-    except Exception as e:
-
-        print(
-            "[WELCOME COMMENTARY ERROR]",
-            e
-        )
-
-        return JSONResponse({
-            "success": False,
-            "message": str(e)
-        })
-
 # =========================================================
 # HTML PAGE
 # =========================================================
 
-
 @app.get("/players", response_class=HTMLResponse)
-async def players_page(request: Request):
+async def home():
+    if STATE["url"]:
+        data = await get_playing_xi(STATE["url"])
 
-    # =========================================================
-    # 1. STATE (SOURCE OF TRUTH)
-    # =========================================================
-    url = STATE.get("url")
-
-    if not url:
-        return HTMLResponse(
-            content="<h1>No Match URL Found in STATE</h1>",
-            status_code=404
+        team_a_html = generate_team_html(
+            data["team_a"],
+            "team-a"
         )
 
-    flags = STATE.get("flags", {})
-
-    team_a_name = flags.get("team_a_full_name", "TEAM A")
-    team_b_name = flags.get("team_b_full_name", "TEAM B")
-
-    team_a_flag = flags.get("team_a_flag") or "/static/default_a.png"
-    team_b_flag = flags.get("team_b_flag") or "/static/default_b.png"
-
-    team_a_short = flags.get("team_a_name", "")
-    team_b_short = flags.get("team_b_name", "")
-
-    match_info = flags.get("match_info", "")
-
-    # =========================================================
-    # 2. FETCH PLAYING XI FROM API
-    # =========================================================
-    try:
-        data = await get_playing_xi(url)
-    except Exception as e:
-        print("❌ Playing XI Error:", e)
-        return HTMLResponse(
-            content="<h1>Failed to load Playing XI</h1>",
-            status_code=500
+        team_b_html = generate_team_html(
+            data["team_b"],
+            "team-b"
         )
 
-    # =========================================================
-    # 3. SAFE API DATA EXTRACTION
-    # =========================================================
-    team_a = data.get("team_a") or {}
-    team_b = data.get("team_b") or {}
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
 
-    team_a_logo = team_a.get("logo") or team_a_flag
-    team_b_logo = team_b.get("logo") or team_b_flag
+        <head>
 
-    # =========================================================
-    # 4. GENERATE HTML BLOCKS
-    # =========================================================
-    team_a_html = generate_team_html(team_a, "team-a")
-    team_b_html = generate_team_html(team_b, "team-b")
+        <meta charset="UTF-8">
 
-    # =========================================================
-    # 5. RENDER TEMPLATE (OBS READY CONTEXT)
-    # =========================================================
-    return templates.TemplateResponse(
-        request=request,
-        name="players.html",
-        context={
-            # HTML blocks
-            "team_a_html": team_a_html,
-            "team_b_html": team_b_html,
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
 
-            # TEAM DISPLAY INFO (STATE CONTROLLED)
-            "team_a_name": team_a_name,
-            "team_b_name": team_b_name,
+        <title>Playing XI</title>
 
-            "team_a_short": team_a_short,
-            "team_b_short": team_b_short,
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-            "match_info": match_info,
+        <style>
 
-            # FLAGS (OBS GRAPHICS)
-            "team_a_flag": team_a_flag,
-            "team_b_flag": team_b_flag,
+        *{{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }}
 
-            # LOGOS (API fallback -> STATE fallback)
-            "team_a_logo": team_a_logo,
-            "team_b_logo": team_b_logo,
+        body{{
+            background:#050505;
+            color:#fff;
+            font-family:'Poppins',sans-serif;
+            padding:30px;
+        }}
 
-            # DEBUG / CONTROL
-            "match_url": url
-        }
-    )
+        .main-title{{
+            text-align:center;
+            font-size:60px;
+            font-weight:900;
+            margin-bottom:40px;
+
+            background:linear-gradient(
+                90deg,
+                #fff,
+                #ffd84d,
+                #ff9800
+            );
+
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }}
+
+        .teams{{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:30px;
+        }}
+
+        .team-container{{
+            background:
+            linear-gradient(
+                135deg,
+                rgba(255,255,255,.08),
+                rgba(255,255,255,.03)
+            );
+
+            border:1px solid rgba(255,255,255,.08);
+
+            border-radius:30px;
+
+            overflow:hidden;
+        }}
+
+        .team-header{{
+            padding:22px;
+            font-size:32px;
+            font-weight:900;
+            text-align:center;
+        }}
+
+        .team-a{{
+            background:
+            linear-gradient(
+                135deg,
+                #ff003c,
+                #ff9800
+            );
+        }}
+
+        .team-b{{
+            background:
+            linear-gradient(
+                135deg,
+                #6a00ff,
+                #c400ff
+            );
+        }}
+
+        .players-grid{{
+            padding:20px;
+
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:18px;
+        }}
+
+        .player-card{{
+            display:flex;
+            align-items:center;
+            gap:15px;
+
+            padding:16px;
+
+            border-radius:20px;
+
+            background:
+            linear-gradient(
+                135deg,
+                rgba(255,255,255,.08),
+                rgba(255,255,255,.02)
+            );
+
+            transition:.3s;
+        }}
+
+        .player-card:hover{{
+            transform:translateY(-5px);
+        }}
+
+        .player-img{{
+            width:80px;
+            height:80px;
+
+            border-radius:50%;
+            object-fit:cover;
+
+            border:3px solid rgba(255,255,255,.15);
+        }}
+
+        .player-info{{
+            flex:1;
+        }}
+
+        .player-name{{
+            font-size:20px;
+            font-weight:800;
+            line-height:1.3;
+        }}
+
+        .tag{{
+            color:#ffd84d;
+            margin-left:6px;
+        }}
+
+        .player-role{{
+            margin-top:8px;
+
+            display:inline-block;
+
+            padding:5px 12px;
+
+            border-radius:30px;
+
+            background:rgba(0,229,255,.12);
+
+            border:1px solid rgba(0,229,255,.25);
+
+            color:#00e5ff;
+
+            font-size:12px;
+            font-weight:700;
+        }}
+
+        @media(max-width:1200px){{
+            .teams{{
+                grid-template-columns:1fr;
+            }}
+        }}
+
+        @media(max-width:700px){{
+            .players-grid{{
+                grid-template-columns:1fr;
+            }}
+
+            .main-title{{
+                font-size:38px;
+            }}
+        }}
+
+        </style>
+
+        </head>
+
+        <body>
+
+            <div class="main-title">
+                PLAYING XI
+            </div>
+
+            <div class="teams">
+
+                {team_a_html}
+
+                {team_b_html}
+
+            </div>
+
+        </body>
+
+        </html>
+        """
+
+    return HTMLResponse(content=html)
+
+
 # =========================================================
 # JSON API
 # =========================================================

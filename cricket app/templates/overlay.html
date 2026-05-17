@@ -980,6 +980,13 @@
             setTimeout(() => clearEvent(), 2500);
         }
 
+        function speak(text) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = "bn-BD";
+            msg.rate = 1.05;
+            msg.pitch = 1.1;
+            speechSynthesis.speak(msg);
+        }
         function showEvent(type) { if (type) runEvent(type); }
 
         // TIMELINE RENDERER
@@ -1033,7 +1040,15 @@
                 setText("#teamB", flags.team_b_name || "TEAM B");
                 setImage("#teamAFlag", flags.team_a_flag);
                 setImage("#teamBFlag", flags.team_b_flag);
-                setText("#commentary", d.commentary || "LIVE MATCH");
+                setText("#commentary", d.result_boxes || "LIVE MATCH");
+
+                if (d.batting != flags.team_a_name){                    
+                    fielding=flags.team_a_name                  
+                    setText("#teamA", flags.team_b_name || "TEAM B");
+                    setText("#teamB", flags.team_a_name || "TEAM A");
+                    setImage("#teamAFlag", flags.team_b_flag);
+                    setImage("#teamBFlag", flags.team_a_flag);
+                }
 
                 if (batsmen[0]) {
                     setText("#strikerName", batsmen[0].name);
@@ -1057,7 +1072,10 @@
                 }
 
                 renderTimeline(d.overs_timeline || []);
-
+                              
+                
+                if (d.commentary)
+                    speak(d.commentary)
                 // Event detection
                 let eventType = d.event || null;
                 
