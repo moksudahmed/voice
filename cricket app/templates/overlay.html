@@ -980,13 +980,24 @@
             setTimeout(() => clearEvent(), 2500);
         }
 
-        function speak(text) {
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = "bn-BD";
-            msg.rate = 1.05;
-            msg.pitch = 1.1;
-            speechSynthesis.speak(msg);
-        }
+         function speak(text = "") {
+
+                if (!text) {
+                    console.log("No text provided for speech");
+                    return;
+                }
+
+                speechSynthesis.cancel();
+
+                const msg = new SpeechSynthesisUtterance(text);
+
+                msg.lang = "bn-BD";
+                msg.rate = 1.05;
+                msg.pitch = 1.1;
+                msg.volume = 1;
+
+                speechSynthesis.speak(msg);
+            }
         function showEvent(type) { if (type) runEvent(type); }
 
         // TIMELINE RENDERER
@@ -1017,6 +1028,7 @@
                 const bowler = livePlayers.bowler || null;
                 
                 console.log("📡 Received:", d.batting);
+                console.log("📡 Received:", d);
                 
                 // Rain detection
                 if (d.commentary) {
@@ -1041,7 +1053,8 @@
                 setImage("#teamAFlag", flags.team_a_flag);
                 setImage("#teamBFlag", flags.team_b_flag);
                 setText("#commentary", d.result_boxes || "LIVE MATCH");
-                const teamName = text.split(" ")[0];
+                
+                const teamName = d.batting.split(" ")[0];
                 if (teamName != flags.team_a_name){                    
                     fielding=flags.team_a_name                  
                     setText("#teamA", flags.team_b_name || "TEAM B");
@@ -1073,9 +1086,11 @@
 
                 renderTimeline(d.overs_timeline || []);
                               
-                
-                //if (d.commentary)
-                 //   speak(d.commentary)
+               speak("হ্যালো বাংলাদেশ"); 
+                // ✅ SAFE
+                if (d.commentary) {
+                    speak(d.commentary);
+                }
                 // Event detection
                 let eventType = d.event || null;
                 

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from playwright.async_api import async_playwright
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import Body
 import asyncio
 import random
 from player_list import get_playing_xi, generate_team_html
@@ -1409,7 +1410,7 @@ async def scraper():
                         print("Testset")
                         STATE["data"]["commentary"] = commentary
                         
-                        speak_bangla(commentary) 
+                        #speak_bangla(commentary) 
                         print(commentary)
                     last_event = event
                 dead = []
@@ -1930,3 +1931,18 @@ async def api_players():
     data = await get_playing_xi()
 
     return JSONResponse(content=data)
+
+@app.post("/play-welcome-commentary")
+async def play_commentary(
+    payload: dict = Body(...)
+):
+
+    text = payload.get("text", "")
+
+    print("COMMENTARY:", text)
+
+    return {
+        "success": True,
+        "message": "Commentary played"
+    }
+
