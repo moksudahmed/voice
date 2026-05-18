@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏏 Cricket AI Broadcast Dashboard - Working Audio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>🏏 Cricket AI Broadcast Dashboard | Real-time Commentary & Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * {
@@ -36,6 +36,7 @@
       overflow-x: hidden;
     }
 
+    /* bg fx */
     .bg-effects {
       position: fixed;
       inset: 0;
@@ -60,6 +61,7 @@
       to { transform: translateY(50px) scale(1.08); }
     }
 
+    /* header */
     .header {
       height: 90px;
       padding: 0 30px;
@@ -126,6 +128,7 @@
       background: linear-gradient(135deg, var(--cyan), var(--cyan2));
     }
 
+    /* layout */
     .container {
       display: grid;
       grid-template-columns: 380px 1fr;
@@ -133,6 +136,7 @@
       padding: 22px;
     }
 
+    /* panels */
     .panel {
       background: linear-gradient(180deg, rgba(17, 26, 46, 0.96), rgba(11, 17, 30, 0.96));
       border-radius: 28px;
@@ -146,6 +150,7 @@
       font-size: 22px;
       color: var(--cyan);
       margin-bottom: 22px;
+      letter-spacing: -0.2px;
     }
 
     .section {
@@ -183,6 +188,7 @@
       box-shadow: 0 0 0 4px rgba(0, 234, 255, 0.14);
     }
 
+    /* buttons */
     .btn {
       width: 100%;
       border: none;
@@ -205,6 +211,7 @@
     .stop-btn { background: linear-gradient(135deg, #ff3b3b, #ff1744); color: #fff; }
     .swap-btn { background: linear-gradient(135deg, #00eaff, #00ff99); color: #000; margin-bottom: 12px; }
 
+    /* team panel */
     .team-panel {
       margin-top: 20px;
       padding: 15px;
@@ -225,6 +232,7 @@
     .team-label { font-weight: 700; color: #00eaff; }
     .team-status { font-weight: 600; color: #ffd84d; }
 
+    /* status box */
     .status-box {
       margin-top: 22px;
       background: #0d1627;
@@ -233,8 +241,9 @@
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
     .status-title { font-size: 12px; color: var(--muted); margin-bottom: 8px; letter-spacing: 1px; }
-    #msg { font-size: 14px; line-height: 1.6; color: var(--cyan); }
+    #msg { font-size: 14px; line-height: 1.6; color: var(--cyan); word-break: break-word; }
 
+    /* right section */
     .right { min-width: 0; }
     .right-top {
       display: flex;
@@ -246,6 +255,7 @@
     .match-count { color: var(--muted); }
     .match-count b { color: var(--gold); }
 
+    /* grid + cards */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -253,6 +263,8 @@
     }
 
     .card {
+      position: relative;
+      overflow: hidden;
       padding: 22px;
       border-radius: 26px;
       cursor: pointer;
@@ -269,6 +281,21 @@
     .card.active {
       border-color: rgba(255, 0, 85, 0.6);
       box-shadow: 0 0 30px rgba(255, 0, 85, 0.3);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+      transform: translateX(-120%);
+      animation: shine 5s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shine {
+      from { transform: translateX(-120%); }
+      to { transform: translateX(120%); }
     }
 
     .card-top {
@@ -301,12 +328,8 @@
 
     .flash {
       color: var(--cyan);
-      animation: textFlash 0.5s ease;
-    }
-
-    @keyframes textFlash {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.02); }
+      transform: scale(1.02);
+      transition: 0.2s;
     }
 
     .links {
@@ -372,7 +395,7 @@
 <div class="header">
   <div class="title-wrap">
     <div class="title">🏏 Cricket AI Broadcast Dashboard</div>
-    <div class="subtitle">Real-time AI Commentary • Text-to-Speech • Live Match Simulation</div>
+    <div class="subtitle">Real-time AI Commentary • Overlay Control • Live Match Automation</div>
   </div>
   <div class="live-system">
     <div class="live-dot"></div>
@@ -381,17 +404,18 @@
 </div>
 
 <div class="container">
+  <!-- LEFT PANEL (UNIFIED) -->
   <div class="panel">
     <h3>🎮 Broadcast Control</h3>
 
     <div class="section">
-      <div class="label">📌 MATCH URL (Simulated)</div>
-      <input type="text" id="url" placeholder="Paste match URL or use demo data...">
+      <div class="label">📌 MATCH URL</div>
+      <input type="text" id="url" placeholder="Paste CREX live match URL...">
     </div>
 
     <div class="section">
       <div class="label">🎙️ WELCOME COMMENTARY</div>
-      <textarea id="welcomeCommentary" placeholder="Enter welcome commentary speech...">Welcome to the Cricket AI Broadcast! Today's match promises exciting action. Stay tuned for live updates and expert analysis.</textarea>
+      <textarea id="welcomeCommentary" placeholder="Enter welcome commentary speech..."></textarea>
     </div>
 
     <button class="btn start-btn" onclick="startMatch()">🚀 START BROADCAST</button>
@@ -401,6 +425,7 @@
     <button class="btn players-btn" onclick="openPlayers()">👥 OPEN PLAYING XI</button>
     <button class="btn stop-btn" onclick="stopAllSystems()">🛑 STOP ALL</button>
 
+    <!-- Team swap panel (integrated) -->
     <div style="margin-top: 16px;">
       <button class="btn swap-btn" onclick="swapTeams()">🔄 SWAP BATTING ↔ FIELDING</button>
       <div class="team-panel">
@@ -417,118 +442,91 @@
 
     <div class="status-box">
       <div class="status-title">📡 SYSTEM STATUS</div>
-      <div id="msg">✅ Ready. Click PLAY COMMENTARY to hear audio.</div>
+      <div id="msg">Waiting for broadcast...</div>
     </div>
   </div>
 
+  <!-- RIGHT SECTION: LIVE MATCHES -->
   <div class="right">
     <div class="right-top">
       <div class="right-title">📡 Live Matches</div>
-      <div class="match-count">Total Matches: <b id="count">3</b></div>
+      <div class="match-count">Total Matches: <b id="count">0</b></div>
     </div>
     <div class="grid" id="matches"></div>
   </div>
 </div>
 
 <script>
-  // ======================= TEXT TO SPEECH SETUP =======================
-  let speechSynthesis = window.speechSynthesis;
-  let currentUtterance = null;
-
-  function speakText(text) {
-    if (!text || text.trim() === "") {
-      msg("⚠️ No text to speak");
-      return false;
-    }
-    
-    // Stop any ongoing speech
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
-    }
-    
-    let utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
-    utterance.volume = 1;
-    utterance.lang = 'en-US';
-    
-    utterance.onstart = () => {
-      msg("🎙️ Speaking: " + text.substring(0, 50) + (text.length > 50 ? "..." : ""));
-    };
-    
-    utterance.onend = () => {
-      msg("✅ Commentary finished");
-    };
-    
-    utterance.onerror = (event) => {
-      console.error("Speech error:", event);
-      msg("❌ Speech error occurred");
-    };
-    
-    speechSynthesis.speak(utterance);
-    currentUtterance = utterance;
-    return true;
-  }
-
   // ======================= STATE =======================
   let selectedCard = null;
+  let prevScores = {};
   let commentaryLoop = null;
   let isLooping = false;
-  let broadcastActive = false;
-  
-  // Team state
+  const OVERLAY_URL = "/overlay";
+
+  // Team state (batting/fielding)
   let teamState = {
     teamA: "Batting",
     teamB: "Fielding"
   };
 
-  // Simulated match data
-  let simulatedMatches = [
-    { id: 1, name: "IND vs AUS - 3rd ODI", url: "https://example.com/ind-vs-aus", score: "IND 245/4 (35.2 ov)" },
-    { id: 2, name: "ENG vs SA - Test Match", url: "https://example.com/eng-vs-sa", score: "ENG 189/2 (58 ov)" },
-    { id: 3, name: "PAK vs NZ - T20", url: "https://example.com/pak-vs-nz", score: "PAK 112/1 (12 ov)" }
-  ];
-  
-  let prevScores = {};
-
+  // ======================= UTILS =======================
   function msg(text) {
     const msgDiv = document.getElementById("msg");
     if (msgDiv) msgDiv.innerText = text;
   }
 
-  // ======================= START BROADCAST =======================
+  // ======================= START MATCH =======================
   async function startMatch() {
     const url = document.getElementById("url").value.trim();
     if (!url) {
-      msg("⚠️ Please enter a match URL or select a match from the list");
+      msg("⚠️ Please enter a match URL");
       return;
     }
-    broadcastActive = true;
-    msg(`🚀 Broadcast started for: ${url.substring(0, 50)}...`);
-    
-    // Simulate broadcast start with a welcome message
-    setTimeout(() => {
-      if (broadcastActive) {
-        speakText("Broadcast has started. Live coverage is now active.");
+    msg("🚀 Starting live broadcast...");
+    try {
+      const res = await fetch("/set-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url })
+      });
+      const data = await res.json();
+      if (data.success) {
+        msg("✅ Broadcast started successfully");
+      } else {
+        msg("❌ Failed to start broadcast");
       }
-    }, 500);
+    } catch (err) {
+      console.error(err);
+      msg("❌ Server connection failed");
+    }
   }
 
-  // ======================= PLAY COMMENTARY (WITH AUDIO) =======================
+  // ======================= PLAY WELCOME COMMENTARY =======================
   async function playWelcomeCommentary() {
     const commentary = document.getElementById("welcomeCommentary").value.trim();
     if (!commentary) {
       msg("⚠️ Please enter commentary text");
       return;
     }
-    
-    // Check if browser supports speech synthesis
-    if (!window.speechSynthesis) {
-      msg("❌ Your browser doesn't support text-to-speech");
-      return;
+    msg("🎙️ Playing commentary...");
+    try {
+      const res = await fetch("/play-welcome-commentary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: commentary })
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+      if (data.success) {
+        msg("✅ Commentary played successfully");
+      } else {
+        msg("❌ Failed to play commentary");
+      }
+    } catch (err) {
+      console.error(err);
+      msg("❌ Commentary server error");
     }
-    
-    speakText(commentary);
   }
 
   // ======================= LOOP COMMENTARY =======================
@@ -537,21 +535,18 @@
       stopLoop();
       return;
     }
-    
     const commentary = document.getElementById("welcomeCommentary").value.trim();
     if (!commentary) {
       msg("⚠️ Please enter commentary first");
       return;
     }
-    
     isLooping = true;
     document.getElementById("loopBtn").innerText = "⏹️ STOP LOOP";
-    msg("🔁 Commentary loop started - playing every 15 seconds");
-    
-    playWelcomeCommentary();
+    msg("🔁 Commentary loop started (every 30s)");
+    playWelcomeCommentary(); // immediate play
     commentaryLoop = setInterval(() => {
       playWelcomeCommentary();
-    }, 15000);
+    }, 30000);
   }
 
   function stopLoop() {
@@ -565,35 +560,38 @@
     msg("⏹️ Commentary loop stopped");
   }
 
-  // ======================= STOP ALL =======================
+  // ======================= STOP ALL SYSTEMS =======================
   async function stopAllSystems() {
-    stopLoop();
-    broadcastActive = false;
-    
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
+    try {
+      stopLoop(); // stop commentary loop
+      // stop broadcast by clearing url
+      await fetch("/set-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: null })
+      });
+      await fetch("/stop-commentary", { method: "POST" }).catch(() => {});
+      if (selectedCard) {
+        selectedCard.classList.remove("active");
+        selectedCard = null;
+      }
+      msg("🛑 All systems stopped");
+    } catch (err) {
+      console.error(err);
+      msg("❌ Failed stopping systems");
     }
-    
-    if (selectedCard) {
-      selectedCard.classList.remove("active");
-      selectedCard = null;
-    }
-    
-    msg("🛑 All systems stopped");
   }
 
   // ======================= OPEN OVERLAY / PLAYERS =======================
   function openOverlay() {
-    alert("🎥 Overlay would open here. In production, this would open a broadcast overlay window.");
-    // window.open("/overlay", "_blank", "width=1920,height=1080");
+    window.open(OVERLAY_URL, "_blank", "width=1920,height=1080");
   }
 
   function openPlayers() {
-    alert("👥 Playing XI panel would open here showing team lineups.");
-    // window.open("/players", "_blank");
+    window.open("http://127.0.0.1:8000/players", "_blank");
   }
 
-  // ======================= SWAP TEAMS =======================
+  // ======================= SWAP TEAMS (Batting/Fielding) =======================
   function swapTeams() {
     let temp = teamState.teamA;
     teamState.teamA = teamState.teamB;
@@ -604,135 +602,99 @@
     if (teamAStatus) teamAStatus.innerText = teamState.teamA;
     if (teamBStatus) teamBStatus.innerText = teamState.teamB;
 
+    // animation
     const teamABox = document.getElementById("teamABox");
     const teamBBox = document.getElementById("teamBBox");
     if (teamABox) teamABox.classList.add("swap-animate");
     if (teamBBox) teamBBox.classList.add("swap-animate");
-    
     setTimeout(() => {
       if (teamABox) teamABox.classList.remove("swap-animate");
       if (teamBBox) teamBBox.classList.remove("swap-animate");
     }, 600);
-    
-    speakText(`Teams swapped. Now ${teamState.teamA} is batting and ${teamState.teamB} is fielding.`);
     msg(`🔄 Teams swapped: ${teamState.teamA} batting, ${teamState.teamB} fielding`);
   }
 
-  // ======================= SELECT MATCH =======================
-  function selectMatch(url, element, matchName) {
+  // ======================= SELECT MATCH (highlight + set url) =======================
+  function selectMatch(url, element) {
     if (selectedCard) {
       selectedCard.classList.remove("active");
     }
     selectedCard = element;
     selectedCard.classList.add("active");
     document.getElementById("url").value = url;
-    startMatch();
-    speakText(`Selected match: ${matchName}`);
+    startMatch(); // auto-start broadcast for selected match
   }
 
-  // ======================= SIMULATED SCORE UPDATES =======================
-  let scoreUpdateInterval = null;
-  
-  function startScoreSimulation() {
-    if (scoreUpdateInterval) clearInterval(scoreUpdateInterval);
-    
-    scoreUpdateInterval = setInterval(() => {
-      if (!broadcastActive) return;
-      
-      // Randomly update scores to simulate live action
-      simulatedMatches.forEach(match => {
-        if (Math.random() < 0.3) { // 30% chance to update
-          let runs = Math.floor(Math.random() * 6) + 1;
-          let wickets = Math.random() < 0.1 ? 1 : 0;
-          let overs = parseFloat(match.score.split(" ")[1]?.replace(/[()]/g, "") || "0");
-          
-          if (match.name.includes("IND")) {
-            let currentRuns = parseInt(match.score.split(" ")[0].split("/")[0].replace(/[A-Z]/g, ""));
-            let newRuns = currentRuns + runs;
-            let newWickets = wickets ? parseInt(match.score.split("/")[1]?.split(" ")[0] || "0") + 1 : parseInt(match.score.split("/")[1]?.split(" ")[0] || "0");
-            match.score = `${match.name.includes("IND") ? "IND" : "AUS"} ${newRuns}/${newWickets} (${(overs + 0.2).toFixed(1)} ov)`;
-          } else if (match.name.includes("ENG")) {
-            match.score = `ENG ${parseInt(match.score.split(" ")[0].split("/")[0].replace(/[A-Z]/g, "")) + runs}/${parseInt(match.score.split("/")[1]?.split(" ")[0] || "0") + wickets} (${(overs + 0.2).toFixed(1)} ov)`;
-          } else if (match.name.includes("PAK")) {
-            match.score = `PAK ${parseInt(match.score.split(" ")[0].split("/")[0].replace(/[A-Z]/g, "")) + runs}/${parseInt(match.score.split("/")[1]?.split(" ")[0] || "0") + wickets} (${(overs + 0.2).toFixed(1)} ov)`;
-          }
-          
-          // Speak the update if broadcast is active
-          if (broadcastActive && Math.random() < 0.2) {
-            speakText(`${match.name} update: ${match.score}`);
-          }
-        }
-      });
-      
-      loadMatches(); // Refresh display
-    }, 8000);
-  }
-
-  // ======================= LOAD MATCHES =======================
+  // ======================= LOAD MATCHES FROM API =======================
   async function loadMatches() {
-    const container = document.getElementById("matches");
-    if (!container) return;
-    
-    document.getElementById("count").innerText = simulatedMatches.length;
-    container.innerHTML = "";
+    try {
+      const res = await fetch("/api/matches");
+      if (!res.ok) throw new Error("API Error");
+      const data = await res.json();
+      document.getElementById("count").innerText = data.count || 0;
+      const container = document.getElementById("matches");
+      if (!container) return;
+      container.innerHTML = "";
 
-    simulatedMatches.forEach(match => {
-      const previous = prevScores[match.url];
-      const hasFlash = previous && previous !== match.score;
-      if (hasFlash) {
-        prevScores[match.url] = match.score;
-      } else if (!previous) {
-        prevScores[match.url] = match.score;
+      if (!data.matches || data.matches.length === 0) {
+        container.innerHTML = `<div class="no-match">No live matches available</div>`;
+        return;
       }
 
-      const card = document.createElement("div");
-      card.className = "card";
-      if (selectedCard && selectedCard.dataset && selectedCard.dataset.url === match.url) {
-        card.classList.add("active");
-      }
-      card.dataset.url = match.url;
-      card.onclick = () => selectMatch(match.url, card, match.name);
-      
-      card.innerHTML = `
-        <div class="card-top">
-          <div class="live-badge">
-            <span class="live-dot"></span>
-            LIVE
+      data.matches.forEach(match => {
+        const previous = prevScores[match.url];
+        const hasFlash = previous && previous !== match.text;
+        if (hasFlash) prevScores[match.url] = match.text;
+        else if (!previous) prevScores[match.url] = match.text;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.onclick = (e) => {
+          // if link clicked avoid propagation
+          if (e.target.tagName === 'A') return;
+          selectMatch(match.url, card);
+        };
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="live-badge">
+              <span class="live-dot"></span>
+              LIVE
+            </div>
+            <div style="font-size:12px;color:#94a3b8;">AUTO</div>
           </div>
-          <div style="font-size:12px;color:#94a3b8;">AUTO SYNC</div>
-        </div>
-        <div class="match-name">${match.name}</div>
-        <div class="score ${hasFlash ? 'flash' : ''}">
-          ${match.score}
-        </div>
-        <div class="links">
-          <a class="main-link" href="${match.url}" target="_blank" onclick="event.stopPropagation()">🌐 Match Details</a>
-          <a class="overlay-link" href="#" onclick="event.stopPropagation();openOverlay()">🎥 Overlay</a>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  }
-
-  // ======================= INITIALIZATION =======================
-  function init() {
-    loadMatches();
-    startScoreSimulation();
-    
-    // Set initial team display
-    document.getElementById("teamAStatus").innerText = teamState.teamA;
-    document.getElementById("teamBStatus").innerText = teamState.teamB;
-    
-    msg("✅ Dashboard ready! Click PLAY COMMENTARY to hear text-to-speech audio.");
-    
-    // Add sample text to welcome commentary if empty
-    const welcomeTextarea = document.getElementById("welcomeCommentary");
-    if (!welcomeTextarea.value.trim()) {
-      welcomeTextarea.value = "Welcome to the Cricket AI Broadcast! Today's match promises exciting action. Stay tuned for live updates and expert analysis.";
+          <div class="match-name">${escapeHtml(match.text) || "Cricket Match"}</div>
+          <div class="score ${hasFlash ? 'flash' : ''}">
+            ${hasFlash ? '⚡ New update • ' : ''}Real-time AI Commentary Ready
+          </div>
+          <div class="links">
+            <a class="main-link" href="${match.url}" target="_blank" onclick="event.stopPropagation()">🌐 Match</a>
+            <a class="overlay-link" href="${OVERLAY_URL}" target="_blank" onclick="event.stopPropagation()">🎥 Overlay</a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    } catch (err) {
+      console.error("Load Match Error:", err);
+      msg("❌ Failed loading matches");
     }
   }
 
-  // Expose functions globally
+  // simple escape to avoid XSS
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  // ======================= AUTO REFRESH & INIT =======================
+  loadMatches();
+  setInterval(loadMatches, 8000);
+
+  // ensure global functions are exposed (for inline onclick)
   window.startMatch = startMatch;
   window.playWelcomeCommentary = playWelcomeCommentary;
   window.toggleLoop = toggleLoop;
@@ -742,8 +704,11 @@
   window.swapTeams = swapTeams;
   window.selectMatch = selectMatch;
 
-  // Start everything when page loads
-  init();
+  // initial team UI sync
+  if (document.getElementById("teamAStatus")) {
+    document.getElementById("teamAStatus").innerText = teamState.teamA;
+    document.getElementById("teamBStatus").innerText = teamState.teamB;
+  }
 </script>
 </body>
 </html>

@@ -265,25 +265,7 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
         if extra in events:
             parts.append(generate_event_commentary([extra]))
 
-    # 4️⃣ Batsman status
-    if batsmen and len(batsmen) >= 2:
-        b1 = batsmen[0]
-        b2 = batsmen[1]
-
-        # Basic score update commentary
-        parts.append(
-            f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
-            f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
-        )
-
-        # Check milestones for both batsmen
-        for b in [b1, b2]:
-            milestone_comment = get_milestone_comment(b["name"], b["runs"])
-            if milestone_comment:
-                parts.append(milestone_comment)
-    elif batsmen and len(batsmen) == 1:
-        b1 = batsmen[0]
-        parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
+   
 
     # 5️⃣ Over complete summary
     if "OVER_COMPLETE" in events:
@@ -294,8 +276,26 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
         else:
             over_comment = f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
         parts.append(over_comment)
-        
-        # 6️⃣ Welcome message and quick update for new viewers
+         # 4️⃣ Batsman status
+        if batsmen and len(batsmen) >= 2:
+            b1 = batsmen[0]
+            b2 = batsmen[1]
+
+            # Basic score update commentary
+            parts.append(
+                f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
+                f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
+            )
+
+            # Check milestones for both batsmen
+            for b in [b1, b2]:
+                milestone_comment = get_milestone_comment(b["name"], b["runs"])
+                if milestone_comment:
+                    parts.append(milestone_comment)
+        elif batsmen and len(batsmen) == 1:
+            b1 = batsmen[0]
+            parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
+            # 6️⃣ Welcome message and quick update for new viewers
         if team1 and team2:
             welcome_msg = (
                 f"যারা নতুন যুক্ত হয়েছেন, স্বাগতম! "
@@ -1410,7 +1410,7 @@ async def scraper():
                         print("Testset")
                         STATE["data"]["commentary"] = commentary
                         
-                        #speak_bangla(commentary) 
+                        speak_bangla(commentary) 
                         print(commentary)
                     last_event = event
                 dead = []
@@ -1932,17 +1932,42 @@ async def api_players():
 
     return JSONResponse(content=data)
 
+
 @app.post("/play-welcome-commentary")
-async def play_commentary(
+async def play_welcome_commentary(
     payload: dict = Body(...)
 ):
 
-    text = payload.get("text", "")
+    try:
 
-    print("COMMENTARY:", text)
+        text = payload.get("text", "").strip()
 
-    return {
-        "success": True,
-        "message": "Commentary played"
-    }
+        if not text:
 
+            return JSONResponse({
+                "success": False,
+                "message": "Empty speech"
+            })
+
+        # ==========================================
+        # YOUR AI TTS FUNCTION
+        # ==========================================
+
+        #await generate_and_play_commentary(text)
+        speak_bangla(text) 
+
+        return JSONResponse({
+            "success": True
+        })
+
+    except Exception as e:
+
+        print(
+            "[WELCOME COMMENTARY ERROR]",
+            e
+        )
+
+        return JSONResponse({
+            "success": False,
+            "message": str(e)
+        })
