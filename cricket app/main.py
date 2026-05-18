@@ -1409,7 +1409,7 @@ async def scraper():
                         print("Testset")
                         STATE["data"]["commentary"] = commentary
                         
-                        #speak_bangla(commentary) 
+                        speak_bangla(commentary) 
                         print(commentary)
                     last_event = event
                 dead = []

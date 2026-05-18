@@ -1016,7 +1016,7 @@
                 const batsmen = livePlayers.batsmen || [];
                 const bowler = livePlayers.bowler || null;
                 
-                console.log("📡 Received:", d);
+                console.log("📡 Received:", d.batting);
                 
                 // Rain detection
                 if (d.commentary) {
@@ -1041,8 +1041,8 @@
                 setImage("#teamAFlag", flags.team_a_flag);
                 setImage("#teamBFlag", flags.team_b_flag);
                 setText("#commentary", d.result_boxes || "LIVE MATCH");
-
-                if (d.batting != flags.team_a_name){                    
+                const teamName = text.split(" ")[0];
+                if (teamName != flags.team_a_name){                    
                     fielding=flags.team_a_name                  
                     setText("#teamA", flags.team_b_name || "TEAM B");
                     setText("#teamB", flags.team_a_name || "TEAM A");
@@ -1074,8 +1074,8 @@
                 renderTimeline(d.overs_timeline || []);
                               
                 
-                if (d.commentary)
-                    speak(d.commentary)
+                //if (d.commentary)
+                 //   speak(d.commentary)
                 // Event detection
                 let eventType = d.event || null;
                 
