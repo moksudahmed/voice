@@ -44,7 +44,10 @@ STATE = {
         "team_b_flag": "",
         "team_b_name":"",
         "team_b_full_name": "TEAM B",
-        "match_info": ""
+        "match_info": "",
+        "team_a_bangla_name":"",
+        "team_b_bangla_name":"",
+
     },
     "data": {}
 }
@@ -148,7 +151,10 @@ BREAK_EVENT_MAP = {
     "Tea Break": "TEA_BREAK",
     "Lunch Break": "LUNCH_BREAK",
     "Rain Break": "RAIN_BREAK",
-    "Rain Break (Delayed)": "RAIN_DELAY"
+    "Rain Break (Delayed)": "RAIN_DELAY",
+    "Time Out": "TIME_OUT",
+    "Strategic Timeout": "STRATEGIC_TIMEOUT"
+
 }
 # =====================================================
 # 🎯 EVENT DETECTION (FAST)
@@ -212,6 +218,9 @@ def generate_commentary2(prev, curr):
         pass
 
     return None
+def generate_welcome_message(team1, team2):
+    template = random.choice(WELCOME_COMMENTARY_TEMPLATES)
+    return template.format(team1=team1, team2=team2)
 
 def get_milestone_comment(name, runs):
     """Return milestone commentary for 50/100 runs."""
@@ -1400,14 +1409,20 @@ async def scraper():
                 bowler = parse_bowler(parsed["live_players"]['bowler'])                          
                 
                 full_over = int(parsed["overs"].split(".")[0])
-                
+                #STATE["data"]["result_boxes"] = "4"
                 if event != last_event:
                     
-                    commentary = generate_continuous_commentary(detect_event(event), batsman, bowler, parsed["score"], full_over, STATE["flags"].get("team_a_full_name"), STATE["flags"].get("team_b_full_name"), event)
+
+                    teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
+                    teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"
+                    
+                    commentary = generate_continuous_commentary(detect_event(event), batsman, bowler, parsed["score"], 
+                                                                    full_over, teamA, 
+                                                                    teamB, event)
                     #commentary = get_bangla_commentary(event)  
                     
                     if commentary:
-                        print("Testset")
+                        
                         STATE["data"]["commentary"] = commentary
                         
                         speak_bangla(commentary) 
@@ -1932,42 +1947,86 @@ async def api_players():
 
     return JSONResponse(content=data)
 
+# BACKEND CODE UPDATE (Add to your existing FastAPI app)
+# =====================================================
+# Add this enhanced endpoint with proper loop-compatible TTS execution
 
 @app.post("/play-welcome-commentary")
-async def play_welcome_commentary(
-    payload: dict = Body(...)
-):
-
+async def play_welcome_commentary(payload: dict = Body(...)):
+    """
+    AI Welcome Commentary Player with loop support
+    - Accepts text and triggers TTS (Bangla/English)
+    - Returns success/failure for loop coordination
+    """
     try:
-
         text = payload.get("text", "").strip()
-
         if not text:
-
             return JSONResponse({
                 "success": False,
-                "message": "Empty speech"
+                "message": "Empty speech text"
             })
-
+        
         # ==========================================
-        # YOUR AI TTS FUNCTION
+        # YOUR AI TTS FUNCTION (supports long text & async)
         # ==========================================
-
-        #await generate_and_play_commentary(text)
-        speak_bangla(text) 
-
+        # NOTE: speak_bangla() should ideally be non-blocking
+        # or run in thread pool to prevent event loop blocking.
+        # For better loop performance, consider:
+        # import asyncio
+        # await asyncio.to_thread(speak_bangla, text)
+        
+        # Option 1: Direct call (if speak_bangla is fast or runs in background)
+        speak_bangla(text)  # Replace with your actual TTS engine
+        
+        # Option 2 (recommended for async loop): 
+        # await asyncio.to_thread(speak_bangla, text)
+        
+        print(f"[WELCOME COMMENTARY] Played: {text[:100]}...")
         return JSONResponse({
-            "success": True
+            "success": True,
+            "message": "Commentary played successfully"
         })
-
+        
     except Exception as e:
-
-        print(
-            "[WELCOME COMMENTARY ERROR]",
-            e
-        )
-
+        print(f"[WELCOME COMMENTARY ERROR] {e}")
         return JSONResponse({
             "success": False,
             "message": str(e)
         })
+    
+# Add to your existing FastAPI backend
+
+# Store Bangla team names
+bangla_team_names = {}
+
+@app.post("/api/update-bangla-team-name")
+async def update_bangla_team_name(payload: dict):
+    try:
+        team = payload.get("team")
+        bangla_name = payload.get("bangla_name")
+        if team =="Team A":
+            STATE["flags"]["team_a_bangla_name"]= bangla_name
+        else:
+            STATE["flags"]["team_b_bangla_name"]= bangla_name
+        
+        print(f"[BANGLA NAME] {team} -> {bangla_name}")
+        
+        return {"success": True, "message": "Bangla name saved"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.get("/api/get-bangla-team-names")
+async def get_bangla_team_names():
+    try:
+        return {
+            "success": True,
+            "names": bangla_team_names
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>🏏 Cricket AI Broadcast Dashboard | Real-time Commentary & Overlay</title>
+  <title>🏏 Cricket AI Broadcast Dashboard | Team Details & Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * {
@@ -206,6 +206,7 @@
     .start-btn { background: linear-gradient(135deg, var(--cyan), #00a2ff); color: #000; }
     .commentary-btn { background: linear-gradient(135deg, #ffd84d, #ff9800); color: #000; }
     .loop-btn { background: linear-gradient(135deg, #9b5cff, #6a11cb); color: #fff; }
+    .loop-active { background: linear-gradient(135deg, #ff3b3b, #e91e63); color: #fff; box-shadow: 0 0 12px #ff3b3b; }
     .overlay-btn { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
     .players-btn { background: linear-gradient(135deg, #00ff99, #00b7ff); color: #000; }
     .stop-btn { background: linear-gradient(135deg, #ff3b3b, #ff1744); color: #fff; }
@@ -227,6 +228,13 @@
       padding: 10px;
       border-radius: 10px;
       background: #16243d;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .team-row:hover {
+      background: #1e3153;
+      transform: translateX(5px);
     }
 
     .team-label { font-weight: 700; color: #00eaff; }
@@ -373,14 +381,197 @@
       100% { transform: scale(1); }
     }
 
-    @media (max-width: 1100px) {
-      .container { grid-template-columns: 1fr; }
+    /* MODAL STYLES - Team Details Page */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 10000;
+      overflow-y: auto;
+      animation: modalFadeIn 0.3s ease;
     }
-    @media (max-width: 700px) {
-      .header { padding: 0 18px; }
-      .title { font-size: 22px; }
-      .container { padding: 15px; }
-      .grid { grid-template-columns: 1fr; }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      max-width: 1400px;
+      margin: 40px auto;
+      background: linear-gradient(135deg, #0a1225, #0c1428);
+      border-radius: 40px;
+      border: 1px solid rgba(0, 234, 255, 0.3);
+      overflow: hidden;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+      padding: 30px 40px;
+      background: linear-gradient(135deg, rgba(0, 234, 255, 0.1), rgba(0, 255, 153, 0.05));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, #00eaff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .close-modal {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      font-size: 32px;
+      cursor: pointer;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-modal:hover {
+      background: #ff3b3b;
+      transform: rotate(90deg);
+    }
+
+    .team-details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      padding: 40px;
+    }
+
+    .team-card-detail {
+      background: rgba(17, 26, 46, 0.8);
+      border-radius: 28px;
+      padding: 30px;
+      border: 1px solid rgba(0, 234, 255, 0.2);
+      transition: 0.3s;
+    }
+
+    .team-card-detail:hover {
+      transform: translateY(-5px);
+      border-color: var(--cyan);
+      box-shadow: 0 10px 30px rgba(0, 234, 255, 0.2);
+    }
+
+    .team-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .team-icon {
+      font-size: 64px;
+    }
+
+    .team-name {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--cyan);
+    }
+
+    .team-role {
+      display: inline-block;
+      padding: 6px 16px;
+      background: linear-gradient(135deg, var(--gold), #ff9800);
+      color: #000;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 10px;
+    }
+
+    .player-list {
+      margin-top: 20px;
+    }
+
+    .player-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      margin: 8px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      transition: 0.2s;
+    }
+
+    .player-item:hover {
+      background: rgba(0, 234, 255, 0.1);
+      transform: translateX(5px);
+    }
+
+    .player-name {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .player-role {
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(0,0,0,0.3);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gold);
+    }
+
+    .match-info {
+      grid-column: span 2;
+      background: rgba(0, 234, 255, 0.05);
+      border-radius: 28px;
+      padding: 25px;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    @media (max-width: 968px) {
+      .team-details-grid { grid-template-columns: 1fr; }
+      .container { grid-template-columns: 1fr; }
+      .modal-content { margin: 20px; }
     }
   </style>
 </head>
@@ -429,20 +620,21 @@
     <div style="margin-top: 16px;">
       <button class="btn swap-btn" onclick="swapTeams()">🔄 SWAP BATTING ↔ FIELDING</button>
       <div class="team-panel">
-        <div class="team-row" id="teamABox">
+        <div class="team-row" id="teamABox" onclick="showTeamDetails('Team A')">
           <span class="team-label">🏏 TEAM A</span>
           <span class="team-status" id="teamAStatus">Batting</span>
         </div>
-        <div class="team-row" id="teamBBox">
+        <div class="team-row" id="teamBBox" onclick="showTeamDetails('Team B')">
           <span class="team-label">⚡ TEAM B</span>
           <span class="team-status" id="teamBStatus">Fielding</span>
         </div>
       </div>
-    </div>
+    </div>    
 
     <div class="status-box">
       <div class="status-title">📡 SYSTEM STATUS</div>
       <div id="msg">Waiting for broadcast...</div>
+      <div id="loopStatus" style="font-size:12px; margin-top:8px; color:#00eaff80;"></div>
     </div>
   </div>
 
@@ -456,12 +648,24 @@
   </div>
 </div>
 
+<!-- TEAM DETAILS MODAL -->
+<div id="teamModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>🏏 Team Details & Lineup</h2>
+      <button class="close-modal" onclick="closeTeamModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
 <script>
   // ======================= STATE =======================
   let selectedCard = null;
   let prevScores = {};
   let commentaryLoop = null;
   let isLooping = false;
+  let loopIntervalSeconds = 30;
   const OVERLAY_URL = "/overlay";
 
   // Team state (batting/fielding)
@@ -470,10 +674,254 @@
     teamB: "Fielding"
   };
 
+  // Mock player data for demonstration
+  const teamPlayers = {
+    "Team A": {
+      name: "Royal Challengers",
+      players: [
+        { name: "Virat Kohli", role: "Batsman (Captain)" },
+        { name: "Faf du Plessis", role: "Batsman" },
+        { name: "Glenn Maxwell", role: "All-rounder" },
+        { name: "Dinesh Karthik", role: "Wicket-keeper" },
+        { name: "Mohammed Siraj", role: "Bowler" }
+      ],
+      stats: { runs: "245/3", overs: "18.2", rr: "13.36" }
+    },
+    "Team B": {
+      name: "Mumbai Indians",
+      players: [
+        { name: "Rohit Sharma", role: "Batsman (Captain)" },
+        { name: "Ishan Kishan", role: "Wicket-keeper" },
+        { name: "Suryakumar Yadav", role: "Batsman" },
+        { name: "Hardik Pandya", role: "All-rounder" },
+        { name: "Jasprit Bumrah", role: "Bowler" }
+      ],
+      stats: { runs: "189/4", overs: "15.0", rr: "12.60" }
+    }
+  };
+
   // ======================= UTILS =======================
   function msg(text) {
     const msgDiv = document.getElementById("msg");
     if (msgDiv) msgDiv.innerText = text;
+  }
+  
+  function updateLoopStatusUI() {
+    const loopStatusDiv = document.getElementById("loopStatus");
+    const loopBtn = document.getElementById("loopBtn");
+    if (isLooping) {
+      if (loopStatusDiv) loopStatusDiv.innerHTML = `🔊 LOOP ACTIVE • Every ${loopIntervalSeconds}s <span style="display:inline-block;width:8px;height:8px;background:#ffd84d;border-radius:50%;animation:pulse 0.8s infinite;"></span>`;
+      if (loopBtn) {
+        loopBtn.innerText = "⏹️ STOP LOOP";
+        loopBtn.classList.add("loop-active");
+      }
+    } else {
+      if (loopStatusDiv) loopStatusDiv.innerHTML = "";
+      if (loopBtn) {
+        loopBtn.innerText = "🔁 START LOOP";
+        loopBtn.classList.remove("loop-active");
+      }
+    }
+  }
+
+  // ======================= TEAM DETAILS MODAL =======================
+  function showTeamDetails(teamName) {
+  const team = teamPlayers[teamName];
+  const role = teamName === "Team A" ? teamState.teamA : teamState.teamB;
+  
+  const modalBody = document.getElementById("modalBody");
+  modalBody.innerHTML = `
+    <div class="team-details-grid">
+      <div class="team-card-detail">
+        <div class="team-header">
+          <div class="team-icon">🏏</div>
+          <div style="flex: 1;">
+            <div class="team-name" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+              <span>${team.name}</span>
+              <span style="font-size: 20px; color: #ffd84d;">|</span>
+              <span style="font-size: 18px; background: linear-gradient(135deg, #00eaff, #00ff99); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                ${team.banglaName || 'দলের নাম'}
+              </span>
+            </div>
+            <div class="team-role">${role}</div>
+          </div>
+        </div>
+        
+        <!-- Bangla Team Name Input Field -->
+        <div style="margin-bottom: 20px; padding: 15px; background: rgba(0, 234, 255, 0.1); border-radius: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #00eaff; font-weight: 600;">
+            🇧🇩 দলের নাম (Team Name in Bangla)
+          </label>
+          <div style="display: flex; gap: 10px;">
+            <input 
+              type="text" 
+              id="banglaTeamName" 
+              value="${team.banglaName || ''}" 
+              placeholder="যেমন: রয়্যাল চ্যালেঞ্জার্স ব্যাঙ্গালোর"
+              style="flex: 1; background: #1a2943; border: 1px solid #00eaff; color: white; padding: 12px; border-radius: 12px; font-size: 16px; font-family: 'Poppins', sans-serif;"
+            >
+            <button 
+              onclick="updateBanglaTeamName('${teamName}')" 
+              style="background: linear-gradient(135deg, #00eaff, #00a2ff); color: #000; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 800;"
+            >
+              💾 সংরক্ষণ
+            </button>
+          </div>
+          <div style="margin-top: 8px; font-size: 12px; color: #8fa3c1;">
+            💡 Tip: Enter team name in Bengali script
+          </div>
+        </div>
+        
+        <h3 style="margin-bottom: 15px;">🎽 Playing XI</h3>
+        <div class="player-list">
+          ${team.players.map(player => `
+            <div class="player-item">
+              <span class="player-name">${player.name}</span>
+              <span class="player-role">${player.role}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div class="team-card-detail">
+        <div class="team-header">
+          <div class="team-icon">📊</div>
+          <div class="team-name">Live Statistics</div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Current Score</div>
+            <div class="stat-value">${team.stats.runs}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Overs</div>
+            <div class="stat-value">${team.stats.overs}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Run Rate</div>
+            <div class="stat-value">${team.stats.rr}</div>
+          </div>
+        </div>
+        
+        <!-- Add Bangla Statistics Display -->
+        <div style="margin-top: 20px; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 16px;">
+          <h4>📊 বাংলা পরিসংখ্যান (Bangla Stats)</h4>
+          <div style="margin-top: 10px; font-size: 14px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+              <span>বর্তমান স্কোর:</span>
+              <span style="color: #00ff99; font-weight: 800;">${team.stats.runs}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+              <span>ওভার:</span>
+              <span style="color: #00ff99; font-weight: 800;">${team.stats.overs}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+              <span>রান রেট:</span>
+              <span style="color: #00ff99; font-weight: 800;">${team.stats.rr}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <h4>🎯 Key Players</h4>
+          ${team.players.slice(0, 3).map(player => `
+            <div class="player-item">
+              <span>⭐ ${player.name}</span>
+              <span style="color: #00ff99;">Form: 🔥</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div class="match-info">
+        <h3>🏆 Match Information</h3>
+        <p style="margin-top: 15px;">
+          <span id="matchInfoText">${team.name} is currently ${role === 'Batting' ? 'setting a target' : 'chasing the target'} in this exciting encounter!</span>
+        </p>
+        <p style="margin-top: 10px; color: #00eaff;">⚡ Live AI Commentary Active • Real-time Updates</p>
+        
+        <!-- Bangla Match Info Display -->
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <h4>🇧🇩 ম্যাচ তথ্য (Bangla)</h4>
+          <p style="margin-top: 10px; font-size: 14px;" id="banglaMatchInfo">
+            ${team.banglaName ? `${team.banglaName} ${role === 'Batting' ? 'ব্যাটিং করছে' : 'ফিল্ডিং করছে'}` : 'দলের নাম সেট করুন'}
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById("teamModal").style.display = "block";
+}
+// Function to update Bangla team name
+function updateBanglaTeamName(teamName) {
+  const banglaNameInput = document.getElementById("banglaTeamName");
+  const banglaName = banglaNameInput.value.trim();
+  
+  if (!banglaName) {
+    msg("⚠️ Please enter a team name in Bangla");
+    return;
+  }
+  
+  // Update the teamPlayers object with Bangla name
+  if (teamPlayers[teamName]) {
+    teamPlayers[teamName].banglaName = banglaName;
+    
+    // Also update the match info text in Bangla
+    const role = teamName === "Team A" ? teamState.teamA : teamState.teamB;
+    const banglaRole = role === "Batting" ? "ব্যাটিং করছে" : "ফিল্ডিং করছে";
+    
+    // Update the displayed Bangla match info
+    const banglaMatchInfo = document.getElementById("banglaMatchInfo");
+    if (banglaMatchInfo) {
+      banglaMatchInfo.innerHTML = `${banglaName} ${banglaRole}`;
+    }
+    
+    // Update the team name display in header
+    const teamNameElements = document.querySelectorAll(".team-name span:last-child");
+    if (teamNameElements.length > 0) {
+      const lastElement = teamNameElements[teamNameElements.length - 1];
+      if (lastElement && lastElement.parentElement === document.querySelector(".team-name")) {
+        lastElement.textContent = banglaName;
+      }
+    }
+    
+    msg(`✅ Team name updated to: ${banglaName}`);
+    
+    // Optional: Send to backend
+    saveBanglaTeamNameToBackend(teamName, banglaName);
+  }
+}
+
+// Function to save Bangla team name to backend
+async function saveBanglaTeamNameToBackend(teamName, banglaName) {
+  try {
+    const response = await fetch("/api/update-bangla-team-name", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        team: teamName,
+        bangla_name: banglaName
+      })
+    });
+    
+    if (response.ok) {
+      console.log("Bangla team name saved to backend");
+    }
+  } catch (error) {
+    console.error("Failed to save to backend:", error);
+  }
+}
+  function closeTeamModal() {
+    document.getElementById("teamModal").style.display = "none";
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById("teamModal");
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
   }
 
   // ======================= START MATCH =======================
@@ -507,7 +955,7 @@
     const commentary = document.getElementById("welcomeCommentary").value.trim();
     if (!commentary) {
       msg("⚠️ Please enter commentary text");
-      return;
+      return false;
     }
     msg("🎙️ Playing commentary...");
     try {
@@ -520,12 +968,15 @@
       const data = await res.json();
       if (data.success) {
         msg("✅ Commentary played successfully");
+        return true;
       } else {
         msg("❌ Failed to play commentary");
+        return false;
       }
     } catch (err) {
       console.error(err);
       msg("❌ Commentary server error");
+      return false;
     }
   }
 
@@ -537,34 +988,46 @@
     }
     const commentary = document.getElementById("welcomeCommentary").value.trim();
     if (!commentary) {
-      msg("⚠️ Please enter commentary first");
+      msg("⚠️ Please enter commentary before starting loop");
       return;
     }
     isLooping = true;
-    document.getElementById("loopBtn").innerText = "⏹️ STOP LOOP";
-    msg("🔁 Commentary loop started (every 30s)");
-    playWelcomeCommentary(); // immediate play
-    commentaryLoop = setInterval(() => {
-      playWelcomeCommentary();
-    }, 30000);
+    updateLoopStatusUI();
+    msg("🔁 Commentary loop started — playing every " + loopIntervalSeconds + " seconds");
+    
+    playWelcomeCommentary().then(() => {
+      scheduleNextLoop();
+    }).catch(() => {
+      scheduleNextLoop();
+    });
   }
-
+  
+  function scheduleNextLoop() {
+    if (!isLooping) return;
+    if (commentaryLoop) clearTimeout(commentaryLoop);
+    commentaryLoop = setTimeout(() => {
+      if (isLooping) {
+        playWelcomeCommentary().finally(() => {
+          scheduleNextLoop();
+        });
+      }
+    }, loopIntervalSeconds * 1000);
+  }
+  
   function stopLoop() {
     if (commentaryLoop) {
-      clearInterval(commentaryLoop);
+      clearTimeout(commentaryLoop);
       commentaryLoop = null;
     }
     isLooping = false;
-    const loopBtn = document.getElementById("loopBtn");
-    if (loopBtn) loopBtn.innerText = "🔁 START LOOP";
+    updateLoopStatusUI();
     msg("⏹️ Commentary loop stopped");
   }
 
   // ======================= STOP ALL SYSTEMS =======================
   async function stopAllSystems() {
     try {
-      stopLoop(); // stop commentary loop
-      // stop broadcast by clearing url
+      stopLoop();
       await fetch("/set-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -591,7 +1054,7 @@
     window.open("http://127.0.0.1:8000/players", "_blank");
   }
 
-  // ======================= SWAP TEAMS (Batting/Fielding) =======================
+  // ======================= SWAP TEAMS =======================
   function swapTeams() {
     let temp = teamState.teamA;
     teamState.teamA = teamState.teamB;
@@ -602,7 +1065,6 @@
     if (teamAStatus) teamAStatus.innerText = teamState.teamA;
     if (teamBStatus) teamBStatus.innerText = teamState.teamB;
 
-    // animation
     const teamABox = document.getElementById("teamABox");
     const teamBBox = document.getElementById("teamBBox");
     if (teamABox) teamABox.classList.add("swap-animate");
@@ -614,18 +1076,18 @@
     msg(`🔄 Teams swapped: ${teamState.teamA} batting, ${teamState.teamB} fielding`);
   }
 
-  // ======================= SELECT MATCH (highlight + set url) =======================
-  function selectMatch(url, element) {
+  // ======================= SELECT MATCH =======================
+  function selectMatch(url, element, matchName) {
     if (selectedCard) {
       selectedCard.classList.remove("active");
     }
     selectedCard = element;
     selectedCard.classList.add("active");
     document.getElementById("url").value = url;
-    startMatch(); // auto-start broadcast for selected match
+    startMatch();
   }
 
-  // ======================= LOAD MATCHES FROM API =======================
+  // ======================= LOAD MATCHES =======================
   async function loadMatches() {
     try {
       const res = await fetch("/api/matches");
@@ -650,9 +1112,8 @@
         const card = document.createElement("div");
         card.className = "card";
         card.onclick = (e) => {
-          // if link clicked avoid propagation
           if (e.target.tagName === 'A') return;
-          selectMatch(match.url, card);
+          selectMatch(match.url, card, match.text);
         };
         card.innerHTML = `
           <div class="card-top">
@@ -664,7 +1125,7 @@
           </div>
           <div class="match-name">${escapeHtml(match.text) || "Cricket Match"}</div>
           <div class="score ${hasFlash ? 'flash' : ''}">
-            ${hasFlash ? '⚡ New update • ' : ''}Real-time AI Commentary Ready
+            ${hasFlash ? '⚡ New update • ' : ''}Click to view team details
           </div>
           <div class="links">
             <a class="main-link" href="${match.url}" target="_blank" onclick="event.stopPropagation()">🌐 Match</a>
@@ -679,7 +1140,6 @@
     }
   }
 
-  // simple escape to avoid XSS
   function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
@@ -690,11 +1150,11 @@
     });
   }
 
-  // ======================= AUTO REFRESH & INIT =======================
+  // Auto-refresh matches
   loadMatches();
   setInterval(loadMatches, 8000);
 
-  // ensure global functions are exposed (for inline onclick)
+  // expose global functions
   window.startMatch = startMatch;
   window.playWelcomeCommentary = playWelcomeCommentary;
   window.toggleLoop = toggleLoop;
@@ -703,12 +1163,15 @@
   window.stopAllSystems = stopAllSystems;
   window.swapTeams = swapTeams;
   window.selectMatch = selectMatch;
+  window.showTeamDetails = showTeamDetails;
+  window.closeTeamModal = closeTeamModal;
 
   // initial team UI sync
   if (document.getElementById("teamAStatus")) {
     document.getElementById("teamAStatus").innerText = teamState.teamA;
     document.getElementById("teamBStatus").innerText = teamState.teamB;
   }
+  updateLoopStatusUI();
 </script>
 </body>
 </html>

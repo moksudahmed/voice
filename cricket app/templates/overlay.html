@@ -588,7 +588,115 @@
                 return false;
             }
         }
-        
+        // =========================================================
+        // PLAY SIX SOUND - TRIUMPHANT & FESTIVE
+        // =========================================================
+        function playSixSound() {
+            if (!audioContext || !audioUnlocked) return false;
+            
+            try {
+                const now = audioContext.currentTime;
+                
+                // 1. TRIUMPHANT FANFARE - Ascending melody
+                const fanfareNotes = [
+                    { freq: 523.25, time: 0.00, duration: 0.4 },  // C5
+                    { freq: 659.25, time: 0.15, duration: 0.4 },  // E5
+                    { freq: 783.99, time: 0.30, duration: 0.5 },  // G5
+                    { freq: 1046.50, time: 0.50, duration: 0.6 }, // C6 (High)
+                    { freq: 1318.52, time: 0.70, duration: 0.7 }, // E6 (Higher)
+                    { freq: 1567.98, time: 0.95, duration: 1.0 }   // G6 (Highest)
+                ];
+                
+                fanfareNotes.forEach(note => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.frequency.value = note.freq;
+                    osc.type = 'sine';
+                    
+                    // Volume envelope
+                    gain.gain.setValueAtTime(0, now + note.time);
+                    gain.gain.linearRampToValueAtTime(0.35, now + note.time + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, now + note.time + note.duration);
+                    
+                    osc.start(now + note.time);
+                    osc.stop(now + note.time + note.duration);
+                });
+                
+                // 2. HAPPY CHEER CHORD - Major chord celebration
+                const cheerFreqs = [523.25, 659.25, 783.99, 1046.50];
+                cheerFreqs.forEach(freq => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'triangle';
+                    gain.gain.setValueAtTime(0, now + 0.8);
+                    gain.gain.linearRampToValueAtTime(0.3, now + 1.0);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, now + 2.0);
+                    osc.start(now + 0.8);
+                    osc.stop(now + 2.0);
+                });
+                
+                // 3. EXCITED CROWD - Rythmic clapping/cheering
+                const crowdGain = audioContext.createGain();
+                crowdGain.connect(audioContext.destination);
+                crowdGain.gain.setValueAtTime(0, now);
+                crowdGain.gain.linearRampToValueAtTime(0.25, now + 0.3);
+                crowdGain.gain.exponentialRampToValueAtTime(0.00001, now + 2.5);
+                
+                // Create rhythmic clapping pattern
+                const clapTimes = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1];
+                clapTimes.forEach(clapTime => {
+                    const noiseBuffer = () => {
+                        const bufferSize = 2048;
+                        const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        for (let i = 0; i < bufferSize; i++) {
+                            data[i] = (Math.random() * 2 - 1) * 0.5;
+                        }
+                        return buffer;
+                    };
+                    
+                    const noise = audioContext.createBufferSource();
+                    noise.buffer = noiseBuffer();
+                    const noiseGain = audioContext.createGain();
+                    noise.connect(noiseGain);
+                    noiseGain.connect(crowdGain);
+                    noiseGain.gain.setValueAtTime(0.3, now + clapTime);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.00001, now + clapTime + 0.15);
+                    noise.start(now + clapTime);
+                });
+                
+                // 4. TRIUMPHANT DRUM ROLL
+                const drumGain = audioContext.createGain();
+                drumGain.connect(audioContext.destination);
+                drumGain.gain.setValueAtTime(0.2, now);
+                drumGain.gain.exponentialRampToValueAtTime(0.00001, now + 1.5);
+                
+                for (let i = 0; i < 12; i++) {
+                    const drumTime = now + (i * 0.08);
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.frequency.value = 120 + (i * 15);
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.15, drumTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, drumTime + 0.1);
+                    osc.start(drumTime);
+                    osc.stop(drumTime + 0.1);
+                }
+                
+                console.log("🔊 Playing SIX sound - TRIUMPHANT!");
+                return true;
+            } catch(e) {
+                console.log("Six sound error:", e);
+                return false;
+            }
+        }
         // Play shock sound
         function playShockSound() {
             if (!audioContext || !audioUnlocked) return false;
@@ -629,28 +737,34 @@
         }
         
         // Main play sound function
-        function playSound(type) {
-            if (!audioContext) {
-                console.log("🔇 Audio context not initialized");
-                return;
-            }
-            
-            if (!audioUnlocked) {
-                console.log(`🔇 Audio locked, queueing: ${type}`);
-                pendingSounds.push(type);
-                // Try to unlock again
-                if (unlockAttempts < 5) {
-                    setTimeout(() => unlockAudio(), 500);
+        // Main play sound function
+            function playSound(type) {
+                if (!audioContext) {
+                    console.log("🔇 Audio context not initialized");
+                    return;
                 }
-                return;
-            }
-            
-            if (type === "crowdCheer") {
-                playCheerSound();
-            } else if (type === "crowdShock") {
-                playShockSound();
-            }
-        }
+                
+                if (!audioUnlocked) {
+                    console.log(`🔇 Audio locked, queueing: ${type}`);
+                    pendingSounds.push(type);
+                    // Try to unlock again
+                    if (unlockAttempts < 5) {
+                        setTimeout(() => unlockAudio(), 500);
+                    }
+                    return;
+                }
+                
+                if (type === "crowdCheer") {
+                    playCheerSound();
+                } else if (type === "crowdSixCheer") {
+                    playSixSound();
+                } else if (type === "crowdShock") {
+                    playShockSound();
+                }
+            }  // <-- THIS CLOSING BRACE WAS MISSING
+
+// Initialize and unlock audio automatically
+
         
         // Initialize and unlock audio automatically
         function unlockAudio() {
@@ -959,7 +1073,7 @@
 
             switch(type) {
                 case "FOUR": className = "four"; sound = "crowdCheer"; flashClass = "four-flash"; break;
-                case "SIX": className = "six"; sound = "crowdCheer"; flashClass = "six-flash"; break;
+                case "SIX": className = "six"; sound = "crowdSixCheer"; flashClass = "six-flash"; break;
                 case "WICKET": className = "wicket"; sound = "crowdShock"; flashClass = "wicket-flash"; document.body.classList.add("shake"); break;
                 default: isEventRunning = false; return;
             }
@@ -1085,12 +1199,6 @@
                 }
 
                 renderTimeline(d.overs_timeline || []);
-                              
-               //speak("হ্যালো বাংলাদেশ"); 
-                // ✅ SAFE
-                if (d.commentary) {
-                    //speak(d.commentary);
-                }
                 // Event detection
                 let eventType = d.event || null;
                 
