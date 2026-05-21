@@ -429,8 +429,8 @@
     <div class="broadcast">
         <div class="top-bar">
             <div class="left-top">
-                <div class="teams" id="teams">INDIA vs AUSTRALIA</div>
-                <div class="match-info" id="matchInfo">ICC WORLD CUP 2026</div>
+                <div class="teams" id="teams"></div>
+                <div class="match-info" id="matchInfo"></div>
                 <div class="overs" id="overs">0.0 Overs</div>
             </div>
 
@@ -459,13 +459,13 @@
         <div class="middle">
             <div class="versus">
                 <div class="team">
-                    <img class="team-logo" id="teamAFlag" src="/static/default_a.png">
-                    <div class="team-name" id="teamA">TEAM A</div>
+                    <img class="team-logo" id="teamAFlag" src="/static/teamA.png">
+                    <div class="team-name" id="teamA"></div>
                 </div>
                 <div class="vs">VS</div>
                 <div class="team">
-                    <img class="team-logo" id="teamBFlag" src="/static/default_b.png">
-                    <div class="team-name" id="teamB">TEAM B</div>
+                    <img class="team-logo" id="teamBFlag" src="/static/teamB.png">
+                    <div class="team-name" id="teamB"></div>
                 </div>
             </div>
 
@@ -1173,8 +1173,9 @@
                     fielding=flags.team_a_name                  
                     setText("#teamA", flags.team_b_name || "TEAM B");
                     setText("#teamB", flags.team_a_name || "TEAM A");
-                    setImage("#teamAFlag", flags.team_b_flag);
-                    setImage("#teamBFlag", flags.team_a_flag);
+                    setImage("#teamAFlag", flags.team_a_flag, "/static/teamA.png");
+                    setImage("#teamBFlag", flags.team_b_flag, "/static/teamB.png");
+                    
                 }
 
                 if (batsmen[0]) {

@@ -8,7 +8,7 @@ from fastapi import Body
 import asyncio
 import random
 from player_list import get_playing_xi, generate_team_html
-from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary, generate_full_commentary
+from commentry import generate_continuous_commentary
 from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY
@@ -222,99 +222,7 @@ def generate_welcome_message(team1, team2):
     template = random.choice(WELCOME_COMMENTARY_TEMPLATES)
     return template.format(team1=team1, team2=team2)
 
-def get_milestone_comment(name, runs):
-    """Return milestone commentary for 50/100 runs."""
-    if runs == 50:
-        return f"🎉 কী দুর্দান্ত ব্যাটিং! {name} এখন হাফ সেঞ্চুরি (৫০ রান) পূর্ণ করেছে!"
-    elif runs == 100:
-        return f"🔥 অসাধারণ ইনিংস! {name} সেঞ্চুরি (১০০ রান) পূর্ণ করেছে! গ্যালারি উল্লাসে ফেটে পড়ছে!"
-    return None
 
-def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=None, team2=None, context=None):
-    """
-    Generate a smooth, human-like cricket commentary for a sequence of events
-    - events: list of strings (SIX, FOUR, WICKET, DOUBLE, SINGLE, DOT, WIDE, NO_BALL, OVER_COMPLETE)
-    - batsmen: list of dicts [{'name':str,'runs':int}, ...]
-    - runs: total runs
-    - wickets: total wickets
-    - over: current over (float)
-    - team1, team2: optional team names for updates
-    """
-    """has_alpha = any(c.isalpha() for c in context)
-    #has_digit = any(c.isdigit() for c in context)
-    
-    status = None
-    if has_alpha:
-        status = context
-        print("Context", context)"""
-    
-    runs, wickets = map(int, score.split("/"))
-    #print(runs, wickets)   
-    
-    parts = []
-    
-    if events == "BOWLER_RUNUP":
-        bowler_name = bowler.get("name", "বোলার")
-        comment = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler=bowler_name)
-        parts.append(comment)                      
-
-    # 1️⃣ WICKET has highest priority
-    if "WICKET" in events:
-        parts.append(generate_wicket_commentary(runs, wickets, over, batsmen[0]['name'] if batsmen else None, context))
-
-    # 2️⃣ Scoring events (SIX, FOUR, DOUBLE, SINGLE, DOT)
-    scoring_priority = ["SIX", "FOUR", "DOUBLE", "SINGLE", "DOT"]
-    for event in scoring_priority:
-        if event in events:        
-            parts.append(generate_event_commentary([event]))            
-            break  # Only one scoring commentary per ball
-
-    # 3️⃣ Extras
-    for extra in ["WIDE", "NO_BALL"]:
-        if extra in events:
-            parts.append(generate_event_commentary([extra]))
-
-   
-
-    # 5️⃣ Over complete summary
-    if "OVER_COMPLETE" in events:
-        over_comment = ""        
-        if context == "MAIDEN OVER":
-            commentary_text = random.choice(COMMENTARY["MAIDEN_OVER"])
-            over_comment = commentary_text + f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
-        else:
-            over_comment = f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
-        parts.append(over_comment)
-         # 4️⃣ Batsman status
-        if batsmen and len(batsmen) >= 2:
-            b1 = batsmen[0]
-            b2 = batsmen[1]
-
-            # Basic score update commentary
-            parts.append(
-                f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে, "
-                f"{b2['name']} করছে {number_to_bangla_words(b2['runs'])} রান।"
-            )
-
-            # Check milestones for both batsmen
-            for b in [b1, b2]:
-                milestone_comment = get_milestone_comment(b["name"], b["runs"])
-                if milestone_comment:
-                    parts.append(milestone_comment)
-        elif batsmen and len(batsmen) == 1:
-            b1 = batsmen[0]
-            parts.append(f"{b1['name']} এখন {number_to_bangla_words(b1['runs'])} রান করছে।")
-            # 6️⃣ Welcome message and quick update for new viewers
-        if team1 and team2:
-            welcome_msg = (
-                f"যারা নতুন যুক্ত হয়েছেন, স্বাগতম! "
-                f"এই সময় {team1} বনাম {team2} ম্যাচে স্কোর {number_to_bangla_words(runs)} রানে {number_to_bangla_words(wickets)} উইকেট। "
-                f"{number_to_bangla_words(over)} ওভার শেষ হয়েছে, দলের সংগ্রহ ভালোভাবে এগুচ্ছে। ম্যাচে উত্তেজনা অব্যাহত!"
-            )
-            parts.append(welcome_msg)
-
-    # Combine all commentary parts naturally
-    return " ".join(parts)
 # =====================================================
 # 🎯 EVENT DETECTION (FAST + SAFE FALLBACK)
 # =====================================================
@@ -1694,8 +1602,11 @@ async def ws(websocket: WebSocket):
         # =========================
         # LOAD FLAGS ONLY ONCE
         # =========================
-        await ensure_flags_loaded()    
-       
+        await ensure_flags_loaded()
+        if STATE["url"]:        
+            data = await get_playing_xi(STATE["url"])
+            print(data)
+
 
         while True:
             await asyncio.sleep(1)
