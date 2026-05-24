@@ -15,7 +15,8 @@ from commentry_dic import COMMENTARY
 from utill import number_to_bangla_words
 import re
 from pydantic import BaseModel
-from voice import speak_bangla 
+from voice import speak_bangla, stop_current_tts, reset_stop_flag
+from scraper import scrap_page
 # =========================================================
 # APP
 # =========================================================
@@ -691,550 +692,6 @@ def parse_batsmen(data):
                 "balls": int(non_striker_balls),
             },
         ]
-async def scrap_page(page):
-    return await page.evaluate("""
-            () => {
-
-                // =================================================
-                // HELPERS
-                // =================================================
-
-                const clean = (t) =>
-                    (t || "")
-                        .replace(/\\s+/g, " ")
-                        .trim();
-
-                const safeText = (selector) => {
-
-                    const el = document.querySelector(selector);
-
-                    return el
-                        ? clean(el.innerText)
-                        : "";
-                };
-
-                const safeImg = (selector) => {
-
-                    const el = document.querySelector(selector);
-
-                    return el
-                        ? el.src
-                        : "";
-                };
-
-                // =================================================
-                // DATA OBJECT
-                // =================================================
-
-                const data = {
-
-                    // MATCH
-                    team_a: "",
-                    team_b: "",
-
-                    score: "",
-                    overs: "",
-                    crr: "",
-
-                    status: "",
-                    commentary: "",
-                    batting:"",                            
-
-                    // BOWLER
-                    bowler: "",
-                    bowler_fig: "",
-                    bowler_img: "",
-
-                    // STRIKER
-                    striker: "",
-                    striker_runs: "",
-                    striker_balls: "",
-                    striker_full: "",
-                    striker_img: "",
-
-                    // NON STRIKER
-                    non_striker: "",
-                    non_striker_runs: "",
-                    non_striker_balls: "",
-                    non_striker_full: "",
-                    non_striker_img: "",
-
-                    // EXTRA
-                    partnership: "",
-                    last_wicket: "",
-
-                    // TIMELINE
-                    overs_timeline: [],
-
-                    // RESULT
-                    result_boxes: [],
-                                         
-                    //Target Run
-                    target: "",
-
-                    // PLAYERS
-                    live_players: {
-                        batsmen: [],
-                        bowler: null
-                    },
-
-                    updated: Date.now()
-                };
-
-                // =================================================
-                // BODY TEXT
-                // =================================================
-
-                const bodyText =
-                    clean(document.body.innerText);
-
-                // =================================================
-                // TEAM NAMES
-                // =================================================
-
-                /*const teamMatch =
-                    bodyText.match(
-                        /([A-Za-z\\s\\-]+)\\s+vs\\s+([A-Za-z\\s\\-]+)/i
-                    );
-
-                if (teamMatch) {
-
-                    data.team_a =
-                        clean(teamMatch[1]);
-
-                    data.team_b =
-                        clean(teamMatch[2]);
-                }*/
-
-                // =================================================
-                // SCORE + OVERS
-                // Example:
-                // 147-2 (14.2)
-                // 147/2 14.2
-                // =================================================
-
-                const scoreOverMatch = bodyText.match(
-                    /(\d{1,3})\s*[-/]\s*(\d{1})\s*(\d+)\.(\d)/
-                );
-
-                if (scoreOverMatch) {
-
-                    const runs = parseInt(scoreOverMatch[1]);      // 86
-                    const wickets = parseInt(scoreOverMatch[2]);   // 1
-                    const over = parseInt(scoreOverMatch[3]);      // 8
-                    const ball = parseInt(scoreOverMatch[4]);      // 5
-
-                    data.score = `${runs}/${wickets}`;
-
-                    // keep CREX-style overs format
-                    data.overs = `${over}.${ball}`;
-
-                    // optional: total balls (VERY IMPORTANT for logic)
-                    data.balls = (over * 6) + ball;
-                }
-                // =================================================
-                // CRR
-                // =================================================
-
-                const crrMatch =
-                    bodyText.match(
-                        /CRR\\s*:?\\s*(\\d+\\.\\d+)/i
-                    );
-
-                if (crrMatch) {
-
-                    data.crr =
-                        crrMatch[1];
-                }
-
-                // =================================================
-                // STATUS
-                // =================================================
-
-                const statusMatch =
-                    bodyText.match(
-                        /(LIVE|Match Info|Stumps|Innings Break|Opt to Bat|Won by.*)/i
-                    );
-
-                if (statusMatch) {
-
-                    data.status =
-                        clean(statusMatch[1]);
-                }
-
-                // =================================================
-                // COMMENTARY
-                // =================================================
-
-               /* const commentaryEl =
-                    document.querySelector(
-                        ".commentary-text, .live-commentary, .commentary"
-                    );
-
-                if (commentaryEl) {
-
-                    data.commentary =
-                        clean(commentaryEl.innerText);
-                }*/
-
-                const teamBlocks =
-                    document.querySelectorAll(
-                    ".team-content"
-                    );
-
-                    // TEAM A
-                    if (teamBlocks.length >= 1) {
-
-                    const team1 = teamBlocks[0];
-
-                    const team1Name =
-                        team1.querySelector(".team-name");
-                    
-
-                    if (team1Name) {
-
-                        data.batting =
-                            clean(team1Name.innerText);
-                    }                    
-
-                    }
-                    
-                // =================================================
-                // PARTNERSHIP
-                // =================================================
-
-                const partnershipMatch =
-                    bodyText.match(
-                        /(\\d+)\\((\\d+)\\)/
-                    );
-
-                if (partnershipMatch) {
-
-                    data.partnership =
-                        `${partnershipMatch[1]}(${partnershipMatch[2]})`;
-                }
-
-                // =================================================
-                // LAST WICKET
-                // =================================================
-
-                const wicketMatch =
-                    bodyText.match(
-                        /Last Wkt\\s*:??\\s*(.*)/i
-                    );
-
-                if (wicketMatch) {
-
-                    data.last_wicket =
-                        clean(wicketMatch[1]);
-                }
-
-                // =================================================
-                // RESULT BOXES
-                // =================================================
-
-                document
-                    .querySelectorAll(".result-box")
-                    .forEach(el => {
-
-                        const txt =
-                            clean(el.innerText);
-
-                        if (txt) {
-
-                            data.result_boxes.push(txt);
-                        }
-                    });
-
-                // =================================================
-                // LIVE PLAYER SECTION
-                // =================================================
-
-                const playerSection =
-                    document.querySelector(
-                        ".player-profile"
-                    );
-
-                if (playerSection) {
-
-                    // =============================================
-                    // BATSMEN
-                    // =============================================
-
-                    const batsmenCards =
-                        playerSection.querySelectorAll(
-                            ".batsmen-partnership"
-                        );
-
-                    batsmenCards.forEach(card => {
-
-                        // Skip bowler card
-                        if (
-                            card.querySelector(
-                                ".batsmen-score.bowler"
-                            )
-                        ) {
-                            return;
-                        }
-
-                        const img =
-                            card.querySelector(
-                                ".batsmen-image img"
-                            );
-
-                        const name =
-                            card.querySelector(
-                                ".batsmen-name p"
-                            );
-
-                        const scorePs =
-                            card.querySelectorAll(
-                                ".batsmen-score p"
-                            );
-
-                        let runs = "";
-                        let balls = "";
-
-                        if (scorePs.length >= 2) {
-
-                            runs =
-                                clean(scorePs[0].innerText);
-
-                            balls =
-                                clean(scorePs[1].innerText)
-                                    .replace(/[()]/g, "");
-                        }
-
-                        data.live_players.batsmen.push({
-
-                            name: name
-                                ? clean(name.innerText)
-                                : "",
-
-                            runs: runs,
-
-                            balls: balls,
-
-                            image: img
-                                ? img.src
-                                : ""
-                        });
-                    });
-
-                    // =============================================
-                    // BOWLER
-                    // =============================================
-
-                    const bowlerCard =
-                        playerSection.querySelector(
-                            ".batsmen-partnership:has(.batsmen-score.bowler)"
-                        );
-
-                    if (bowlerCard) {
-
-                        const bowlerImg =
-                            bowlerCard.querySelector(
-                                ".batsmen-image img"
-                            );
-
-                        const bowlerName =
-                            bowlerCard.querySelector(
-                                ".batsmen-name p"
-                            );
-
-                        const figures =
-                            bowlerCard.querySelectorAll(
-                                ".batsmen-score.bowler p"
-                            );
-
-                        let fig = "";
-
-                        if (figures.length >= 2) {
-
-                            fig =
-                                clean(figures[0].innerText) +
-                                " " +
-                                clean(figures[1].innerText);
-                        }
-
-                        data.live_players.bowler = {
-
-                            name: bowlerName
-                                ? clean(bowlerName.innerText)
-                                : "",
-
-                            figures: fig,
-
-                            image: bowlerImg
-                                ? bowlerImg.src
-                                : ""
-                        };
-                    }
-                }
-
-                // =================================================
-                // STRIKER
-                // =================================================
-
-                if (
-                    data.live_players.batsmen.length >= 1
-                ) {
-
-                    const s =
-                        data.live_players.batsmen[0];
-
-                    data.striker =
-                        s.name;
-
-                    data.striker_runs =
-                        s.runs;
-
-                    data.striker_balls =
-                        s.balls;
-
-                    data.striker_full =
-                        `${s.name} ${s.runs} (${s.balls})`;
-
-                    data.striker_img =
-                        s.image;
-                }
-
-                // =================================================
-                // NON STRIKER
-                // =================================================
-
-                if (
-                    data.live_players.batsmen.length >= 2
-                ) {
-
-                    const ns =
-                        data.live_players.batsmen[1];
-
-                    data.non_striker =
-                        ns.name;
-
-                    data.non_striker_runs =
-                        ns.runs;
-
-                    data.non_striker_balls =
-                        ns.balls;
-
-                    data.non_striker_full =
-                        `${ns.name} ${ns.runs} (${ns.balls})`;
-
-                    data.non_striker_img =
-                        ns.image;
-                }
-
-                // =================================================
-                // BOWLER
-                // =================================================
-
-                if (data.live_players.bowler) {
-
-                    data.bowler =
-                        data.live_players.bowler.name;
-
-                    data.bowler_fig =
-                        data.live_players.bowler.figures;
-
-                    data.bowler_img =
-                        data.live_players.bowler.image;
-                }
-
-                // =================================================
-                // OVERS TIMELINE
-                // =================================================
-
-                document
-                    .querySelectorAll(".overs-slide")
-                    .forEach(overEl => {
-
-                        const overData = {
-
-                            over: "",
-                            balls: [],
-                            total: ""
-                        };
-
-                        // OVER TITLE
-
-                        const overTitle =
-                            overEl.querySelector("span");
-
-                        if (overTitle) {
-
-                            overData.over =
-                                clean(overTitle.innerText);
-                        }
-
-                        // BALLS
-
-                        overEl
-                            .querySelectorAll(".over-ball")
-                            .forEach(ball => {
-
-                                const val =
-                                    clean(ball.innerText);
-
-                                if (val) {
-
-                                    overData.balls.push(val);
-                                }
-                            });
-
-                        // TOTAL
-
-                        const total =
-                            overEl.querySelector(".total");
-
-                        if (total) {
-
-                            overData.total =
-                                clean(
-                                    total.innerText.replace("=", "")
-                                );
-                        }
-
-                        data.overs_timeline.push(overData);
-                    });
-
-                                         
-
-                    // =================================================
-                    // RESULT / MATCH STATUS
-                    // =================================================
-
-                    // final result text
-                    const finalResultEl =
-                        document.querySelector(
-                            ".final-result.m-none"
-                        );
-
-                    if (finalResultEl) {
-
-                        const resultText =
-                            clean(finalResultEl.innerText);
-
-                        if (resultText) {
-
-                            // main status
-                            //data.status = resultText;
-
-                            // separate field
-                            data.target = resultText;
-
-                            // push to result boxes
-                            //data.result_boxes.push(resultText);
-                        }
-                    }
-                // =================================================
-                // RETURN
-                // =================================================
-
-                return data;
-            }
-            """)
 
 async def scraper():
 
@@ -1862,12 +1319,12 @@ async def api_players():
 # =====================================================
 # Add this enhanced endpoint with proper loop-compatible TTS execution
 
+# ======================= FASTAPI ENDPOINTS =======================
+
 @app.post("/play-welcome-commentary")
 async def play_welcome_commentary(payload: dict = Body(...)):
     """
-    AI Welcome Commentary Player with loop support
-    - Accepts text and triggers TTS (Bangla/English)
-    - Returns success/failure for loop coordination
+    Play welcome commentary - automatically stops previous before starting new
     """
     try:
         text = payload.get("text", "").strip()
@@ -1877,25 +1334,22 @@ async def play_welcome_commentary(payload: dict = Body(...)):
                 "message": "Empty speech text"
             })
         
-        # ==========================================
-        # YOUR AI TTS FUNCTION (supports long text & async)
-        # ==========================================
-        # NOTE: speak_bangla() should ideally be non-blocking
-        # or run in thread pool to prevent event loop blocking.
-        # For better loop performance, consider:
-        # import asyncio
-        # await asyncio.to_thread(speak_bangla, text)
+        # Stop any currently playing TTS first
+        stop_current_tts()
         
-        # Option 1: Direct call (if speak_bangla is fast or runs in background)
-        speak_bangla(text)  # Replace with your actual TTS engine
+        # Small delay to ensure cleanup
+        await asyncio.sleep(0.1)
         
-        # Option 2 (recommended for async loop): 
-        # await asyncio.to_thread(speak_bangla, text)
+        # Reset the stop flag before starting new
+        reset_stop_flag()
         
-        print(f"[WELCOME COMMENTARY] Played: {text[:100]}...")
+        # Start new TTS (use whichever you prefer)
+        speak_bangla(text)  # Change to speak_bangla2 or speak_english as needed
+        
+        print(f"[WELCOME COMMENTARY] Started: {text[:100]}...")
         return JSONResponse({
             "success": True,
-            "message": "Commentary played successfully"
+            "message": "Commentary started"
         })
         
     except Exception as e:
@@ -1904,7 +1358,21 @@ async def play_welcome_commentary(payload: dict = Body(...)):
             "success": False,
             "message": str(e)
         })
-    
+
+@app.post("/stop-commentary")
+async def stop_commentary():
+    """
+    Stop currently playing commentary immediately
+    """
+    stop_current_tts()
+    return JSONResponse({
+        "success": True,
+        "message": "Commentary stopped"
+    })
+
+
+# ======================= YOUR EXISTING CODE BELOW (KEEP EVERYTHING) =======================
+# Keep all your existing WebSocket, /set-url, /api/matches, etc. here    
 # Add to your existing FastAPI backend
 
 # Store Bangla team names
@@ -1941,3 +1409,49 @@ async def get_bangla_team_names():
             status_code=500,
             content={"success": False, "message": str(e)}
         )
+    
+
+@app.post("/api/swap-teams")
+async def swap_teams(payload: dict = Body(...)):
+    """Receive team swap information from dashboard"""
+    batting_team = payload.get("batting_team")
+    fielding_team = payload.get("fielding_team")
+    
+    # Store in global state
+    STATE["batting_team"] = batting_team
+    STATE["fielding_team"] = fielding_team
+    
+    
+    print(f"🔄 Teams swapped: {batting_team} batting, {fielding_team} fielding")
+    
+    return JSONResponse({
+        "success": True,
+        "message": "Teams swapped successfully",
+        "batting_team": batting_team,
+        "fielding_team": fielding_team
+    })
+
+@app.post("/api/broadcast-swap")
+async def broadcast_swap(payload: dict = Body(...)):
+    """Broadcast team swap to all connected WebSocket clients"""
+    try:
+        # Broadcast to all connected WebSocket clients
+        for client in clients:
+            try:
+                await client.send_json(payload)
+            except:
+                pass
+        return JSONResponse({"success": True, "message": "Swap broadcasted"})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)})
+    
+
+@app.get("/api/team-state")
+async def get_team_state():
+    """Get current team state (batting/fielding)"""
+    return JSONResponse({
+        "batting_team": STATE.get("batting_team", "Team A"),
+        "fielding_team": STATE.get("fielding_team", "Team B"),
+        "team_a_status": STATE.get("team_a_status", "Batting"),
+        "team_b_status": STATE.get("team_b_status", "Fielding")
+    })

@@ -6,7 +6,6 @@
   <title>🏏 Cricket AI Broadcast Dashboard | Team Details & Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ========== YOUR EXISTING CSS - KEPT EXACTLY THE SAME ========== */
     * {
       margin: 0;
       padding: 0;
@@ -37,6 +36,7 @@
       overflow-x: hidden;
     }
 
+    /* bg fx */
     .bg-effects {
       position: fixed;
       inset: 0;
@@ -61,6 +61,7 @@
       to { transform: translateY(50px) scale(1.08); }
     }
 
+    /* header */
     .header {
       height: 90px;
       padding: 0 30px;
@@ -127,6 +128,7 @@
       background: linear-gradient(135deg, var(--cyan), var(--cyan2));
     }
 
+    /* layout */
     .container {
       display: grid;
       grid-template-columns: 380px 1fr;
@@ -134,6 +136,7 @@
       padding: 22px;
     }
 
+    /* panels */
     .panel {
       background: linear-gradient(180deg, rgba(17, 26, 46, 0.96), rgba(11, 17, 30, 0.96));
       border-radius: 28px;
@@ -185,6 +188,7 @@
       box-shadow: 0 0 0 4px rgba(0, 234, 255, 0.14);
     }
 
+    /* buttons */
     .btn {
       width: 100%;
       border: none;
@@ -208,6 +212,7 @@
     .stop-btn { background: linear-gradient(135deg, #ff3b3b, #ff1744); color: #fff; }
     .swap-btn { background: linear-gradient(135deg, #00eaff, #00ff99); color: #000; margin-bottom: 12px; }
 
+    /* team panel */
     .team-panel {
       margin-top: 20px;
       padding: 15px;
@@ -235,6 +240,7 @@
     .team-label { font-weight: 700; color: #00eaff; }
     .team-status { font-weight: 600; color: #ffd84d; }
 
+    /* status box */
     .status-box {
       margin-top: 22px;
       background: #0d1627;
@@ -245,6 +251,7 @@
     .status-title { font-size: 12px; color: var(--muted); margin-bottom: 8px; letter-spacing: 1px; }
     #msg { font-size: 14px; line-height: 1.6; color: var(--cyan); word-break: break-word; }
 
+    /* right section */
     .right { min-width: 0; }
     .right-top {
       display: flex;
@@ -256,6 +263,7 @@
     .match-count { color: var(--muted); }
     .match-count b { color: var(--gold); }
 
+    /* grid + cards */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -373,6 +381,7 @@
       100% { transform: scale(1); }
     }
 
+    /* MODAL STYLES - Team Details Page */
     .modal {
       display: none;
       position: fixed;
@@ -470,8 +479,16 @@
       border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     }
 
-    .team-icon { font-size: 64px; }
-    .team-name { font-size: 28px; font-weight: 800; color: var(--cyan); }
+    .team-icon {
+      font-size: 64px;
+    }
+
+    .team-name {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--cyan);
+    }
+
     .team-role {
       display: inline-block;
       padding: 6px 16px;
@@ -483,7 +500,10 @@
       margin-top: 10px;
     }
 
-    .player-list { margin-top: 20px; }
+    .player-list {
+      margin-top: 20px;
+    }
+
     .player-item {
       display: flex;
       align-items: center;
@@ -494,9 +514,24 @@
       border-radius: 12px;
       transition: 0.2s;
     }
-    .player-item:hover { background: rgba(0, 234, 255, 0.1); transform: translateX(5px); }
-    .player-name { font-weight: 600; font-size: 16px; }
-    .player-role { font-size: 12px; color: var(--muted); background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; }
+
+    .player-item:hover {
+      background: rgba(0, 234, 255, 0.1);
+      transform: translateX(5px);
+    }
+
+    .player-name {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .player-role {
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(0,0,0,0.3);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
 
     .stats-grid {
       display: grid;
@@ -504,14 +539,25 @@
       gap: 15px;
       margin-top: 20px;
     }
+
     .stat-card {
       background: rgba(0, 0, 0, 0.3);
       padding: 15px;
       border-radius: 16px;
       text-align: center;
     }
-    .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-    .stat-value { font-size: 28px; font-weight: 800; color: var(--gold); }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gold);
+    }
 
     .match-info {
       grid-column: span 2;
@@ -549,22 +595,28 @@
 </div>
 
 <div class="container">
+  <!-- LEFT PANEL (UNIFIED) -->
   <div class="panel">
     <h3>🎮 Broadcast Control</h3>
+
     <div class="section">
       <div class="label">📌 MATCH URL</div>
       <input type="text" id="url" placeholder="Paste CREX live match URL...">
     </div>
+
     <div class="section">
       <div class="label">🎙️ WELCOME COMMENTARY</div>
-      <textarea id="welcomeCommentary" placeholder="Enter welcome commentary speech (Bangla/English)..."></textarea>
+      <textarea id="welcomeCommentary" placeholder="Enter welcome commentary speech..."></textarea>
     </div>
+
     <button class="btn start-btn" onclick="startMatch()">🚀 START BROADCAST</button>
     <button class="btn commentary-btn" onclick="playWelcomeCommentary()">🎙️ PLAY COMMENTARY</button>
     <button class="btn loop-btn" id="loopBtn" onclick="toggleLoop()">🔁 START LOOP</button>
     <button class="btn overlay-btn" onclick="openOverlay()">🎥 OPEN OVERLAY</button>
     <button class="btn players-btn" onclick="openPlayers()">👥 OPEN PLAYING XI</button>
     <button class="btn stop-btn" onclick="stopAllSystems()">🛑 STOP ALL</button>
+
+    <!-- Team swap panel (integrated) -->
     <div style="margin-top: 16px;">
       <button class="btn swap-btn" onclick="swapTeams()">🔄 SWAP BATTING ↔ FIELDING</button>
       <div class="team-panel">
@@ -578,6 +630,7 @@
         </div>
       </div>
     </div>    
+
     <div class="status-box">
       <div class="status-title">📡 SYSTEM STATUS</div>
       <div id="msg">Waiting for broadcast...</div>
@@ -585,6 +638,7 @@
     </div>
   </div>
 
+  <!-- RIGHT SECTION: LIVE MATCHES -->
   <div class="right">
     <div class="right-top">
       <div class="right-title">📡 Live Matches</div>
@@ -594,6 +648,7 @@
   </div>
 </div>
 
+<!-- TEAM DETAILS MODAL -->
 <div id="teamModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -610,15 +665,19 @@
   let prevScores = {};
   let commentaryLoop = null;
   let isLooping = false;
-  let loopIntervalSeconds = 5;
+  let loopIntervalSeconds = 30;
   const OVERLAY_URL = "/overlay";
 
-  let teamState = { teamA: "Batting", teamB: "Fielding" };
+  // Team state (batting/fielding)
+  let teamState = {
+    teamA: "Batting",
+    teamB: "Fielding"
+  };
 
+  // Mock player data for demonstration
   const teamPlayers = {
     "Team A": {
       name: "Royal Challengers",
-      banglaName: "রয়্যাল চ্যালেঞ্জার্স",
       players: [
         { name: "Virat Kohli", role: "Batsman (Captain)" },
         { name: "Faf du Plessis", role: "Batsman" },
@@ -630,7 +689,6 @@
     },
     "Team B": {
       name: "Mumbai Indians",
-      banglaName: "মুম্বই ইন্ডিয়ান্স",
       players: [
         { name: "Rohit Sharma", role: "Batsman (Captain)" },
         { name: "Ishan Kishan", role: "Wicket-keeper" },
@@ -642,7 +700,11 @@
     }
   };
 
-  function msg(text) { const el = document.getElementById("msg"); if (el) el.innerText = text; }
+  // ======================= UTILS =======================
+  function msg(text) {
+    const msgDiv = document.getElementById("msg");
+    if (msgDiv) msgDiv.innerText = text;
+  }
   
   function updateLoopStatusUI() {
     const loopStatusDiv = document.getElementById("loopStatus");
@@ -664,206 +726,245 @@
 
   // ======================= TEAM DETAILS MODAL =======================
   function showTeamDetails(teamName) {
-    const team = teamPlayers[teamName];
-    const role = teamName === "Team A" ? teamState.teamA : teamState.teamB;
-    
-    const modalBody = document.getElementById("modalBody");
-    modalBody.innerHTML = `
-      <div class="team-details-grid">
-        <div class="team-card-detail">
-          <div class="team-header">
-            <div class="team-icon">🏏</div>
-            <div style="flex: 1;">
-              <div class="team-name" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <span>${team.name}</span>
-                <span style="font-size: 20px; color: #ffd84d;">|</span>
-                <span style="font-size: 18px; background: linear-gradient(135deg, #00eaff, #00ff99); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
-                  ${team.banglaName || 'দলের নাম'}
-                </span>
-              </div>
-              <div class="team-role">${role}</div>
+  const team = teamPlayers[teamName];
+  const role = teamName === "Team A" ? teamState.teamA : teamState.teamB;
+  
+  const modalBody = document.getElementById("modalBody");
+  modalBody.innerHTML = `
+    <div class="team-details-grid">
+      <div class="team-card-detail">
+        <div class="team-header">
+          <div class="team-icon">🏏</div>
+          <div style="flex: 1;">
+            <div class="team-name" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+              <span>${team.name}</span>
+              <span style="font-size: 20px; color: #ffd84d;">|</span>
+              <span style="font-size: 18px; background: linear-gradient(135deg, #00eaff, #00ff99); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                ${team.banglaName || 'দলের নাম'}
+              </span>
             </div>
-          </div>
-          
-          <div style="margin-bottom: 20px; padding: 15px; background: rgba(0, 234, 255, 0.1); border-radius: 16px;">
-            <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #00eaff; font-weight: 600;">
-              🇧🇩 দলের নাম (Team Name in Bangla)
-            </label>
-            <div style="display: flex; gap: 10px;">
-              <input 
-                type="text" 
-                id="banglaTeamName" 
-                value="${team.banglaName || ''}" 
-                placeholder="যেমন: রয়্যাল চ্যালেঞ্জার্স ব্যাঙ্গালোর"
-                style="flex: 1; background: #1a2943; border: 1px solid #00eaff; color: white; padding: 12px; border-radius: 12px; font-size: 16px;"
-              >
-              <button 
-                onclick="updateBanglaTeamName('${teamName}')" 
-                style="background: linear-gradient(135deg, #00eaff, #00a2ff); color: #000; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 800;"
-              >
-                💾 সংরক্ষণ
-              </button>
-            </div>
-            <div style="margin-top: 8px; font-size: 12px; color: #8fa3c1;">
-              💡 Tip: Enter team name in Bengali script
-            </div>
-          </div>
-          
-          <h3 style="margin-bottom: 15px;">🎽 Playing XI</h3>
-          <div class="player-list">
-            ${team.players.map(player => `
-              <div class="player-item">
-                <span class="player-name">${player.name}</span>
-                <span class="player-role">${player.role}</span>
-              </div>
-            `).join('')}
+            <div class="team-role">${role}</div>
           </div>
         </div>
         
-        <div class="team-card-detail">
-          <div class="team-header">
-            <div class="team-icon">📊</div>
-            <div class="team-name">Live Statistics</div>
+        <!-- Bangla Team Name Input Field -->
+        <div style="margin-bottom: 20px; padding: 15px; background: rgba(0, 234, 255, 0.1); border-radius: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #00eaff; font-weight: 600;">
+            🇧🇩 দলের নাম (Team Name in Bangla)
+          </label>
+          <div style="display: flex; gap: 10px;">
+            <input 
+              type="text" 
+              id="banglaTeamName" 
+              value="${team.banglaName || ''}" 
+              placeholder="যেমন: রয়্যাল চ্যালেঞ্জার্স ব্যাঙ্গালোর"
+              style="flex: 1; background: #1a2943; border: 1px solid #00eaff; color: white; padding: 12px; border-radius: 12px; font-size: 16px; font-family: 'Poppins', sans-serif;"
+            >
+            <button 
+              onclick="updateBanglaTeamName('${teamName}')" 
+              style="background: linear-gradient(135deg, #00eaff, #00a2ff); color: #000; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 800;"
+            >
+              💾 সংরক্ষণ
+            </button>
           </div>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-label">Current Score</div>
-              <div class="stat-value">${team.stats.runs}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Overs</div>
-              <div class="stat-value">${team.stats.overs}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Run Rate</div>
-              <div class="stat-value">${team.stats.rr}</div>
-            </div>
-          </div>
-          
-          <div style="margin-top: 20px; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 16px;">
-            <h4>📊 বাংলা পরিসংখ্যান (Bangla Stats)</h4>
-            <div style="margin-top: 10px; font-size: 14px;">
-              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                <span>বর্তমান স্কোর:</span>
-                <span style="color: #00ff99; font-weight: 800;">${team.stats.runs}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                <span>ওভার:</span>
-                <span style="color: #00ff99; font-weight: 800;">${team.stats.overs}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                <span>রান রেট:</span>
-                <span style="color: #00ff99; font-weight: 800;">${team.stats.rr}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div style="margin-top: 20px;">
-            <h4>🎯 Key Players</h4>
-            ${team.players.slice(0, 3).map(player => `
-              <div class="player-item">
-                <span>⭐ ${player.name}</span>
-                <span style="color: #00ff99;">Form: 🔥</span>
-              </div>
-            `).join('')}
+          <div style="margin-top: 8px; font-size: 12px; color: #8fa3c1;">
+            💡 Tip: Enter team name in Bengali script
           </div>
         </div>
         
-        <div class="match-info">
-          <h3>🏆 Match Information</h3>
-          <p style="margin-top: 15px;">
-            <span id="matchInfoText">${team.name} is currently ${role === 'Batting' ? 'setting a target' : 'chasing the target'} in this exciting encounter!</span>
-          </p>
-          <p style="margin-top: 10px; color: #00eaff;">⚡ Live AI Commentary Active • Real-time Updates</p>
-          
-          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <h4>🇧🇩 ম্যাচ তথ্য (Bangla)</h4>
-            <p style="margin-top: 10px; font-size: 14px;" id="banglaMatchInfo">
-              ${team.banglaName ? `${team.banglaName} ${role === 'Batting' ? 'ব্যাটিং করছে' : 'ফিল্ডিং করছে'}` : 'দলের নাম সেট করুন'}
-            </p>
-          </div>
+        <h3 style="margin-bottom: 15px;">🎽 Playing XI</h3>
+        <div class="player-list">
+          ${team.players.map(player => `
+            <div class="player-item">
+              <span class="player-name">${player.name}</span>
+              <span class="player-role">${player.role}</span>
+            </div>
+          `).join('')}
         </div>
       </div>
-    `;
-    
-    document.getElementById("teamModal").style.display = "block";
+      
+      <div class="team-card-detail">
+        <div class="team-header">
+          <div class="team-icon">📊</div>
+          <div class="team-name">Live Statistics</div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Current Score</div>
+            <div class="stat-value">${team.stats.runs}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Overs</div>
+            <div class="stat-value">${team.stats.overs}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Run Rate</div>
+            <div class="stat-value">${team.stats.rr}</div>
+          </div>
+        </div>
+        
+        <!-- Add Bangla Statistics Display -->
+        <div style="margin-top: 20px; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 16px;">
+          <h4>📊 বাংলা পরিসংখ্যান (Bangla Stats)</h4>
+          <div style="margin-top: 10px; font-size: 14px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+              <span>বর্তমান স্কোর:</span>
+              <span style="color: #00ff99; font-weight: 800;">${team.stats.runs}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+              <span>ওভার:</span>
+              <span style="color: #00ff99; font-weight: 800;">${team.stats.overs}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+              <span>রান রেট:</span>
+              <span style="color: #00ff99; font-weight: 800;">${team.stats.rr}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <h4>🎯 Key Players</h4>
+          ${team.players.slice(0, 3).map(player => `
+            <div class="player-item">
+              <span>⭐ ${player.name}</span>
+              <span style="color: #00ff99;">Form: 🔥</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div class="match-info">
+        <h3>🏆 Match Information</h3>
+        <p style="margin-top: 15px;">
+          <span id="matchInfoText">${team.name} is currently ${role === 'Batting' ? 'setting a target' : 'chasing the target'} in this exciting encounter!</span>
+        </p>
+        <p style="margin-top: 10px; color: #00eaff;">⚡ Live AI Commentary Active • Real-time Updates</p>
+        
+        <!-- Bangla Match Info Display -->
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <h4>🇧🇩 ম্যাচ তথ্য (Bangla)</h4>
+          <p style="margin-top: 10px; font-size: 14px;" id="banglaMatchInfo">
+            ${team.banglaName ? `${team.banglaName} ${role === 'Batting' ? 'ব্যাটিং করছে' : 'ফিল্ডিং করছে'}` : 'দলের নাম সেট করুন'}
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById("teamModal").style.display = "block";
+}
+// Function to update Bangla team name
+function updateBanglaTeamName(teamName) {
+  const banglaNameInput = document.getElementById("banglaTeamName");
+  const banglaName = banglaNameInput.value.trim();
+  
+  if (!banglaName) {
+    msg("⚠️ Please enter a team name in Bangla");
+    return;
   }
-
-  function updateBanglaTeamName(teamName) {
-    const banglaNameInput = document.getElementById("banglaTeamName");
-    const banglaName = banglaNameInput.value.trim();
+  
+  // Update the teamPlayers object with Bangla name
+  if (teamPlayers[teamName]) {
+    teamPlayers[teamName].banglaName = banglaName;
     
-    if (!banglaName) {
-      msg("⚠️ Please enter a team name in Bangla");
-      return;
+    // Also update the match info text in Bangla
+    const role = teamName === "Team A" ? teamState.teamA : teamState.teamB;
+    const banglaRole = role === "Batting" ? "ব্যাটিং করছে" : "ফিল্ডিং করছে";
+    
+    // Update the displayed Bangla match info
+    const banglaMatchInfo = document.getElementById("banglaMatchInfo");
+    if (banglaMatchInfo) {
+      banglaMatchInfo.innerHTML = `${banglaName} ${banglaRole}`;
     }
     
-    if (teamPlayers[teamName]) {
-      teamPlayers[teamName].banglaName = banglaName;
-      const role = teamName === "Team A" ? teamState.teamA : teamState.teamB;
-      const banglaRole = role === "Batting" ? "ব্যাটিং করছে" : "ফিল্ডিং করছে";
-      const banglaMatchInfo = document.getElementById("banglaMatchInfo");
-      if (banglaMatchInfo) {
-        banglaMatchInfo.innerHTML = `${banglaName} ${banglaRole}`;
+    // Update the team name display in header
+    const teamNameElements = document.querySelectorAll(".team-name span:last-child");
+    if (teamNameElements.length > 0) {
+      const lastElement = teamNameElements[teamNameElements.length - 1];
+      if (lastElement && lastElement.parentElement === document.querySelector(".team-name")) {
+        lastElement.textContent = banglaName;
       }
-      msg(`✅ Team name updated to: ${banglaName}`);
-      saveBanglaTeamNameToBackend(teamName, banglaName);
     }
+    
+    msg(`✅ Team name updated to: ${banglaName}`);
+    
+    // Optional: Send to backend
+    saveBanglaTeamNameToBackend(teamName, banglaName);
+  }
+}
+
+// Function to save Bangla team name to backend
+async function saveBanglaTeamNameToBackend(teamName, banglaName) {
+  try {
+    const response = await fetch("/api/update-bangla-team-name", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        team: teamName,
+        bangla_name: banglaName
+      })
+    });
+    
+    if (response.ok) {
+      console.log("Bangla team name saved to backend");
+    }
+  } catch (error) {
+    console.error("Failed to save to backend:", error);
+  }
+}
+  function closeTeamModal() {
+    document.getElementById("teamModal").style.display = "none";
   }
 
-  async function saveBanglaTeamNameToBackend(teamName, banglaName) {
-    try {
-      await fetch("/api/update-bangla-team-name", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team: teamName, bangla_name: banglaName })
-      });
-    } catch (error) {
-      console.error("Failed to save to backend:", error);
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById("teamModal");
+    if (event.target === modal) {
+      modal.style.display = "none";
     }
   }
-
-  function closeTeamModal() { document.getElementById("teamModal").style.display = "none"; }
-  window.onclick = function(event) { if (event.target === document.getElementById("teamModal")) closeTeamModal(); };
 
   // ======================= START MATCH =======================
   async function startMatch() {
     const url = document.getElementById("url").value.trim();
-    if (!url) { msg("⚠️ Please enter a match URL"); return; }
+    if (!url) {
+      msg("⚠️ Please enter a match URL");
+      return;
+    }
     msg("🚀 Starting live broadcast...");
     try {
-      const res = await fetch("/set-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
+      const res = await fetch("/set-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url })
+      });
       const data = await res.json();
-      msg(data.success ? "✅ Broadcast started successfully" : "❌ Failed to start broadcast");
-    } catch (err) { msg("❌ Server connection failed"); }
+      if (data.success) {
+        msg("✅ Broadcast started successfully");
+      } else {
+        msg("❌ Failed to start broadcast");
+      }
+    } catch (err) {
+      console.error(err);
+      msg("❌ Server connection failed");
+    }
   }
 
   // ======================= PLAY WELCOME COMMENTARY =======================
-  let currentAbortController = null;
-
   async function playWelcomeCommentary() {
     const commentary = document.getElementById("welcomeCommentary").value.trim();
     if (!commentary) {
       msg("⚠️ Please enter commentary text");
       return false;
     }
-    
-    // Abort any ongoing request
-    if (currentAbortController) {
-      currentAbortController.abort();
-      currentAbortController = null;
-    }
-    
-    currentAbortController = new AbortController();
-    
     msg("🎙️ Playing commentary...");
     try {
       const res = await fetch("/play-welcome-commentary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: commentary }),
-        signal: currentAbortController.signal
+        body: JSON.stringify({ text: commentary })
       });
+      if (!res.ok) throw new Error("Request failed");
       const data = await res.json();
       if (data.success) {
         msg("✅ Commentary played successfully");
@@ -873,138 +974,113 @@
         return false;
       }
     } catch (err) {
-      if (err.name === 'AbortError') {
-        msg("⏹️ Commentary stopped");
-      } else {
-        console.error(err);
-        msg("❌ Commentary server error");
-      }
+      console.error(err);
+      msg("❌ Commentary server error");
       return false;
-    } finally {
-      currentAbortController = null;
     }
   }
 
   // ======================= LOOP COMMENTARY =======================
+  function toggleLoop() {
+    if (isLooping) {
+      stopLoop();
+      return;
+    }
+    const commentary = document.getElementById("welcomeCommentary").value.trim();
+    if (!commentary) {
+      msg("⚠️ Please enter commentary before starting loop");
+      return;
+    }
+    isLooping = true;
+    updateLoopStatusUI();
+    msg("🔁 Commentary loop started — playing every " + loopIntervalSeconds + " seconds");
+    
+    playWelcomeCommentary().then(() => {
+      scheduleNextLoop();
+    }).catch(() => {
+      scheduleNextLoop();
+    });
+  }
+  
   function scheduleNextLoop() {
     if (!isLooping) return;
     if (commentaryLoop) clearTimeout(commentaryLoop);
     commentaryLoop = setTimeout(() => {
       if (isLooping) {
-        playWelcomeCommentary().finally(() => scheduleNextLoop());
+        playWelcomeCommentary().finally(() => {
+          scheduleNextLoop();
+        });
       }
     }, loopIntervalSeconds * 1000);
   }
-
-  function startLoop() {
-    const commentary = document.getElementById("welcomeCommentary").value.trim();
-    if (!commentary) { msg("⚠️ Please enter commentary before starting loop"); return false; }
-    isLooping = true;
-    updateLoopStatusUI();
-    msg("🔁 Commentary loop started — playing every " + loopIntervalSeconds + " seconds");
-    playWelcomeCommentary().finally(() => { if (isLooping) scheduleNextLoop(); });
-    return true;
-  }
-
+  
   function stopLoop() {
-    if (commentaryLoop) { clearTimeout(commentaryLoop); commentaryLoop = null; }
-    
-    // Abort any ongoing fetch request
-    if (currentAbortController) {
-      currentAbortController.abort();
-      currentAbortController = null;
+    if (commentaryLoop) {
+      clearTimeout(commentaryLoop);
+      commentaryLoop = null;
     }
-    
-    // Also call backend stop endpoint
-    fetch("/stop-commentary", { method: "POST" }).catch(() => {});
-    
     isLooping = false;
     updateLoopStatusUI();
     msg("⏹️ Commentary loop stopped");
   }
 
-  function toggleLoop() { isLooping ? stopLoop() : startLoop(); }
-
   // ======================= STOP ALL SYSTEMS =======================
   async function stopAllSystems() {
-    stopLoop();
     try {
-      await fetch("/set-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: null }) });
-      if (selectedCard) { selectedCard.classList.remove("active"); selectedCard = null; }
-      msg("🛑 All systems stopped");
-    } catch(err) {}
-  }
-
-  // ======================= OPEN OVERLAY / PLAYERS =======================
-  function openOverlay() { window.open(OVERLAY_URL, "_blank", "width=1920,height=1080"); }
-  function openPlayers() { window.open("http://127.0.0.1:8000/players", "_blank"); }
-
-  // ======================= FIXED: SWAP TEAMS WITH BACKEND SYNC =======================
-  async function swapTeams() {
-    // Swap local team state
-    let temp = teamState.teamA;
-    teamState.teamA = teamState.teamB;
-    teamState.teamB = temp;
-    
-    // Update UI
-    document.getElementById("teamAStatus").innerText = teamState.teamA;
-    document.getElementById("teamBStatus").innerText = teamState.teamB;
-    
-    // Add animation
-    document.getElementById("teamABox").classList.add("swap-animate");
-    document.getElementById("teamBBox").classList.add("swap-animate");
-    setTimeout(() => {
-      document.getElementById("teamABox").classList.remove("swap-animate");
-      document.getElementById("teamBBox").classList.remove("swap-animate");
-    }, 600);
-    
-    // Send swap information to backend for overlay update
-    try {
-      const response = await fetch("/api/swap-teams", {
+      stopLoop();
+      await fetch("/set-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          batting_team: teamState.teamA === "Batting" ? "Team A" : "Team B",
-          fielding_team: teamState.teamB === "Fielding" ? "Team B" : "Team A"
-        })
+        body: JSON.stringify({ url: null })
       });
-      
-      if (response.ok) {
-        msg(`🔄 Teams swapped: ${teamState.teamA} batting, ${teamState.teamB} fielding`);
-        
-        // Also send WebSocket message to update all clients (including overlay)
-        const wsMessage = {
-          type: "team_swap",
-          batting: teamState.teamA === "Batting" ? "Team A" : "Team B",
-          fielding: teamState.teamB === "Fielding" ? "Team B" : "Team A",
-          team_a_status: teamState.teamA,
-          team_b_status: teamState.teamB
-        };
-        
-        // If you have WebSocket connection, broadcast the swap
-        if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-          window.ws.send(JSON.stringify(wsMessage));
-        }
-        
-        // Also send via fetch to a broadcast endpoint
-        await fetch("/api/broadcast-swap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(wsMessage)
-        }).catch(e => console.log("Broadcast error:", e));
-        
-      } else {
-        msg("⚠️ Teams swapped locally, but overlay sync failed");
+      await fetch("/stop-commentary", { method: "POST" }).catch(() => {});
+      if (selectedCard) {
+        selectedCard.classList.remove("active");
+        selectedCard = null;
       }
+      msg("🛑 All systems stopped");
     } catch (err) {
-      console.error("Swap sync error:", err);
-      msg(`🔄 Teams swapped locally (overlay sync pending): ${teamState.teamA} batting, ${teamState.teamB} fielding`);
+      console.error(err);
+      msg("❌ Failed stopping systems");
     }
   }
 
+  // ======================= OPEN OVERLAY / PLAYERS =======================
+  function openOverlay() {
+    window.open(OVERLAY_URL, "_blank", "width=1920,height=1080");
+  }
+
+  function openPlayers() {
+    window.open("http://127.0.0.1:8000/players", "_blank");
+  }
+
+  // ======================= SWAP TEAMS =======================
+  function swapTeams() {
+    let temp = teamState.teamA;
+    teamState.teamA = teamState.teamB;
+    teamState.teamB = temp;
+
+    const teamAStatus = document.getElementById("teamAStatus");
+    const teamBStatus = document.getElementById("teamBStatus");
+    if (teamAStatus) teamAStatus.innerText = teamState.teamA;
+    if (teamBStatus) teamBStatus.innerText = teamState.teamB;
+
+    const teamABox = document.getElementById("teamABox");
+    const teamBBox = document.getElementById("teamBBox");
+    if (teamABox) teamABox.classList.add("swap-animate");
+    if (teamBBox) teamBBox.classList.add("swap-animate");
+    setTimeout(() => {
+      if (teamABox) teamABox.classList.remove("swap-animate");
+      if (teamBBox) teamBBox.classList.remove("swap-animate");
+    }, 600);
+    msg(`🔄 Teams swapped: ${teamState.teamA} batting, ${teamState.teamB} fielding`);
+  }
+
   // ======================= SELECT MATCH =======================
-  function selectMatch(url, element) {
-    if (selectedCard) selectedCard.classList.remove("active");
+  function selectMatch(url, element, matchName) {
+    if (selectedCard) {
+      selectedCard.classList.remove("active");
+    }
     selectedCard = element;
     selectedCard.classList.add("active");
     document.getElementById("url").value = url;
@@ -1021,36 +1097,64 @@
       const container = document.getElementById("matches");
       if (!container) return;
       container.innerHTML = "";
-      if (!data.matches || data.matches.length === 0) { container.innerHTML = `<div class="no-match">No live matches available</div>`; return; }
+
+      if (!data.matches || data.matches.length === 0) {
+        container.innerHTML = `<div class="no-match">No live matches available</div>`;
+        return;
+      }
+
       data.matches.forEach(match => {
         const previous = prevScores[match.url];
         const hasFlash = previous && previous !== match.text;
         if (hasFlash) prevScores[match.url] = match.text;
         else if (!previous) prevScores[match.url] = match.text;
+
         const card = document.createElement("div");
         card.className = "card";
-        card.onclick = (e) => { if (e.target.tagName === 'A') return; selectMatch(match.url, card); };
+        card.onclick = (e) => {
+          if (e.target.tagName === 'A') return;
+          selectMatch(match.url, card, match.text);
+        };
         card.innerHTML = `
-          <div class="card-top"><div class="live-badge"><span class="live-dot"></span>LIVE</div><div style="font-size:12px;color:#94a3b8;">AUTO</div></div>
+          <div class="card-top">
+            <div class="live-badge">
+              <span class="live-dot"></span>
+              LIVE
+            </div>
+            <div style="font-size:12px;color:#94a3b8;">AUTO</div>
+          </div>
           <div class="match-name">${escapeHtml(match.text) || "Cricket Match"}</div>
-          <div class="score ${hasFlash ? 'flash' : ''}">${hasFlash ? '⚡ New update • ' : ''}Click to view team details</div>
-          <div class="links"><a class="main-link" href="${match.url}" target="_blank" onclick="event.stopPropagation()">🌐 Match</a><a class="overlay-link" href="${OVERLAY_URL}" target="_blank" onclick="event.stopPropagation()">🎥 Overlay</a></div>
+          <div class="score ${hasFlash ? 'flash' : ''}">
+            ${hasFlash ? '⚡ New update • ' : ''}Click to view team details
+          </div>
+          <div class="links">
+            <a class="main-link" href="${match.url}" target="_blank" onclick="event.stopPropagation()">🌐 Match</a>
+            <a class="overlay-link" href="${OVERLAY_URL}" target="_blank" onclick="event.stopPropagation()">🎥 Overlay</a>
+          </div>
         `;
         container.appendChild(card);
       });
-    } catch (err) { console.error("Load Match Error:", err); msg("❌ Failed loading matches"); }
+    } catch (err) {
+      console.error("Load Match Error:", err);
+      msg("❌ Failed loading matches");
+    }
   }
 
-  function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
 
+  // Auto-refresh matches
   loadMatches();
   setInterval(loadMatches, 8000);
-  if (document.getElementById("teamAStatus")) {
-    document.getElementById("teamAStatus").innerText = teamState.teamA;
-    document.getElementById("teamBStatus").innerText = teamState.teamB;
-  }
-  updateLoopStatusUI();
 
+  // expose global functions
   window.startMatch = startMatch;
   window.playWelcomeCommentary = playWelcomeCommentary;
   window.toggleLoop = toggleLoop;
@@ -1061,7 +1165,13 @@
   window.selectMatch = selectMatch;
   window.showTeamDetails = showTeamDetails;
   window.closeTeamModal = closeTeamModal;
-  window.updateBanglaTeamName = updateBanglaTeamName;
+
+  // initial team UI sync
+  if (document.getElementById("teamAStatus")) {
+    document.getElementById("teamAStatus").innerText = teamState.teamA;
+    document.getElementById("teamBStatus").innerText = teamState.teamB;
+  }
+  updateLoopStatusUI();
 </script>
 </body>
 </html>
