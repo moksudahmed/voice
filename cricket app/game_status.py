@@ -1,10 +1,20 @@
 import time
 import sys
 import re
-from datetime import datetime
-from playwright.sync_api import sync_playwright
-from commentry import generate_wicket_commentary, generate_winning_commentary, generate_event_commentary,generate_toss_commentary, demonstrate_toss_scenarios, pre_game_scenario_commentary, generate_break_commentary
-#from voice import speak
+
+
+def parse_match_result(text: str):
+    pattern = r"(.+?)\s+won\s+by\s+(\d+)\s+(runs|wickets)"
+    match = re.search(pattern, text, re.IGNORECASE)
+
+    if not match:
+        return None
+
+    return {
+        "winner": match.group(1).strip(),
+        "margin": int(match.group(2)),
+        "type": match.group(3).lower()
+    }
 
 def detect_game_status(data):
     """
@@ -12,7 +22,7 @@ def detect_game_status(data):
     """
     text = ' '.join(str(item) for item in data)
     text_lower = text.lower()
-    
+    print("Hello", data)
     # 1. Highest priority: Match Abandoned
     if "Match Abandoned" in data or "match abandoned" in text_lower:
         return "Match Abandoned"

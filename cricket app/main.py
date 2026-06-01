@@ -7,8 +7,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import Body
 import asyncio
 import random
+import json
 from player_list import get_playing_xi, generate_team_html
-from commentry import generate_continuous_commentary
+from commentry import generate_continuous_commentary, bangla_commentary
 from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY
@@ -196,29 +197,7 @@ def get_bangla_commentary(event):
         or BREAK_COMMENTARY.get(event)
         or "যারা নতুন যুক্ত হয়েছেন, স্বাগতম!"
     )
-def generate_commentary2(prev, curr):
-    if not prev:
-        return "Welcome to the live match!"
 
-    try:
-        prev_runs = int(prev["score"].split("/")[0])
-        curr_runs = int(curr["score"].split("/")[0])
-        diff = curr_runs - prev_runs
-
-        status = curr["status"].upper()
-
-        if "WICKET" in status:
-            return "Wicket! Huge breakthrough!"
-        elif diff == 6:
-            return "Massive six! What a shot!"
-        elif diff == 4:
-            return "That's a beautiful boundary!"
-        elif diff > 0:
-            return f"{diff} runs added."
-    except:
-        pass
-
-    return None
 def generate_welcome_message(team1, team2):
     template = random.choice(WELCOME_COMMENTARY_TEMPLATES)
     return template.format(team1=team1, team2=team2)
@@ -259,9 +238,25 @@ def detect_run_event(event):
 def clean(t):
     return re.sub(r"\s+", " ", t).strip() if t else ""
 
+def parse_match_result(text: str):
+    pattern = r"(.+?)\s+won\s+by\s+(\d+)\s+(runs|wickets)"
+    match = re.search(pattern, text, re.IGNORECASE)
+
+    if not match:
+        return None
+
+    return {
+        "winner": match.group(1).strip(),
+        "margin": int(match.group(2)),
+        "type": match.group(3).lower()
+    }
+
+
+
 # =========================================================
 # FAST PARSER (OPTIMIZED FOR CREX + ANGULAR)
 # =========================================================
+
 def parse_score(text):
     match = re.search(r'(\d+)-(\d)(\d+)\.([0-5])', text)
     if not match:
@@ -758,17 +753,40 @@ async def scraper():
             # =====================================================
             # SEND ONLY IF CHANGED (FAST HASH STYLE OPTIONAL)
             # =====================================================
+            status = None
+            #status = detect_game_status(parsed["result_boxes"][0])
+            #print(status)
            
+            # parse result
+            """data = parse_match_result(parsed["result_boxes"][0])
+
+                # use dictionary correctly
+            if data:
+                    print(data["winner"])
+                    print(data["margin"])
+                    print(data["type"])
+            if data:
+                    commentary =  bangla_commentary(data)
+                    speak_bangla(commentary) 
+                    print(commentary)    """
+            
+
             if parsed != last_state:
                 last_state = parsed
                 STATE["data"] = parsed
                 event = parsed["result_boxes"][0]
-                
+                print("Test")
                 print(event)
+
+                # scraped text
+                #text = "Dragons Women won by 8 runs 🏆"
+
                 
+                
+                #commentary= bangla_commentary(event)
                 #STATE["data"]["commentary"]= event
                 #batsmen = parsed["result_boxes"][0]
-                
+               
                 batsman = parse_batsmen(parsed)
                 
                 bowler = parse_bowler(parsed["live_players"]['bowler'])                          
@@ -794,7 +812,7 @@ async def scraper():
                         print(commentary)
                     last_event = event
                 dead = []
-
+                
                 if event == "Innings Break" and not innings_state and is_valid_flags(STATE.get("flags")):                
                     #print("Check innings break")
                     swap_teams(STATE["flags"])
@@ -1340,11 +1358,8 @@ async def play_welcome_commentary(payload: dict = Body(...)):
         # Small delay to ensure cleanup
         await asyncio.sleep(0.1)
         
-        # Reset the stop flag before starting new
-        reset_stop_flag()
-        
-        # Start new TTS (use whichever you prefer)
-        speak_bangla(text)  # Change to speak_bangla2 or speak_english as needed
+        # Start new TTS
+        speak_bangla(text)
         
         print(f"[WELCOME COMMENTARY] Started: {text[:100]}...")
         return JSONResponse({
@@ -1369,6 +1384,7 @@ async def stop_commentary():
         "success": True,
         "message": "Commentary stopped"
     })
+
 
 
 # ======================= YOUR EXISTING CODE BELOW (KEEP EVERYTHING) =======================
@@ -1412,7 +1428,7 @@ async def get_bangla_team_names():
     
 
 @app.post("/api/swap-teams")
-async def swap_teams(payload: dict = Body(...)):
+async def swap_team(payload: dict = Body(...)):
     """Receive team swap information from dashboard"""
     batting_team = payload.get("batting_team")
     fielding_team = payload.get("fielding_team")
@@ -1421,7 +1437,7 @@ async def swap_teams(payload: dict = Body(...)):
     STATE["batting_team"] = batting_team
     STATE["fielding_team"] = fielding_team
     
-    
+    swap_teams(STATE["flags"])
     print(f"🔄 Teams swapped: {batting_team} batting, {fielding_team} fielding")
     
     return JSONResponse({

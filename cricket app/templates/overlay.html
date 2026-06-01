@@ -1169,14 +1169,14 @@
                 setText("#commentary", d.result_boxes || "LIVE MATCH");
                 
                 const teamName = d.batting.split(" ")[0];
-                if (teamName != flags.team_a_name){                    
+               /* if (teamName != flags.team_a_name){                    
                     fielding=flags.team_a_name                  
                     setText("#teamA", flags.team_b_name || "TEAM B");
                     setText("#teamB", flags.team_a_name || "TEAM A");
                     setImage("#teamAFlag", flags.team_a_flag, "/static/teamA.png");
                     setImage("#teamBFlag", flags.team_b_flag, "/static/teamB.png");
                     
-                }
+                }*/
 
                 if (batsmen[0]) {
                     setText("#strikerName", batsmen[0].name);
@@ -1212,7 +1212,7 @@
                     } else if (boxValue === "6" || boxValue === "SIX") {
                         eventType = "SIX";
                         console.log("🎯 DETECTED: SIX");
-                    } else if (boxValue === "W" || boxValue === "WICKET" || boxValue === "OUT" || boxValue === "BOWLED" || boxValue === "CAUGHT" || boxValue === "RUN OUT") {
+                    } else if (boxValue === "W" || boxValue === "WICKET" || boxValue === "OUT" || boxValue === "BOWLED" || boxValue === "CAUGHT" || boxValue === "RUN OUT" || boxValue ==="STUMPED OUT") {
                         eventType = "WICKET";
                         console.log("🎯 DETECTED: WICKET");
                     }

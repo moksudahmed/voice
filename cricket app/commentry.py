@@ -18,6 +18,33 @@ def num_to_bn(n):
     return BN_NUMBERS.get(n, str(n))
 
 
+def bangla_commentary(data) -> str:
+    #data = parse_match_result(text)
+
+    if not data:
+        return "📢 দুঃখিত, ম্যাচের ফলাফল বোঝা যায়নি।"
+
+    winner = data["winner"]
+    margin = data["margin"]
+    mtype = data["type"]
+
+    if mtype == "runs":
+        return (
+            f"🏆 ম্যাচ শেষ!\n"
+            f"অসাধারণ জয় পেলো {winner}!\n"
+            f"{margin} রানের দারুণ ব্যবধানে তারা ম্যাচটি নিজেদের করে নিয়েছে!\n"
+            f"স্টেডিয়ামে এখন উৎসবের আমেজ!"
+        )
+
+    elif mtype == "wickets":
+        return (
+            f"🏆 ম্যাচ শেষ!\n"
+            f"দারুণ জয় {winner}-এর!\n"
+            f"{margin} উইকেট হাতে রেখে তারা সহজেই ম্যাচ জিতে নিয়েছে!\n"
+            f"গ্যালারিতে চলছে উল্লাসের ঢেউ!"
+        )
+
+    return "📢 ম্যাচের ফলাফল পাওয়া গেছে, তবে বিশ্লেষণ করা সম্ভব হয়নি।"
 # -----------------------------
 # MAIN FUNCTION
 # -----------------------------
