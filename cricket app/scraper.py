@@ -1,7 +1,7 @@
 # =========================================================
 # APP
 # =========================================================
-async def scrap_page(page):
+async def scrap_page_NEW(page):
     return await page.evaluate(r"""
         () => {
 
@@ -321,7 +321,7 @@ async def scrap_page(page):
         }
     """)
 
-async def scrap_page_old(page):
+async def scrap_page(page):
     return await page.evaluate("""
             () => {
 
