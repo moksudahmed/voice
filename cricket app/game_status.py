@@ -22,7 +22,7 @@ def detect_game_status(data):
     """
     text = ' '.join(str(item) for item in data)
     text_lower = text.lower()
-    print("Hello", data)
+    #print("Hello", data)
     # 1. Highest priority: Match Abandoned
     if "Match Abandoned" in data or "match abandoned" in text_lower:
         return "Match Abandoned"

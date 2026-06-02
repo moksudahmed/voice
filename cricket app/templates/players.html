@@ -1,196 +1,693 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>TV Broadcast | Playing XI Lineup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<title>Playing XI | OBS Broadcast | 1920x1080</title>
+        body {
+            background: #0A0C10;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            padding: 24px 32px;
+            letter-spacing: -0.01em;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+        /* broadcast tv frame effect */
+        .broadcast-container {
+            max-width: 1920px;
+            margin: 0 auto;
+            position: relative;
+        }
 
-<style>
-/* ===== KEEP YOUR FULL CSS UNCHANGED (same as yours) ===== */
-</style>
+        /* top scoreboard style header */
+        .tv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 28px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+            padding-bottom: 18px;
+        }
 
+        .main-title-block {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+        }
+
+        .main-title {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #FFFFFF 30%, #E0E4FF 70%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .broadcast-label {
+            background: #E50914;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(229,9,20,0.4);
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 6px 18px;
+            border-radius: 60px;
+            border-left: 3px solid #E50914;
+        }
+
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #E50914;
+            border-radius: 50%;
+            animation: pulse 1.2s infinite;
+            box-shadow: 0 0 5px #ff3b3b;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; transform: scale(0.8);}
+            100% { opacity: 1; transform: scale(1.2);}
+        }
+
+        .live-text {
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
+        /* teams grid - professional split */
+        .teams-broadcast {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        /* team card - glassmorphic tv panel */
+        .team-panel {
+            background: rgba(18, 22, 28, 0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
+        }
+
+        .team-header-broadcast {
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .team-name {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(120deg, #fff, #cfd9ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .team-stats {
+            background: rgba(0,0,0,0.5);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+        }
+
+        /* specific team accents */
+        .team-a-accent .team-header-broadcast {
+            border-left: 5px solid #FF3B5C;
+            background: linear-gradient(90deg, rgba(255,59,92,0.08), transparent);
+        }
+        .team-b-accent .team-header-broadcast {
+            border-left: 5px solid #7C4DFF;
+            background: linear-gradient(90deg, rgba(124,77,255,0.08), transparent);
+        }
+
+        /* players grid - professional 2 columns with modern cards */
+        .players-grid-pro {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            padding: 22px 24px 26px 24px;
+        }
+
+        /* player card - tv lower third style */
+        .player-card-pro {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(10, 12, 16, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 20px;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .player-card-pro:hover {
+            transform: translateY(-3px);
+            background: rgba(30, 35, 45, 0.9);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 25px -12px rgba(0,0,0,0.4);
+        }
+
+        /* avatar with elegant frame */
+        .player-avatar {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            flex-shrink: 0;
+        }
+        .player-img-pro {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            background: #1e2128;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+        }
+
+        .player-details {
+            flex: 1;
+        }
+
+        .player-name-line {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .player-name-pro {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            color: #F5F9FF;
+        }
+
+        .captain-badge, .keeper-badge {
+            font-size: 11px;
+            font-weight: 800;
+            background: #FFB800;
+            color: #0A0C10;
+            padding: 2px 8px;
+            border-radius: 40px;
+            display: inline-block;
+            line-height: 1.3;
+        }
+        .keeper-badge {
+            background: #00C3FF;
+            color: #000;
+        }
+
+        .role-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #A8F0FF;
+            backdrop-filter: blur(2px);
+        }
+
+        /* empty state */
+        .empty-grid-state {
+            grid-column: span 2;
+            text-align: center;
+            padding: 48px 20px;
+            color: #9aa3b0;
+            font-weight: 500;
+            background: rgba(0,0,0,0.2);
+            border-radius: 28px;
+        }
+
+        /* refresh + status - tv overlay style */
+        .tv-control-bar {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            gap: 14px;
+            z-index: 1000;
+        }
+
+        .tv-button {
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 12px 24px;
+            border-radius: 44px;
+            font-family: 'Inter', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tv-button:hover {
+            background: #E50914;
+            border-color: #E50914;
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(229,9,20,0.5);
+        }
+
+        .status-panel {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid #00E5FF;
+            z-index: 1000;
+            letter-spacing: 0.3px;
+        }
+
+        .status-led {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 6px #00ff88;
+        }
+        .status-led.off {
+            background: #ff3366;
+            box-shadow: none;
+        }
+
+        /* responsive adjustments */
+        @media (max-width: 1100px) {
+            body { padding: 20px; }
+            .players-grid-pro { gap: 12px; padding: 18px; }
+            .player-name-pro { font-size: 16px; }
+            .player-avatar { width: 60px; height: 60px; }
+        }
+
+        @media (max-width: 780px) {
+            .teams-broadcast { grid-template-columns: 1fr; gap: 24px; }
+            .main-title { font-size: 32px; }
+        }
+
+        @media (max-width: 550px) {
+            .players-grid-pro { grid-template-columns: 1fr; }
+            .tv-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        /* subtle scanline effect (tv vibe) */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 2px, transparent 2px, transparent 6px);
+            z-index: 9999;
+        }
+    </style>
 </head>
-
 <body>
-
-<!-- BACKGROUND -->
-<div class="bg-glow">
-    <div class="glow glow1"></div>
-    <div class="glow glow2"></div>
-    <div class="glow glow3"></div>
-</div>
-
-<!-- NAV -->
-<div class="nav-buttons">
-    <button class="nav-btn" id="prevBtn">‹</button>
-    <button class="nav-btn" id="nextBtn">›</button>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-
-    <div class="main-title">
-        PLAYING XI
-    </div>
-
-    <div class="slider-wrapper">
-
-        <div class="slides">
-
-            <!-- TEAM A -->
-            <div class="team-slide active" id="teamASlide">
-
-                <div class="slide-text">🔴 TEAM A</div>
-
-                <div class="team-header team-a">
-                    <img class="team-logo" id="teamALogo" src="" alt="Team A Logo">
-                    <div class="team-name" id="teamAName">TEAM A</div>
-                    <div class="team-sub">PLAYING XI • 11 PLAYERS</div>
-                </div>
-
-                <div class="players-grid" id="teamAPlayers"></div>
-
-            </div>
-
-            <!-- TEAM B -->
-            <div class="team-slide" id="teamBSlide">
-
-                <div class="slide-text">🔵 TEAM B</div>
-
-                <div class="team-header team-b">
-                    <img class="team-logo" id="teamBLogo" src="" alt="Team B Logo">
-                    <div class="team-name" id="teamBName">TEAM B</div>
-                    <div class="team-sub">PLAYING XI • 11 PLAYERS</div>
-                </div>
-
-                <div class="players-grid" id="teamBPlayers"></div>
-
-            </div>
-
+<div class="broadcast-container">
+    <!-- TV style header -->
+    <div class="tv-header">
+        <div class="main-title-block">
+            <div class="main-title">PLAYING XI</div>
+            <div class="broadcast-label">LIVE LINEUP</div>
         </div>
-
+        <div class="live-badge">
+            <div class="pulse-dot"></div>
+            <div class="live-text">BROADCAST FEED</div>
+        </div>
     </div>
 
+    <!-- dynamic teams grid -->
+    <div class="teams-broadcast" id="proTeamsContainer">
+        <!-- initial loader state (will be replaced by JS) -->
+        <div class="team-panel" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+            <div class="role-chip">⏳ LOADING SQUADS...</div>
+        </div>
+        <div class="team-panel" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+            <div class="role-chip">⏳ FETCHING DATA</div>
+        </div>
+    </div>
+</div>
+
+<!-- tv style controls -->
+<div class="tv-control-bar">
+    <button class="tv-button" id="refreshButtonTV">
+        <span>⟳</span> REFRESH LINEUP
+    </button>
+</div>
+<div class="status-panel" id="tvStatusPanel">
+    <div class="status-led" id="statusLed"></div>
+    <span id="statusMessage">Connecting to broadcast...</span>
 </div>
 
 <script>
-/* =========================================================
-   STATE FROM FASTAPI
-========================================================= */
-const STATE = {{ state | tojson }};
+    // CONFIGURATION
+    const API_URL = "/api/playing-xi";
+    let wsConnection = null;
+    let reconnectAttempts = 0;
+    let refreshIntervalFallback = null;
 
-/* =========================================================
-   RENDER PLAYER CARD
-========================================================= */
-function createPlayerCard(player, index) {
+    // DOM elements
+    const teamsContainer = document.getElementById("proTeamsContainer");
+    const refreshBtn = document.getElementById("refreshButtonTV");
+    const statusLed = document.getElementById("statusLed");
+    const statusMessageSpan = document.getElementById("statusMessage");
 
-    const isCaptain = player.tag === "(C)";
-    const isWK = player.tag === "(WK)";
-
-    let badge = "";
-
-    if (isCaptain) {
-        badge = `<div class="player-badge badge-captain">🏆 CAPTAIN</div>`;
-    } else if (isWK) {
-        badge = `<div class="player-badge badge-wicketkeeper">🧤 WK</div>`;
+    // Helper: update status UI (TV style)
+    function updateTvStatus(connected, customMsg = null) {
+        if(connected) {
+            statusLed.className = "status-led";
+            if(customMsg) statusMessageSpan.innerText = customMsg;
+            else statusMessageSpan.innerText = "📡 LIVE • SIGNAL ACTIVE";
+        } else {
+            statusLed.className = "status-led off";
+            if(customMsg) statusMessageSpan.innerText = customMsg;
+            else statusMessageSpan.innerText = "⚠️ OFFLINE • RETRYING";
+        }
     }
 
-    let roleIcon = "";
-    if (player.role === "Batter") roleIcon = "🏏";
-    else if (player.role === "Bowler") roleIcon = "🎯";
-    else roleIcon = "⚡";
+    // Helper: generate professional HTML for a team
+    function generateBroadcastTeamHtml(teamData, teamSide = 'a') {
+        const teamName = teamData?.name || (teamSide === 'a' ? 'TEAM A' : 'TEAM B');
+        const players = teamData?.players || [];
+        const accentClass = teamSide === 'a' ? 'team-a-accent' : 'team-b-accent';
+        
+        // calculate player count display (optional)
+        const playerCount = players.length;
+        const statsLabel = `${playerCount} PLAYERS`;
 
-    return `
-        <div class="player-card" style="--order:${index}">
-            <div class="player-number">${index + 1}</div>
-            ${badge}
+        let playersHtml = '';
+        if (players.length === 0) {
+            playersHtml = `<div class="empty-grid-state">📋 NO LINEUP DATA AVAILABLE</div>`;
+        } else {
+            players.forEach((player, idx) => {
+                const fullName = player.full_name || player.name || 'Unnamed Player';
+                const roleRaw = player.role || 'Player';
+                let roleIcon = '';
+                if (roleRaw.toLowerCase().includes('batter')) roleIcon = '🏏';
+                else if (roleRaw.toLowerCase().includes('bowler')) roleIcon = '🎯';
+                else if (roleRaw.toLowerCase().includes('all rounder')) roleIcon = '⚡';
+                else roleIcon = '🏅';
+                
+                // captain / wicketkeeper detection (from tag or explicit)
+                let isCaptain = false;
+                let isWK = false;
+                if (player.tag) {
+                    if (player.tag === '(C)' || player.tag === 'C' || player.tag === 'Captain') isCaptain = true;
+                    if (player.tag === '(WK)' || player.tag === 'WK' || player.tag === 'Wicketkeeper') isWK = true;
+                }
+                // fallback: if role contains captain or wk string
+                if (!isCaptain && roleRaw.toLowerCase().includes('captain')) isCaptain = true;
+                if (!isWK && roleRaw.toLowerCase().includes('wicketkeeper')) isWK = true;
+                
+                const badgeHtml = isCaptain ? `<span class="captain-badge">CAP</span>` : (isWK ? `<span class="keeper-badge">WK</span>` : '');
+                const playerImage = player.image || '/static/player.png';
+                
+                playersHtml += `
+                    <div class="player-card-pro">
+                        <div class="player-avatar">
+                            <img class="player-img-pro" src="${playerImage}" alt="${fullName}" onerror="this.src='/static/player.png'">
+                        </div>
+                        <div class="player-details">
+                            <div class="player-name-line">
+                                <span class="player-name-pro">${escapeHtml(fullName)}</span>
+                                ${badgeHtml}
+                            </div>
+                            <div class="role-chip">${roleIcon} ${escapeHtml(roleRaw)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
-            <img class="player-img"
-                 src="${player.image || '/static/player.png'}"
-                 onerror="this.src='/static/player.png'">
-
-            <div class="player-info">
-                <div class="player-name">${player.full_name}</div>
-                <div class="player-short-name">${player.short_name || ""}</div>
-                <div class="player-role">${roleIcon} ${player.role}</div>
+        return `
+            <div class="team-panel ${accentClass}">
+                <div class="team-header-broadcast">
+                    <div class="team-name">${escapeHtml(teamName)}</div>
+                    <div class="team-stats">${statsLabel}</div>
+                </div>
+                <div class="players-grid-pro">
+                    ${playersHtml}
+                </div>
             </div>
-        </div>
-    `;
-}
+        `;
+    }
 
-/* =========================================================
-   RENDER TEAMS FROM STATE
-========================================================= */
-function renderTeams() {
+    // simple escape to avoid injection
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
 
-    const teamA = STATE.data.team_a;
-    const teamB = STATE.data.team_b;
+    // Core render function from data object { team_a, team_b }
+    function renderPlayingXI(data) {
+        if (!teamsContainer) return;
+        
+        // Validate structure: we need at least one team or both
+        const teamA = data.team_a || null;
+        const teamB = data.team_b || null;
+        
+        if (!teamA && !teamB) {
+            teamsContainer.innerHTML = `
+                <div class="team-panel" style="grid-column: span 2; text-align: center; padding: 60px 20px;">
+                    <div class="role-chip" style="font-size: 18px;">⚠️ NO LINEUP DATA RECEIVED</div>
+                    <div style="margin-top: 20px; color:#aaa;">Awaiting broadcast feed...</div>
+                </div>
+            `;
+            return;
+        }
+        
+        let teamAHtml = '';
+        let teamBHtml = '';
+        if (teamA) {
+            teamAHtml = generateBroadcastTeamHtml(teamA, 'a');
+        } else {
+            teamAHtml = `<div class="team-panel team-a-accent"><div class="team-header-broadcast"><div class="team-name">TEAM A</div><div class="team-stats">PENDING</div></div><div class="empty-grid-state">⏳ Waiting for team A data</div></div>`;
+        }
+        
+        if (teamB) {
+            teamBHtml = generateBroadcastTeamHtml(teamB, 'b');
+        } else {
+            teamBHtml = `<div class="team-panel team-b-accent"><div class="team-header-broadcast"><div class="team-name">TEAM B</div><div class="team-stats">PENDING</div></div><div class="empty-grid-state">⏳ Waiting for team B data</div></div>`;
+        }
+        
+        teamsContainer.innerHTML = teamAHtml + teamBHtml;
+    }
 
-    // TEAM A
-    document.getElementById("teamAName").innerText =
-        STATE.flags.team_a_full_name || "TEAM A";
+    // Fetch data from REST endpoint
+    async function fetchPlayingXI() {
+        try {
+            updateTvStatus(true, "⟳ FETCHING LIVE...");
+            const response = await fetch(API_URL, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const jsonData = await response.json();
+            console.log("🏏 API Response:", jsonData);
+            
+            // check data format: success + team objects
+            let lineupData = null;
+            if (jsonData.success && (jsonData.team_a || jsonData.team_b)) {
+                lineupData = { team_a: jsonData.team_a, team_b: jsonData.team_b };
+            } else if (jsonData.team_a || jsonData.team_b) {
+                // some backends might not wrap success
+                lineupData = { team_a: jsonData.team_a, team_b: jsonData.team_b };
+            } else {
+                throw new Error("Invalid data schema");
+            }
+            
+            renderPlayingXI(lineupData);
+            updateTvStatus(true, `✅ LIVE • ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`);
+            return true;
+        } catch (error) {
+            console.error("❌ REST fetch error:", error);
+            updateTvStatus(false, "⚠️ SIGNAL LOSS • RETRYING");
+            // don't override UI with error if we already have some data? keep previous if possible.
+            return false;
+        }
+    }
 
-    document.getElementById("teamALogo").src =
-        STATE.flags.team_a_flag || "/static/default_a.png";
+    // WebSocket professional handler
+    function initWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        
+        if (wsConnection) {
+            try { wsConnection.close(); } catch(e) {}
+        }
+        
+        wsConnection = new WebSocket(wsUrl);
+        
+        wsConnection.onopen = () => {
+            console.log("🎤 TV WebSocket connected");
+            updateTvStatus(true, "📡 REAL-TIME FEED • CONNECTED");
+            reconnectAttempts = 0;
+        };
+        
+        wsConnection.onmessage = (event) => {
+            try {
+                const payload = JSON.parse(event.data);
+                console.log("📡 WS update:", payload);
+                let updateData = null;
+                if (payload.type === "playing_xi" || payload.type === "playing_xi_update") {
+                    if (payload.data && (payload.data.team_a || payload.data.team_b)) {
+                        updateData = payload.data;
+                    } else if (payload.team_a || payload.team_b) {
+                        updateData = { team_a: payload.team_a, team_b: payload.team_b };
+                    } else if (payload.data && payload.data.team_a) {
+                        updateData = payload.data;
+                    }
+                    if (updateData) {
+                        renderPlayingXI(updateData);
+                        updateTvStatus(true, `🎬 LIVE UPDATE • ${new Date().toLocaleTimeString()}`);
+                    }
+                } else if ((payload.team_a || payload.team_b) && !payload.type) {
+                    // raw team update
+                    renderPlayingXI({ team_a: payload.team_a, team_b: payload.team_b });
+                    updateTvStatus(true, `⚡ INSTANT UPDATE • ${new Date().toLocaleTimeString()}`);
+                }
+            } catch (err) {
+                console.warn("WS parse error", err);
+            }
+        };
+        
+        wsConnection.onclose = () => {
+            console.log("🔌 WebSocket closed");
+            updateTvStatus(false, "📡 RECONNECTING...");
+            setTimeout(() => {
+                reconnectAttempts++;
+                if (reconnectAttempts < 15) {
+                    initWebSocket();
+                } else {
+                    updateTvStatus(false, "⚠️ FALLBACK MODE • HTTP POLLING");
+                }
+            }, 3500);
+        };
+        
+        wsConnection.onerror = (err) => {
+            console.error("WebSocket error", err);
+        };
+    }
+    
+    // manual refresh action with visual feedback
+    async function manualRefresh() {
+        const originalBtnText = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = "<span>⟳</span> UPDATING...";
+        refreshBtn.style.opacity = "0.7";
+        await fetchPlayingXI();
+        setTimeout(() => {
+            refreshBtn.innerHTML = originalBtnText;
+            refreshBtn.style.opacity = "1";
+        }, 700);
+    }
+    
+    // Setup auto fallback polling (30s) but avoid duplicate intervals
+    function startFallbackPolling() {
+        if (refreshIntervalFallback) clearInterval(refreshIntervalFallback);
+        refreshIntervalFallback = setInterval(() => {
+            // Only fetch as backup if we haven't received ws update for a while? But safe to keep sync.
+            // We'll call fetch but avoid excessive if ws is connected, but no harm.
+            fetchPlayingXI();
+        }, 30000);
+    }
 
-    const aBox = document.getElementById("teamAPlayers");
-    aBox.innerHTML = "";
-
-    (teamA?.players || []).forEach((p, i) => {
-        aBox.innerHTML += createPlayerCard(p, i);
+    // Try to initialize default demo data if API fails first time? but we expect real data.
+    // However we also include an optional demo template to simulate professional preview (for standalone presentation)
+    // NOTE: the TV screen will load and call the actual API. Also we have a small inline demo mock for design preview if needed but not overriding.
+    // Final initialization
+    async function initApp() {
+        // load initial data via REST
+        await fetchPlayingXI();
+        // start websocket connection
+        initWebSocket();
+        // fallback polling
+        startFallbackPolling();
+        
+        // Additional: listen for refresh button
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                manualRefresh();
+            });
+        }
+    }
+    
+    // run app when ready
+    initApp();
+    
+    // for handling edge case where no data available — provide a resilient broadcast message
+    window.addEventListener('load', () => {
+        console.log("TV Professional Screen Loaded — broadcast ready");
     });
-
-    // TEAM B
-    document.getElementById("teamBName").innerText =
-        STATE.flags.team_b_full_name || "TEAM B";
-
-    document.getElementById("teamBLogo").src =
-        STATE.flags.team_b_flag || "/static/default_b.png";
-
-    const bBox = document.getElementById("teamBPlayers");
-    bBox.innerHTML = "";
-
-    (teamB?.players || []).forEach((p, i) => {
-        bBox.innerHTML += createPlayerCard(p, i);
-    });
-}
-
-/* =========================================================
-   SLIDER
-========================================================= */
-let current = 0;
-
-function showSlide(i) {
-
-    const slides = document.querySelectorAll(".team-slide");
-
-    slides.forEach((s, idx) => {
-        s.classList.toggle("active", idx === i);
-    });
-
-    current = i;
-}
-
-document.getElementById("nextBtn").onclick = () => {
-    showSlide(current === 0 ? 1 : 0);
-};
-
-document.getElementById("prevBtn").onclick = () => {
-    showSlide(current === 0 ? 1 : 0);
-};
-
-/* =========================================================
-   INIT
-========================================================= */
-renderTeams();
-
-console.log("OBS PLAYING XI LOADED");
+    
+    // optional: override img error handling via dynamic listener
+    document.addEventListener('error', (e) => {
+        if (e.target.tagName === 'IMG') {
+            if (!e.target.src.includes('/static/player.png')) {
+                e.target.src = '/static/player.png';
+            }
+        }
+    }, true);
 </script>
-
 </body>
 </html>

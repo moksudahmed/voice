@@ -1,3 +1,8 @@
+import re
+
+def clean(t):
+    return re.sub(r"\s+", " ", t).strip() if t else ""
+
 
 def number_to_bangla_words(n):
 

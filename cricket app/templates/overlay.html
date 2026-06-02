@@ -1155,15 +1155,15 @@
                 }
                 
                 // Update UI
-                setText("#teams", `${flags.team_a_name || "TEAM A"} vs ${flags.team_b_name || "TEAM B"}`);
+                setText("#teams", `${flags.team_a_name || ""} vs ${flags.team_b_name || ""}`);
                 setText("#matchInfo", flags.match_info || "LIVE MATCH");
                 setText("#overs", `${d.overs || "0.0"} Overs`);
                 setText("#score", d.score || "0/0");
                 setText("#crr", d.crr || "0.00");
                 setText("#targetScore", d.target || "0/0");
                 setText("#partnership", d.partnership || "0(0)");
-                setText("#teamA", flags.team_a_name || "TEAM A");
-                setText("#teamB", flags.team_b_name || "TEAM B");
+                setText("#teamA", flags.team_a_name || "");
+                setText("#teamB", flags.team_b_name || "");
                 setImage("#teamAFlag", flags.team_a_flag);
                 setImage("#teamBFlag", flags.team_b_flag);
                 setText("#commentary", d.result_boxes || "LIVE MATCH");

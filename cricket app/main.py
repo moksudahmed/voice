@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from playwright.async_api import async_playwright
@@ -7,7 +7,13 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import Body
 import asyncio
 import random
+from pathlib import Path
 import json
+from datetime import datetime
+import os
+import time
+import sys
+import re
 from player_list import get_playing_xi, generate_team_html
 from commentry import generate_continuous_commentary, bangla_commentary
 from game_status import detect_game_status, handle_break_period
@@ -15,9 +21,11 @@ from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY
 from utill import number_to_bangla_words
 import re
+from obs_config import switch_scene, init_obs
 from pydantic import BaseModel
 from voice import speak_bangla, stop_current_tts, reset_stop_flag
 from scraper import scrap_page
+from live_matches import get_live_matches
 # =========================================================
 # APP
 # =========================================================
@@ -38,6 +46,7 @@ app.add_middleware(
 
 STATE = {
     "url": "",
+    "current_playing_xi": None,
     "connected": False,
     "flags": {
         "team_a_flag": "",
@@ -69,46 +78,11 @@ clients = set()
 # =========================
 FLAGS_LOADED = False
 FLAGS_URL = None
+STOP_ENGINE = False
 # =========================
 # OBS SETUP
 # =========================
-try:
-    from obsws_python import ReqClient
-    OBS_ENABLED = True
-except:
-    ReqClient = None
-    OBS_ENABLED = False
 
-obs = None
-last_scene = None
-
-OBS_SCENES = ["LIVE", "REPLAY", "CROWD", "DRONE"]
-
-def init_obs():
-    global obs
-    if not OBS_ENABLED:
-        print("⚠ OBS SDK not installed")
-        return
-
-    try:
-        obs = ReqClient(host="localhost", port=4455, password="jbuDLaKfxUZc6c7m")
-        print("✅ OBS CONNECTED")
-    except Exception as e:
-        print("❌ OBS ERROR:", e)
-        obs = None
-
-def switch_scene(scene: str):
-    global last_scene, obs
-
-    if not obs or scene not in OBS_SCENES or scene == last_scene:
-        return
-
-    try:
-        obs.set_current_program_scene(scene)
-        last_scene = scene
-        print(f"🎬 OBS SWITCHED → {scene}")
-    except Exception as e:
-        print("OBS ERROR:", e)
 # =========================
 # SCENE LOGIC
 # =========================
@@ -774,8 +748,7 @@ async def scraper():
             if parsed != last_state:
                 last_state = parsed
                 STATE["data"] = parsed
-                event = parsed["result_boxes"][0]
-                print("Test")
+                event = parsed["result_boxes"][0]                
                 print(event)
 
                 # scraped text
@@ -841,167 +814,193 @@ async def scraper():
             print("❌ SCRAPER ERROR:", e)
             STATE["connected"] = False
             await asyncio.sleep(2)
+# =========================================
+# 🧠 AI ENGINE WRAPPER (THREAD SAFE FIX)
+# =========================================
 
+async def run_ai_engine():
+    """
+    Playwright scraping engine with safe URL validation.
+    """
 
-# =========================
-# REQUEST MODEL
-# =========================
-class UrlRequest(BaseModel):
-    url: str | None = None
+    playwright = None
+    browser = None
 
-async def get_live_matches():
-    matches = []
+    url = STATE.get("url")  # SAFE ACCESS
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        
-        CREX_URL = "https://crex.com/cricket-live-score"
-        
-        await page.goto(CREX_URL, timeout=60000)
-        await page.wait_for_timeout(5000)  # allow JS load
+    if not url or not isinstance(url, str) or url.strip() == "":
+        print("❌ INVALID URL in STATE['url']")
+        return None
 
-        # match cards (CREX structure)
-        #cards = await page.locator(".match-card, .match-box, .scorecard, a").all()
-        cards = await page.locator("app-live-matches .live-card").all()
-        #print(cards)
-        for card in cards:
-            try:
-                text = await card.inner_text()
+    try:
+        playwright = await async_playwright().start()
 
-                # filter only live matches
-                if "LIVE" in text.upper() or "STUMPS" in text.upper():
-
-                    teams = await card.locator("text=/vs/i").all_inner_texts()
-
-                    link = await card.get_attribute("href")
-                    if link and link.startswith("/"):
-                        link = "https://crex.com" + link
-
-                    matches.append({
-                        "text": text.strip(),
-                        "url": link
-                    })
-
-            except:
-                continue
-
-        await browser.close()
-
-    return matches
-
-async def get_live_matches():
-    matches = []
-
-    CREX_URL = "https://crex.com/cricket-live-score"
-
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await playwright.chromium.launch(headless=True)
         page = await browser.new_page()
 
-        await page.goto(CREX_URL, timeout=60000)
-        await page.wait_for_timeout(6000)  # wait Angular render
+        print(f"🌐 Opening: {url}")
 
-        # =========================
-        # LIVE MATCH CARDS
-        # =========================
-        cards = await page.locator("div.live-card").all()
+        await page.goto(url, timeout=60000)
 
-        for card in cards:
-            try:
-                # =========================
-                # CHECK LIVE STATUS
-                # =========================
-                live_tag = await card.locator(".liveTag").all_inner_texts()
-                if not any("live" in t.lower() for t in live_tag):
-                    continue
+        await page.wait_for_load_state("networkidle")
+        await page.wait_for_timeout(3000)
 
-                # =========================
-                # SERIES NAME (TOP)
-                # =========================
-                series = await card.locator("h2.snameTag").first.inner_text()
-                series = series.strip() if series else "Live Match"
+        print("🚀 SYSTEM STARTED...")
 
-                # =========================
-                # MATCH URL (MAIN LINK)
-                # =========================
-                match_link_el = card.locator(
-                    "a[href*='cricket-live-score'], a[href*='match-updates']"
-                ).last
+        text = await page.inner_text("body")
+        lines = text.splitlines()
 
-                href = await match_link_el.get_attribute("href")
+        status = detect_game_status(lines)
 
-                if href and href.startswith("/"):
-                    href = "https://crex.com" + href
+        print(f"📊 Current Status: {status}")
+        # ========== INTELLIGENT STATUS HANDLING ==========
+        
+        # 1. Match Abandoned - Exit immediately
+        if "Abandoned" in status:
+            print("❌ Match has been ABANDONED. Exiting...")
+            
+        # 2. Suspended/Deferred - Exit with message
+        if "Suspended" in status or "Deferred" in status:
+            print(f"⏸️ Match is {status}. Exiting...")
+            
+        # 3. Completed - Show result and exit
+        if "Completed" in status:
+            result_text = status.replace("Completed - ", "")
+            #match_title = "KKR vs LSG, 15th T20, IPL 2026 summary"
+            print(f"🏆 MATCH FINISHED! {result_text}")
+            print("✅ Exiting...")
+            
+        # 4. Tomorrow - Exit with scheduling info
+        if "Tomorrow" in status:
+            print(f"📅 Match is scheduled for {status}. Script will exit. Run again tomorrow.")
+            
+        # 5. Today at specific time
+        if "Today at" in status:
+            time_match = re.search(r'(\d{1,2}:\d{2}\s*(?:AM|PM))', status)
+            if time_match:
+                match_time_str = time_match.group(1)
+                now = datetime.now()
+                match_time = datetime.strptime(match_time_str, "%I:%M %p")
+                match_time = now.replace(hour=match_time.hour, minute=match_time.minute, second=0, microsecond=0)
+                
+                if now > match_time:
+                    print(f"⏰ Match scheduled at {match_time_str} should have started. Checking again...")
+                    page.reload()
+                    page.wait_for_timeout(2000)
+                    text = page.inner_text("body")
+                    lines = text.splitlines()
+                    status = detect_game_status(lines)
+                    print(f"📊 Updated Status: {status}")
+                    
+                    if "Live" in status:
+                        print("🎯 Match is LIVE! Starting main loop...")
+                    elif "Completed" in status:
+                        result_text = status.replace("Completed - ", "")
+                        print(f"🏆 Match already finished! {result_text}")
+                    else:
+                        print(f"ℹ️ Match status is '{status}'. Exiting.")
+                else:
+                    wait_seconds = (match_time - now).total_seconds()
+                    if wait_seconds > 3600:
+                        print(f"📅 Match starts at {match_time_str}. Script will exit. Run closer to match time.")
+                    else:
+                        print(f"⏳ Match starts at {match_time_str}. Waiting {wait_seconds/60:.1f} minutes...")
+                        time.sleep(wait_seconds)
+                        page.reload()
+                        page.wait_for_timeout(2000)
+                        text = page.inner_text("body")
+                        lines = text.splitlines()
+                        status = detect_game_status(lines)
+                        print(f"📊 Updated Status: {status}")
+        
+        # 6. "Today" without time or "Scheduled" - Exit
+        if "Today" in status and "at" not in status:
+            print("📅 Match is scheduled for today but no specific time found. Exiting. Run manually when match starts.")
+            
+        if "Scheduled" in status:
+            print("📅 Match is scheduled but not started yet. Exiting. Run closer to match time.")
+            
+        # 7. "Yet to Start" - Wait for toss/live
+        if "Yet to Start" in status:
+            print("🟡 Match yet to start. Waiting for toss/live signal...")
+            max_wait_time = 7200
+            start_wait = time.time()
+            
+            while True:
+                time.sleep(30)
+                page.reload()
+                page.wait_for_timeout(2000)
+                text = page.inner_text("body")
+                lines = text.splitlines()
+                new_status = detect_game_status(lines)
+                print(f"🔄 Re-check: {new_status}")
+                
+                if "Live" in new_status:
+                    status = new_status
+                    print("🎯 Match is now LIVE! Proceeding...")
+                    break
+                elif "Completed" in new_status:
+                    result_text = new_status.replace("Completed - ", "")
+                    print(f"🏆 Match already finished! {result_text}")
+                   
+                elif "Abandoned" in new_status or "Suspended" in new_status:
+                    print(f"❌ Match {new_status}. Exiting.")
+                   
+                elif time.time() - start_wait > max_wait_time:
+                    print("⏰ Max wait time exceeded. Match didn't start. Exiting.")
+                   
+        
+        # 8. LIVE MATCH - Main continuous loop with break handling
+        if "Live" in status or "Break" in status:
+            print("🎬 MATCH IS LIVE! Starting continuous monitoring...")
+            print("   Will detect and handle Drinks/Innings breaks automatically")
+            print("   Will detect when match finishes with result")
+            print("Press Ctrl+C to stop\n")
+            #game_welcome(page)
+            refresh_interval = 15
+            last_data_hash = None
+            await scraper()
 
-                # =========================
-                # MATCH TITLE / INFO
-                # =========================
-                match_info = await card.locator("h3.match-number").first.inner_text()
-                match_info = match_info.strip() if match_info else ""
+        # 9. Unknown status
+        if "Unknown" in status:
+            print("⚠️ Could not determine match status. Exiting.")
+            
+            
+        
+        return status
 
-                # =========================
-                # COMMENT (IMPORTANT INFO)
-                # =========================
-                comment = await card.locator(".comment").first.inner_text()
-                comment = comment.strip() if comment else ""
+    except Exception as e:
+        print(f"❌ ERROR in run_ai_engine: {e}")
+        return None
 
-                # =========================
-                # TEAMS + SCORES
-                # =========================
-                teams = await card.locator(".team-name").all_inner_texts()
-                scores = await card.locator(".team-score").all_inner_texts()
-                overs = await card.locator(".match-over").all_inner_texts()
+    finally:
+        if browser:
+            await browser.close()
+        if playwright:
+            await playwright.stop()
 
-                team_info = ""
-                if len(teams) >= 2:
-                    team_info = f"{teams[0]} vs {teams[1]}"
+#if init_obs():
+#        switch_scene("LIVE")
+        #switch_scene("REPLAY")
+        # switch_scene("CROWD")
+        # switch_scene("DRONE")"""    
+async def engine_loop():
+    """
+    Safe continuous engine for FastAPI
+    """
 
-                score_info = ""
-                if scores:
-                    score_info = " | ".join([s.strip() for s in scores if s.strip()])
+    global STOP_ENGINE
 
-                over_info = ""
-                if overs:
-                    over_info = "Overs: " + " | ".join(overs)
+    while not STOP_ENGINE:
+        await run_ai_engine()
+        await asyncio.sleep(5)
 
-                # =========================
-                # FINAL FORMAT
-                # =========================
-                text = "\n".join(filter(None, [
-                    series,
-                    match_info,
-                    team_info,
-                    score_info,
-                    over_info,
-                    comment
-                ]))
-                # =========================
-                # STATE SAVE (FIXED)
-                # =========================
-                MATCH_INFO = {
-                    "series": series,
-                    "match_info": match_info,
-                    "team_info": team_info,
-                    "score_info": score_info,
-                    "over_info": over_info,
-                    "comment": comment,
-                    "url": href
-                }
-                matches.append({
-                    "text": text,
-                    "url": href
-                })
+    print("🛑 Engine loop stopped safely.")
 
-            except Exception as e:
-                print("❌ CARD ERROR:", e)
-                continue
-
-        await browser.close()
-
-    return matches
-
-
+def stop_engine(reason: str):
+    global STOP_ENGINE
+    print(f"🛑 ENGINE STOPPED: {reason}")
+    STOP_ENGINE = True
 # ==========================================================
 # MAIN
 # ==========================================================
@@ -1026,10 +1025,10 @@ app.mount(
 # STARTUP
 # =========================================================
 
+
 @app.on_event("startup")
 async def startup():
-    asyncio.create_task(scraper())
-
+    asyncio.create_task(engine_loop())
 # =========================================================
 # ROUTES
 # =========================================================
@@ -1094,232 +1093,88 @@ async def ws(websocket: WebSocket):
 # =========================================================
 # HTML PAGE
 # =========================================================
-
 @app.get("/players", response_class=HTMLResponse)
-async def home():
+async def get_players_page(request: Request):
+    """Serve the playing XI HTML page with team data"""
+    
+    team_a_html = ""
+    team_b_html = ""
+    has_data = False
+    
     if STATE["url"]:
-        data = await get_playing_xi(STATE["url"])
+        try:
+            data = await get_playing_xi(STATE["url"])
+            STATE["current_playing_xi"] = data
+            
+            team_a_html = generate_team_html(
+                data.get("team_a", {}),
+                "team-a"
+            )
+            
+            team_b_html = generate_team_html(
+                data.get("team_b", {}),
+                "team-b"
+            )
+            
+            has_data = True
+            
+        except Exception as e:
+            print(f"Error fetching playing XI: {e}")
+            team_a_html = '<div class="team-container"><div class="team-header team-a">Error Loading</div><div class="players-grid">Failed to load team data</div></div>'
+            team_b_html = '<div class="team-container"><div class="team-header team-b">Error Loading</div><div class="players-grid">Failed to load team data</div></div>'
+    
+    # Read the HTML template
+    html_file_path = Path("templates/players.html")
+    
+    if not html_file_path.exists():
+        return HTMLResponse(content="<h1>players.html file not found!</h1>", status_code=404)
+    
+    with open(html_file_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+    
+    # Replace placeholders with actual data
+    if has_data:
+        html_content = html_content.replace("{{ TEAM_A_HTML }}", team_a_html)
+        html_content = html_content.replace("{{ TEAM_B_HTML }}", team_b_html)
+        html_content = html_content.replace("{{ DATA_AVAILABLE }}", "true")
+    else:
+        html_content = html_content.replace("{{ TEAM_A_HTML }}", '<div class="team-container"><div class="team-header team-a">No Data</div><div class="players-grid">Waiting for data...</div></div>')
+        html_content = html_content.replace("{{ TEAM_B_HTML }}", '<div class="team-container"><div class="team-header team-b">No Data</div><div class="players-grid">Waiting for data...</div></div>')
+        html_content = html_content.replace("{{ DATA_AVAILABLE }}", "false")
+    
+    return HTMLResponse(content=html_content)
 
-        team_a_html = generate_team_html(
-            data["team_a"],
-            "team-a"
-        )
-
-        team_b_html = generate_team_html(
-            data["team_b"],
-            "team-b"
-        )
-
-        html = f"""
-        <!DOCTYPE html>
-        <html lang="en">
-
-        <head>
-
-        <meta charset="UTF-8">
-
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-        >
-
-        <title>Playing XI</title>
-
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-        <style>
-
-        *{{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-        }}
-
-        body{{
-            background:#050505;
-            color:#fff;
-            font-family:'Poppins',sans-serif;
-            padding:30px;
-        }}
-
-        .main-title{{
-            text-align:center;
-            font-size:60px;
-            font-weight:900;
-            margin-bottom:40px;
-
-            background:linear-gradient(
-                90deg,
-                #fff,
-                #ffd84d,
-                #ff9800
-            );
-
-            -webkit-background-clip:text;
-            -webkit-text-fill-color:transparent;
-        }}
-
-        .teams{{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:30px;
-        }}
-
-        .team-container{{
-            background:
-            linear-gradient(
-                135deg,
-                rgba(255,255,255,.08),
-                rgba(255,255,255,.03)
-            );
-
-            border:1px solid rgba(255,255,255,.08);
-
-            border-radius:30px;
-
-            overflow:hidden;
-        }}
-
-        .team-header{{
-            padding:22px;
-            font-size:32px;
-            font-weight:900;
-            text-align:center;
-        }}
-
-        .team-a{{
-            background:
-            linear-gradient(
-                135deg,
-                #ff003c,
-                #ff9800
-            );
-        }}
-
-        .team-b{{
-            background:
-            linear-gradient(
-                135deg,
-                #6a00ff,
-                #c400ff
-            );
-        }}
-
-        .players-grid{{
-            padding:20px;
-
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:18px;
-        }}
-
-        .player-card{{
-            display:flex;
-            align-items:center;
-            gap:15px;
-
-            padding:16px;
-
-            border-radius:20px;
-
-            background:
-            linear-gradient(
-                135deg,
-                rgba(255,255,255,.08),
-                rgba(255,255,255,.02)
-            );
-
-            transition:.3s;
-        }}
-
-        .player-card:hover{{
-            transform:translateY(-5px);
-        }}
-
-        .player-img{{
-            width:80px;
-            height:80px;
-
-            border-radius:50%;
-            object-fit:cover;
-
-            border:3px solid rgba(255,255,255,.15);
-        }}
-
-        .player-info{{
-            flex:1;
-        }}
-
-        .player-name{{
-            font-size:20px;
-            font-weight:800;
-            line-height:1.3;
-        }}
-
-        .tag{{
-            color:#ffd84d;
-            margin-left:6px;
-        }}
-
-        .player-role{{
-            margin-top:8px;
-
-            display:inline-block;
-
-            padding:5px 12px;
-
-            border-radius:30px;
-
-            background:rgba(0,229,255,.12);
-
-            border:1px solid rgba(0,229,255,.25);
-
-            color:#00e5ff;
-
-            font-size:12px;
-            font-weight:700;
-        }}
-
-        @media(max-width:1200px){{
-            .teams{{
-                grid-template-columns:1fr;
-            }}
-        }}
-
-        @media(max-width:700px){{
-            .players-grid{{
-                grid-template-columns:1fr;
-            }}
-
-            .main-title{{
-                font-size:38px;
-            }}
-        }}
-
-        </style>
-
-        </head>
-
-        <body>
-
-            <div class="main-title">
-                PLAYING XI
-            </div>
-
-            <div class="teams">
-
-                {team_a_html}
-
-                {team_b_html}
-
-            </div>
-
-        </body>
-
-        </html>
-        """
-
-    return HTMLResponse(content=html)
+@app.get("/api/playing-xi")
+async def get_playing_xi_api():
+    """API endpoint to get playing XI data as JSON"""
+    # Initialize STATE["current_playing_xi"] if it doesn't exist
+    if "current_playing_xi" not in STATE:
+        STATE["current_playing_xi"] = None
+    
+    if STATE.get("url"):
+        try:
+            data = await get_playing_xi(STATE["url"])
+            STATE["current_playing_xi"] = data
+            return {
+                "success": True,
+                "team_a": data.get("team_a", {}),
+                "team_b": data.get("team_b", {})
+            }
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": str(e), "team_a": {}, "team_b": {}}
+            )
+    
+    # Safe check using .get() to avoid KeyError
+    if STATE.get("current_playing_xi"):
+        return {
+            "success": True,
+            "team_a": STATE["current_playing_xi"].get("team_a", {}),
+            "team_b": STATE["current_playing_xi"].get("team_b", {})
+        }
+    
+    return {"success": False, "team_a": {}, "team_b": {}}
 
 
 # =========================================================
@@ -1332,6 +1187,7 @@ async def api_players():
     data = await get_playing_xi()
 
     return JSONResponse(content=data)
+
 
 # BACKEND CODE UPDATE (Add to your existing FastAPI app)
 # =====================================================
