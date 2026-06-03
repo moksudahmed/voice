@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cricket Match Monitor • Stadium Live</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'Poppins', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 20px;
+}
+
+/* Stadium Video Background */
+.stadium-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+    filter: brightness(0.35) contrast(1.1);
+}
+
+/* Dark Overlay for Readability */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 40%, rgba(0,0,0,0.5), rgba(0,5,15,0.85));
+    z-index: -1;
+}
+
+/* Main Card - Glassmorphism */
+.card {
+    width: 650px;
+    max-width: 95%;
+    background: rgba(30, 41, 59, 0.88);
+    backdrop-filter: blur(14px);
+    padding: 35px;
+    border-radius: 28px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.1) inset;
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+/* Header - LARGER FONT */
+h2 {
+    margin-bottom: 30px;
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, #facc15);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+h2::before {
+    content: "🏏";
+    font-size: 2.4rem;
+    background: none;
+    -webkit-background-clip: unset;
+    color: #facc15;
+}
+
+/* Row Layout - LARGER SPACING */
+.row {
+    margin: 22px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* Label - LARGER FONT */
+.label {
+    color: #94a3b8;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: 85px;
+}
+
+/* Value - LARGER FONT */
+.value {
+    font-weight: 700;
+    font-size: 1.4rem;
+    word-break: break-word;
+    flex: 1;
+    color: #f1f5f9;
+}
+
+/* Badge Styles - LARGER */
+.badge {
+    padding: 10px 24px;
+    border-radius: 50px;
+    display: inline-block;
+    font-size: 1.2rem;
+    font-weight: 800;
+    transition: all 0.2s;
+}
+
+.success { 
+    color: #4ade80; 
+    font-weight: 800;
+    font-size: 1.4rem;
+}
+
+.error { 
+    color: #f87171; 
+    font-weight: 800;
+    font-size: 1.4rem;
+}
+
+.wait { 
+    background: linear-gradient(135deg, #facc15, #eab308); 
+    color: #0f172a; 
+    box-shadow: 0 3px 12px rgba(250,204,21,0.4);
+    font-size: 1.2rem;
+    padding: 10px 24px;
+}
+
+.live { 
+    background: linear-gradient(135deg, #22c55e, #16a34a); 
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(34,197,94,0.5);
+    animation: pulse-live 1.5s infinite;
+    font-size: 1.2rem;
+    padding: 10px 24px;
+}
+
+@keyframes pulse-live {
+    0% { box-shadow: 0 3px 12px rgba(34,197,94,0.4); }
+    50% { box-shadow: 0 3px 20px rgba(34,197,94,0.8); }
+    100% { box-shadow: 0 3px 12px rgba(34,197,94,0.4); }
+}
+
+/* Footer / Refresh Hint - LARGER */
+.footer-hint {
+    margin-top: 25px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+}
+
+.refresh-dot {
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 6px #22c55e;
+    animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Mobile Responsive - Adjusted for large fonts */
+@media (max-width: 600px) {
+    .card { padding: 20px; }
+    h2 { font-size: 1.8rem; }
+    h2::before { font-size: 1.8rem; }
+    .label { font-size: 0.9rem; min-width: 70px; }
+    .value { font-size: 1.1rem; }
+    .badge { font-size: 0.9rem; padding: 6px 16px; }
+    .wait, .live { font-size: 0.9rem; padding: 6px 16px; }
+    .success, .error { font-size: 1.1rem; }
+    .row { margin: 15px 0; gap: 10px; }
+    .footer-hint { font-size: 0.7rem; }
+}
+
+/* Custom Scrollbar if needed */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e293b;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- Stadium Video Background -->
+<video class="stadium-bg" autoplay muted loop playsinline>
+    <source src="/static/stadium.mp4" type="video/mp4">
+    <!-- Fallback: if stadium.mp4 not found, gradient background remains -->
+</video>
+<div class="overlay"></div>
+
+<!-- Main Card -->
+<div class="card">
+
+    <h2>Live Cricket Match</h2>
+
+    <div class="row">
+        <div class="label">Status:</div>
+        <div id="status" class="value">Loading...</div>
+    </div>
+
+    <div class="row">
+        <div class="label">Message:</div>
+        <div id="message" class="value">Waiting...</div>
+    </div>
+
+
+
+    <div class="row">
+        <div class="label">Action:</div>
+        <div id="action" class="badge">-</div>
+    </div>
+
+    <div class="footer-hint">
+        <span>🏟️ Live from Stadium</span>
+        <span><span class="refresh-dot"></span> Auto-update every 7s</span>
+    </div>
+
+</div>
+
+<script>
+
+// ============================================
+// Cricket Match Monitor - Stadium Edition
+// LARGE FONT VERSION
+// Preserves original logic + video background
+// Endpoint: GET /api/match-status
+// ============================================
+
+let isFetching = false;   // prevent overlap
+let intervalId = null;
+
+async function fetchMatchStatus() {
+
+    if (isFetching) return;   // stop duplicate calls
+    isFetching = true;
+
+    try {
+
+        const res = await fetch("/api/match-status", {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+
+        // ---------------- SAFE DOM UPDATE ----------------
+        const statusEl = document.getElementById("status");
+        const messageEl = document.getElementById("message");
+        const successEl = document.getElementById("success");
+        const actionEl = document.getElementById("action");
+
+        if (statusEl) statusEl.innerText = data.status || "-";
+        if (messageEl) messageEl.innerText = data.message || "-";
+
+        if (successEl) {
+            successEl.innerText = data.success ? "TRUE" : "FALSE";
+            successEl.className = data.success ? "value success" : "value error";
+        }
+
+        if (actionEl) {
+            const actionValue = data.action || "-";
+            actionEl.innerText = actionValue;
+
+            // reset classes
+            actionEl.className = "badge";
+
+            switch (actionValue) {
+                case "LIVE":
+                    actionEl.classList.add("live");
+                    break;
+                case "WAIT":
+                    actionEl.classList.add("wait");
+                    break;
+                case "ERROR":
+                    actionEl.classList.add("error");
+                    break;
+                default:
+                    // keep default badge style
+                    actionEl.style.background = "#475569";
+                    actionEl.style.color = "#fff";
+                    actionEl.style.padding = "10px 24px";
+                    actionEl.style.fontSize = "1.2rem";
+            }
+        }
+
+    } catch (err) {
+        console.error("Fetch error:", err);
+
+        const statusEl = document.getElementById("status");
+        const messageEl = document.getElementById("message");
+        const successEl = document.getElementById("success");
+        const actionEl = document.getElementById("action");
+
+        if (statusEl) statusEl.innerText = "Connection Error";
+        if (messageEl) messageEl.innerText = err.message || "Failed to fetch match data";
+        if (successEl) {
+            successEl.innerText = "FALSE";
+            successEl.className = "value error";
+        }
+        if (actionEl) {
+            actionEl.innerText = "ERROR";
+            actionEl.className = "badge error";
+            actionEl.style.background = "#ef4444";
+            actionEl.style.color = "#fff";
+            actionEl.style.padding = "10px 24px";
+            actionEl.style.fontSize = "1.2rem";
+        }
+
+    } finally {
+        isFetching = false; // unlock
+    }
+}
+
+// -------- INITIAL LOAD ----------
+fetchMatchStatus();
+
+// -------- SAFE AUTO REFRESH (every 7 seconds) ----------
+intervalId = setInterval(() => {
+    fetchMatchStatus();
+}, 7000);
+
+// Clean up interval on page unload (good practice)
+window.addEventListener('beforeunload', () => {
+    if (intervalId) {
+        clearInterval(intervalId);
+    }
+});
+
+// Video background fallback handler (if stadium.mp4 is missing)
+const bgVideo = document.querySelector('.stadium-bg');
+if (bgVideo) {
+    bgVideo.addEventListener('error', () => {
+        console.log('Stadium video not found — using gradient overlay');
+        bgVideo.style.display = 'none';
+        // Overlay already provides a dark gradient background
+    });
+    // Attempt to play (autoplay muted works in modern browsers)
+    bgVideo.play().catch(e => console.log('Video autoplay restricted, background overlay active'));
+}
+
+// Optional: Double-click card to force manual refresh (user friendly)
+const cardElement = document.querySelector('.card');
+if (cardElement) {
+    cardElement.addEventListener('dblclick', () => {
+        fetchMatchStatus();
+        // Visual feedback for manual refresh
+        const footerHint = document.querySelector('.footer-hint');
+        if (footerHint) {
+            footerHint.style.opacity = '0.6';
+            setTimeout(() => { footerHint.style.opacity = '1'; }, 300);
+        }
+    });
+}
+
+// Console log for debugging
+console.log('🏏 Cricket Match Monitor Active (Large Font) | Endpoint: /api/match-status | Auto-refresh: 7s');
+
+</script>
+
+</body>
+</html>

@@ -709,3 +709,103 @@ def generate_full_commentary(raw_text, match_title=None):
     return commentary
 
 
+def generate_current_match_status(action="", status="", message=""):
+    """
+    Generate appropriate voice message based on action and status
+    Returns the message string without speaking it
+    """
+    try:
+        # =========================
+        # WAIT STATE MESSAGES
+        # =========================
+        if action == "WAIT":
+            if "Tomorrow" in status:
+                return "আগামীকাল ম্যাচ scheduled আছে। দয়া করে অপেক্ষা করুন।"
+            
+            elif "Today at" in status:
+                import re
+                time_match = re.search(r'(\d{1,2}:\d{2}\s*(?:AM|PM))', status)
+                if time_match:
+                    match_time = time_match.group(1)
+                    return f"ম্যাচ আজ {match_time} টায় শুরু হবে। অনুগ্রহ করে অপেক্ষা করুন।"
+                else:
+                    return message if message else "ম্যাচ শুরুর অপেক্ষায় রয়েছে।"
+            
+            elif "Scheduled" in status:
+                return "ম্যাচ এখনো শুরু হয়নি। নির্ধারিত সময়ের জন্য অপেক্ষা করুন।"
+            
+            elif "Yet to Start" in status:
+                return "ম্যাচ এখনো শুরু হয়নি। টস বা ম্যাচ শুরুর অপেক্ষায় রয়েছে।"
+            
+            else:
+                return message if message else "ম্যাচ শুরুর অপেক্ষায় রয়েছে।"
+        
+        # =========================
+        # LIVE STATE MESSAGES
+        # =========================
+        elif action == "LIVE":
+            pre_game_scenario_commentary(status)
+            if "Break" in status:
+                return "ম্যাচ চলছে। বর্তমানে বিরতি চলছে।"
+            elif "Match Stoped" in status:
+                return "ম্যাচ স্থগিত রয়েছে। আবার শুরু হলে জানানো হবে।"
+            else:
+                return "ম্যাচ শুরু হয়ে গেছে! লাইভ খেলা চলছে!"
+        
+        # =========================
+        # COMPLETE STATE MESSAGES
+        # =========================
+        elif action == "COMPLETE":
+            if "Completed" in status:
+                result_text = status.replace("Completed - ", "")
+                return f"ম্যাচ শেষ হয়েছে। {result_text}"
+            else:
+                return "ম্যাচ সম্পূর্ণ হয়েছে। খেলা শেষ।"
+        
+        # =========================
+        # STOP STATE MESSAGES
+        # =========================
+        elif action == "STOP":
+            if "Abandoned" in status:
+                return "ম্যাচ পরিত্যক্ত হয়েছে। খেলা বন্ধ করা হচ্ছে।"
+            else:
+                return "ম্যাচ বন্ধ করা হয়েছে। সিস্টেম থামানো হচ্ছে।"
+        
+        # =========================
+        # PAUSE STATE MESSAGES
+        # =========================
+        elif action == "PAUSE":
+            if "Suspended" in status:
+                return "ম্যাচ স্থগিত রয়েছে। আবার শুরু হলে জানানো হবে।"
+            elif "Deferred" in status:
+                return "ম্যাচ স্থগিত করা হয়েছে। পরবর্তী সময়ের জন্য অপেক্ষা করুন।"
+            else:
+                return f"ম্যাচ বর্তমানে {status} অবস্থায় রয়েছে।"
+        
+        # =========================
+        # ERROR STATE MESSAGES
+        # =========================
+        elif action == "ERROR":
+            return "সিস্টেমে একটি ত্রুটি ঘটেছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।"
+        
+        # =========================
+        # UNKNOWN STATE MESSAGES
+        # =========================
+        elif action == "UNKNOWN":
+            return "ম্যাচের বর্তমান অবস্থা বোঝা যাচ্ছে না। নেটওয়ার্ক চেক করুন।"
+        
+        # =========================
+        # REFRESH STATE MESSAGES
+        # =========================
+        elif action == "REFRESH":
+            return "পাতা রিফ্রেশ করা হচ্ছে। সর্বশেষ তথ্য সংগ্রহ করা হচ্ছে।"
+        
+        # =========================
+        # DEFAULT MESSAGE
+        # =========================
+        else:
+            return message if message else "বাংলাদেশ ক্রিকেট সিস্টেম সক্রিয় আছে।"
+    
+    except Exception as e:
+        print(f"MESSAGE GENERATION ERROR: {e}")
+        return "একটি ত্রুটি ঘটেছে।"

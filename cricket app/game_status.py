@@ -1,7 +1,7 @@
 import time
 import sys
 import re
-
+from commentry import generate_break_commentary
 
 def parse_match_result(text: str):
     pattern = r"(.+?)\s+won\s+by\s+(\d+)\s+(runs|wickets)"
@@ -75,6 +75,13 @@ def detect_game_status(data):
     # 5. Yet to start (toss pending)
     if "Match hasn't started yet" in text or "We'll be live once the toss begins" in text:
         return "Yet to Start"
+    
+    if "Toss delayed due to wet outfield" in text or "We'll be live once the toss begins" in text:
+        return "Yet to Start"
+    
+    if "Match stopped due to rain" in text or "We'll be live once the toss begins" in text:
+        return "Match Stoped"
+    
     
     # 6. Live match
     if "Live" in data and "Match Abandoned" not in data:

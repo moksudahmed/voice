@@ -245,6 +245,7 @@ def generate_wicket_commentary(runs, wickets, over, batsman=None, wicket_type=No
     return random.choice(templates)
 # ---------------------------------------
 
+
 def generate_winning_commentary2(team, margin, win_type):
     """
     Advanced natural Bangla winning commentary

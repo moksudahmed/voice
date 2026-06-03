@@ -16,9 +16,11 @@ import sys
 import re
 from player_list import get_playing_xi, generate_team_html
 from commentry import generate_continuous_commentary, bangla_commentary
+from bangla_commentry import generate_current_match_status
 from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY
+from fastapi.templating import Jinja2Templates
 from utill import number_to_bangla_words
 import re
 from obs_config import switch_scene, init_obs
@@ -128,6 +130,7 @@ BREAK_EVENT_MAP = {
     "Lunch Break": "LUNCH_BREAK",
     "Rain Break": "RAIN_BREAK",
     "Rain Break (Delayed)": "RAIN_DELAY",
+    "Match stopped due to rain":"RAIN_BREAK",
     "Time Out": "TIME_OUT",
     "Strategic Timeout": "STRATEGIC_TIMEOUT"
 
@@ -744,11 +747,12 @@ async def scraper():
                     speak_bangla(commentary) 
                     print(commentary)    """
             
-
+            
             if parsed != last_state:
                 last_state = parsed
                 STATE["data"] = parsed
-                event = parsed["result_boxes"][0]                
+                event = parsed["result_boxes"][0]
+                
                 print(event)
 
                 # scraped text
@@ -817,8 +821,279 @@ async def scraper():
 # =========================================
 # 🧠 AI ENGINE WRAPPER (THREAD SAFE FIX)
 # =========================================
+        
+async def voice_announce_once(action="", status="", message=""):
+    """
+    Single announcement version - generates message and speaks once
+    """
+    try:
+        # Generate the appropriate voice message
+        voice_message = generate_current_match_status(action, status, message)
+        
+        # Speak the message if it's not empty
+        if voice_message and voice_message.strip():
+            # Run speak_bangla in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, speak_bangla, voice_message)
+    
+    except Exception as e:
+        print("VOICE ERROR:", e)
+
+        
+def api_response(
+    status="Unknown",
+    message="",
+    action=None,
+    success=True,
+    data=None
+):
+    # Create async task for voice worker without blocking
+    if action and action in ["WAIT", "LIVE", "COMPLETE", "STOP", "PAUSE", "ERROR", "UNKNOWN", "REFRESH"]:
+        asyncio.create_task(voice_announce_once(action, status, message))
+    
+    return {
+        "success": success,
+        "status": status,
+        "message": message,
+        "action": action,
+        "data": data or {}
+    }
 
 async def run_ai_engine():
+    """
+    Scrape match page and return status information
+    suitable for frontend consumption.
+    """
+
+    playwright = None
+    browser = None
+
+    url = STATE.get("url")
+
+    if not url:
+        return api_response(
+            success=False,
+            status="Invalid URL",
+            message="No match URL found."
+        )
+
+    try:
+        playwright = await async_playwright().start()
+
+        browser = await playwright.chromium.launch(
+            headless=True
+        )
+
+        page = await browser.new_page()
+
+        print(f"🌐 Opening: {url}")
+
+        await page.goto(url, timeout=60000)
+        await page.wait_for_load_state("networkidle")
+        await page.wait_for_timeout(3000)
+
+        print("🚀 SYSTEM STARTED...")
+
+        text = await page.inner_text("body")
+        lines = text.splitlines()
+
+        status = detect_game_status(lines)
+
+        print(f"📊 Current Status: {status}")
+
+        # ==================================================
+        # ABANDONED
+        # ==================================================
+
+        if "Abandoned" in status:           
+            return api_response(
+                status=status,
+                message="Match has been abandoned.",
+                action="STOP"
+            )
+
+        # ==================================================
+        # SUSPENDED / DEFERRED
+        # ==================================================
+
+        if "Suspended" in status or "Deferred" in status:
+            return api_response(
+                status=status,
+                message=f"Match is currently {status}.",
+                action="PAUSE"
+            )
+
+        # ==================================================
+        # COMPLETED
+        # ==================================================
+
+        if "Completed" in status:
+
+            result_text = status.replace("Completed - ", "")
+
+            return api_response(
+                status=status,
+                message=f"Match finished. {result_text}",
+                action="COMPLETE",
+                data={
+                    "result": result_text
+                }
+            )
+
+        # ==================================================
+        # TOMORROW
+        # ==================================================
+
+        if "Tomorrow" in status:
+            return api_response(
+                status=status,
+                message="Match is scheduled for tomorrow.",
+                action="WAIT"
+            )
+
+        # ==================================================
+        # TODAY AT SPECIFIC TIME
+        # ==================================================
+
+        if "Today at" in status:
+
+            time_match = re.search(
+                r'(\d{1,2}:\d{2}\s*(?:AM|PM))',
+                status
+            )
+
+            if time_match:
+
+                match_time_str = time_match.group(1)
+
+                now = datetime.now()
+
+                match_time = datetime.strptime(
+                    match_time_str,
+                    "%I:%M %p"
+                )
+
+                match_time = now.replace(
+                    hour=match_time.hour,
+                    minute=match_time.minute,
+                    second=0,
+                    microsecond=0
+                )
+
+                if now > match_time:
+
+                    await page.reload()
+                    await page.wait_for_timeout(2000)
+
+                    text = await page.inner_text("body")
+                    lines = text.splitlines()
+
+                    updated_status = detect_game_status(lines)
+
+                    return api_response(
+                        status=updated_status,
+                        message=f"Status updated: {updated_status}",
+                        action="REFRESH"
+                    )
+
+                wait_seconds = (
+                    match_time - now
+                ).total_seconds()
+
+                return api_response(
+                    status=status,
+                    message=f"Match starts at {match_time_str}",
+                    action="WAIT",
+                    data={
+                        "wait_seconds": int(wait_seconds)
+                    }
+                )
+
+        # ==================================================
+        # SCHEDULED
+        # ==================================================
+
+        if "Scheduled" in status:
+
+            return api_response(
+                status=status,
+                message="Match has not started yet.",
+                action="WAIT"
+            )
+
+        # ==================================================
+        # YET TO START
+        # ==================================================
+
+        if "Yet to Start" in status:
+
+            return api_response(
+                status=status,
+                message="Waiting for toss or match start.",
+                action="WAIT"
+            )
+
+        # ==================================================
+        # LIVE / BREAK
+        # ==================================================
+        print("Hello")
+        print(status)
+        if "Live" in status or "Break" in status:
+
+            print("🎬 MATCH IS LIVE")
+
+            # Run scraper in background
+            asyncio.create_task(scraper())
+
+            return api_response(
+                status=status,
+                message="Live match detected. Monitoring started.",
+                action="LIVE"
+            )
+        
+        if "Stoped" in status :
+
+            print("🎬 Match Stoped")
+
+            # Run scraper in background          
+
+            return api_response(
+                status=status,
+                message="Match stopped due to rain",
+                action="LIVE"
+            )
+        # ==================================================
+        # UNKNOWN
+        # ==================================================
+
+        return api_response(
+            status=status,
+            message="Unable to determine match state.",
+            action="UNKNOWN",
+            success=False
+        )
+
+    except Exception as e:
+
+        print(f"❌ ERROR in run_ai_engine: {e}")
+
+        return api_response(
+            success=False,
+            status="Error",
+            message=str(e),
+            action="ERROR"
+        )
+
+    finally:
+
+        if browser:
+            await browser.close()
+
+        if playwright:
+            await playwright.stop()
+
+
+async def run_ai_engine_old():
     """
     Playwright scraping engine with safe URL validation.
     """
@@ -957,9 +1232,11 @@ async def run_ai_engine():
             print("   Will detect when match finishes with result")
             print("Press Ctrl+C to stop\n")
             #game_welcome(page)
-            refresh_interval = 15
-            last_data_hash = None
+            #refresh_interval = 15
+            #last_data_hash = None
             await scraper()
+                        
+            
 
         # 9. Unknown status
         if "Unknown" in status:
@@ -1050,6 +1327,26 @@ async def set_url(payload: dict):
     return {"ok": True}
 
 
+
+templates = Jinja2Templates(directory="templates")
+
+
+@app.get("/api/match-status")
+async def get_match_status():
+    data = await run_ai_engine()
+    return JSONResponse(content=data)
+
+@app.get("/live-match-status", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    commentary = "বৃষ্টি শুরু! খেলা বন্ধ! সবাই অপেক্ষায়! লাইভে যারা আছেন—আপনারা কি মনে করেন ম্যাচ আবার শুরু হবে?"
+    speak_bangla(commentary)
+    return templates.TemplateResponse(
+        "match_status.html",
+        {
+            "request": request
+        }
+    )
+
 # =========================
 # LIVE MATCH API (NEW FIXED)
 # =========================
@@ -1079,7 +1376,7 @@ async def ws(websocket: WebSocket):
         await ensure_flags_loaded()
         if STATE["url"]:        
             data = await get_playing_xi(STATE["url"])
-            print(data)
+            #print(data)
 
 
         while True:
