@@ -56,7 +56,7 @@ def get_milestone_comment(name, runs):
         return f"🔥 অসাধারণ ইনিংস! {name} সেঞ্চুরি (১০০ রান) পূর্ণ করেছে! গ্যালারি উল্লাসে ফেটে পড়ছে!"
     return None
 
-def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=None, team2=None, context=None):
+def generate_continuous_commentary__old(events, batsmen, bowler, score, over, team1=None, team2=None, context=None):
     """
     Generate a smooth, human-like cricket commentary for a sequence of events
     - events: list of strings (SIX, FOUR, WICKET, DOUBLE, SINGLE, DOT, WIDE, NO_BALL, OVER_COMPLETE)
@@ -141,6 +141,266 @@ def generate_continuous_commentary(events, batsmen, bowler, score, over, team1=N
 
     # Combine all commentary parts naturally
     return " ".join(parts)
+
+import random
+
+def generate_continuous_commentary(
+    events,
+    batsmen,
+    bowler,
+    score,
+    over,
+    team1=None,
+    team2=None,
+    context=None,
+    lang="bn"
+):
+    """
+    Generate smooth cricket commentary in multiple languages.
+
+    Args:
+        events: list of events (SIX, FOUR, WICKET, DOT, WIDE, NO_BALL, OVER_COMPLETE, BOWLER_RUNUP)
+        batsmen: list of dicts [{'name': str, 'runs': int}, ...]
+        score: "runs/wickets" format e.g. "120/3"
+        over: current over number
+        team1, team2: optional team names
+        context: extra match context (e.g. "MAIDEN OVER")
+        lang: "en" or "bn"
+    """
+
+    runs, wickets = map(int, score.split("/"))
+    parts = []
+
+    # -------------------------
+    # Language helper
+    # -------------------------
+    def txt(en_text, bn_text):
+        return bn_text if lang == "bn" else en_text
+
+    # -------------------------
+    # BOWLER RUN-UP
+    # -------------------------
+    if events == "BOWLER_RUNUP":
+        bowler_name = bowler.get("name", "Bowler")
+        comment = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler=bowler_name)
+        parts.append(comment)
+
+    # -------------------------
+    # WICKET (highest priority)
+    # -------------------------
+    if "WICKET" in events:
+        batsman_name = batsmen[0]["name"] if batsmen else None
+        parts.append(
+            generate_wicket_commentary(
+                runs,
+                wickets,
+                over,
+                batsman_name,
+                context
+            )
+        )
+
+    # -------------------------
+    # SCORING EVENTS
+    # -------------------------
+    scoring_priority = ["SIX", "FOUR", "DOUBLE", "SINGLE", "DOT"]
+
+    for event in scoring_priority:
+        if event in events:
+            parts.append(generate_event_commentary([event]))
+            break
+
+    # -------------------------
+    # EXTRAS
+    # -------------------------
+    for extra in ["WIDE", "NO_BALL"]:
+        if extra in events:
+            parts.append(generate_event_commentary([extra]))
+
+    # -------------------------
+    # OVER COMPLETION
+    # -------------------------
+    if "OVER_COMPLETE" in events:
+
+        if context == "MAIDEN OVER":
+            over_comment = random.choice(COMMENTARY["MAIDEN_OVER"])
+        else:
+            over_comment = ""
+            
+        over_comment += txt(
+            f" Over {over} is completed. Score is {runs} runs {wickets} wickets.",
+            f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"
+           
+        )
+
+        parts.append(over_comment)
+
+        # -------------------------
+        # BATSMEN UPDATE
+        # -------------------------
+        if batsmen and len(batsmen) >= 2:
+            b1, b2 = batsmen[0], batsmen[1]
+
+            parts.append(
+                txt(
+                    f"{b1['name']} is on {b1['runs']} runs, "
+                    f"{b2['name']} is on {b2['runs']} runs.",
+                    
+                    f"{b1['name']} এখন {b1['runs']} রান করছে, "
+                    f"{b2['name']} করছে {b2['runs']} রান।"
+                )
+            )
+
+        elif batsmen and len(batsmen) == 1:
+            b1 = batsmen[0]
+            parts.append(
+                txt(
+                    f"{b1['name']} is on {b1['runs']} runs.",
+                    f"{b1['name']} এখন {b1['runs']} রান করছে।"
+                )
+            )
+
+        # -------------------------
+        # WELCOME MESSAGE
+        # -------------------------
+        if team1 and team2:
+            parts.append(
+                txt(
+                    f"Welcome! This is {team1} vs {team2}. Score: {runs} runs {wickets} wickets after {over} overs.",
+                    f"স্বাগতম! {team1} বনাম {team2} ম্যাচ চলছে। স্কোর {runs} রানে {wickets} উইকেট, {over} ওভার শেষ।"
+                )
+            )
+
+    # -------------------------
+    # FINAL OUTPUT
+    # -------------------------
+    return " ".join(parts)
+    
+def generate_continuous_commentary_old(
+    events,
+    batsmen,
+    bowler,
+    score,
+    over,
+    team1=None,
+    team2=None,
+    context=None
+):
+    """
+    Generate smooth, human-like cricket commentary for a sequence of events.
+
+    Args:
+        events: list of strings (SIX, FOUR, WICKET, DOUBLE, SINGLE, DOT, WIDE, NO_BALL, OVER_COMPLETE, BOWLER_RUNUP)
+        batsmen: list of dicts [{'name': str, 'runs': int}, ...]
+        score: string in format "runs/wickets" (e.g. "120/3")
+        over: current over number
+        team1, team2: optional team names
+        context: extra match context (e.g. "MAIDEN OVER")
+    """
+
+    runs, wickets = map(int, score.split("/"))
+
+    parts = []
+
+    # =========================
+    # 1️⃣ Bowler run-up
+    # =========================
+    if events == "BOWLER_RUNUP":
+        bowler_name = bowler.get("name", "Bowler")
+        comment = random.choice(COMMENTARY["BOWLER_RUNUP"]).format(bowler=bowler_name)
+        parts.append(comment)
+
+    # =========================
+    # 2️⃣ Wicket (highest priority)
+    # =========================
+    if "WICKET" in events:
+        batsman_name = batsmen[0]["name"] if batsmen else None
+        parts.append(
+            generate_wicket_commentary(
+                runs,
+                wickets,
+                over,
+                batsman_name,
+                context
+            )
+        )
+
+    # =========================
+    # 3️⃣ Scoring events
+    # =========================
+    scoring_priority = ["SIX", "FOUR", "DOUBLE", "SINGLE", "DOT"]
+
+    for event in scoring_priority:
+        if event in events:
+            parts.append(generate_event_commentary([event]))
+            break  # Only one scoring event per ball
+
+    # =========================
+    # 4️⃣ Extras
+    # =========================
+    for extra in ["WIDE", "NO_BALL"]:
+        if extra in events:
+            parts.append(generate_event_commentary([extra]))
+
+    # =========================
+    # 5️⃣ Over completion summary
+    # =========================
+    if "OVER_COMPLETE" in events:
+
+        if context == "MAIDEN OVER":
+            over_comment = random.choice(COMMENTARY["MAIDEN_OVER"])
+        else:
+            over_comment = ""
+
+        over_comment += (
+            f" Over {number_to_bangla_words(over)} is completed. "
+            f"The score is now {number_to_bangla_words(runs)} runs for "
+            f"{number_to_bangla_words(wickets)} wickets."
+        )
+
+        parts.append(over_comment)
+
+        # =========================
+        # 6️⃣ Batsmen update
+        # =========================
+        if batsmen and len(batsmen) >= 2:
+            b1, b2 = batsmen[0], batsmen[1]
+
+            parts.append(
+                f"{b1['name']} is now on {number_to_bangla_words(b1['runs'])} runs, "
+                f"while {b2['name']} has {number_to_bangla_words(b2['runs'])} runs."
+            )
+
+            # Milestone checks
+            for b in [b1, b2]:
+                milestone_comment = get_milestone_comment(b["name"], b["runs"])
+                if milestone_comment:
+                    parts.append(milestone_comment)
+
+        elif batsmen and len(batsmen) == 1:
+            b1 = batsmen[0]
+            parts.append(
+                f"{b1['name']} is on {number_to_bangla_words(b1['runs'])} runs."
+            )
+
+        # =========================
+        # 7️⃣ Welcome message for new viewers
+        # =========================
+        if team1 and team2:
+            welcome_msg = (
+                f"Welcome to all new viewers! "
+                f"This is the match between {team1} and {team2}. "
+                f"The score is {number_to_bangla_words(runs)} for "
+                f"{number_to_bangla_words(wickets)} wickets after {number_to_bangla_words(over)} overs. "
+                f"Stay with us for more live updates!"
+            )
+            parts.append(welcome_msg)
+
+    # =========================
+    # Final output
+    # =========================
+    return " ".join(parts)
+
 def generate_event_commentary2(events):
     """
     Generate rich, natural Bangla commentary for a given list of cricket events

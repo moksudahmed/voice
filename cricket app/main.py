@@ -1043,13 +1043,13 @@ async def run_ai_engine():
             print("🎬 MATCH IS LIVE")
 
             # Run scraper in background
-            asyncio.create_task(scraper())
-
-            return api_response(
+            #asyncio.create_task(scraper())
+            await scraper()
+            """return api_response(
                 status=status,
                 message="Live match detected. Monitoring started.",
                 action="LIVE"
-            )
+            )"""
         
         if "Stoped" in status :
 
@@ -1338,8 +1338,8 @@ async def get_match_status():
 
 @app.get("/live-match-status", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    commentary = "বৃষ্টি শুরু! খেলা বন্ধ! সবাই অপেক্ষায়! লাইভে যারা আছেন—আপনারা কি মনে করেন ম্যাচ আবার শুরু হবে?"
-    speak_bangla(commentary)
+    #commentary = "বৃষ্টি শুরু! খেলা বন্ধ! সবাই অপেক্ষায়! লাইভে যারা আছেন—আপনারা কি মনে করেন ম্যাচ আবার শুরু হবে?"
+    #speak_bangla(commentary)
     return templates.TemplateResponse(
         "match_status.html",
         {

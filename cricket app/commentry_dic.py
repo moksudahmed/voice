@@ -121,16 +121,16 @@ COMMENTARY = {
 ],
 
 "BOWLER_RUNUP": [
-"{bowler} রান আপ শুরু!",
-"{bowler} ছন্দে এগিয়ে আসছেন!",
-"{bowler} ফোকাসড রান আপ!",
-"{bowler} বল করতে প্রস্তুত!",
-"{bowler} স্টেডিয়াম নীরব!",
-"{bowler} গুরুত্বপূর্ণ ডেলিভারি!",
-"{bowler} ইয়র্কার আসছে কি?",
-"{bowler} রিদমে দৌড়াচ্ছেন!",
-"{bowler} ফাইনাল মোমেন্ট!",
-"{bowler} ম্যাচ শেপিং বল!"
+    "{bowler} শুরু করলেন রান-আপ, স্টেডিয়ামে নেমে এসেছে এক গভীর নীরবতা…",
+    "{bowler} ছন্দে ছন্দে এগিয়ে আসছেন, চোখে স্পষ্ট ফোকাস আর আত্মবিশ্বাস…",
+    "{bowler} ধীরে ধীরে এগিয়ে আসছেন, প্রতিটি পদক্ষেপে বাড়ছে উত্তেজনার চাপ…",
+    "{bowler} প্রস্তুত ডেলিভারির জন্য, পুরো স্টেডিয়াম এখন নিঃশ্বাস বন্ধ করে অপেক্ষায়…",
+    "{bowler} রান-আপে ছন্দের এক অপূর্ব মেলবন্ধন, ব্যাটসম্যানের চোখ স্থির বলের ওপর…",
+    "{bowler} এগিয়ে আসছেন গুরুত্বপূর্ণ এই ডেলিভারি নিয়ে, ম্যাচের মোড় ঘুরে যেতে পারে এখানেই…",
+    "{bowler} কি তবে ইয়র্কার? নাকি কোনো চমক অপেক্ষা করছে ব্যাটসম্যানের জন্য…",
+    "{bowler} দৌড়ে আসছেন পূর্ণ ছন্দে, গ্যালারিতে উত্তেজনার ঢেউ…",
+    "{bowler} শেষ মুহূর্তের রান-আপ, এখনই ঘটতে পারে ম্যাচ বদলে দেওয়া কিছু…",
+    "{bowler} এগিয়ে আসছেন, এই বলই হয়তো আজকের ম্যাচের গল্প লিখে দেবে…"
 ],
 
 "BOWLED": [
@@ -960,6 +960,268 @@ WINNING_COMMENTARY_TEMPLATES = {
     ]
 }
 COMMENTARY_ENG = {
+"SIX": [
+"Ohhhh wow! What a massive six! The moment it left the bat, everyone knew it was heading straight into the stands! The stadium is erupting with excitement! Thanks to everyone watching live—could this be the shot of the day? Let us know in the comments!",
+"That's an absolute monster hit! The fielders can only watch as the ball disappears into the sky! The batter has just announced that this is his over! Thanks to all our live viewers—tell us where you're watching from!",
+"Magnificent! Right off the middle of the bat and into the crowd! The bowler looks completely stunned! The batter is operating on another level today! Do you think a century is coming? Let us know!",
+"Straight down the ground! What a classic cricket shot! Over the bowler's head and deep into the stands! That's not just a six, that's a masterpiece of timing and technique!",
+"The helicopter shot! Tremendous wrist power sends the ball soaring into the crowd! The entire stadium is amazed! Rate that shot out of ten!",
+"Pulled away beautifully! The short ball has been punished! It sails over midwicket for a huge six! The crowd is absolutely loving it! Type 🔥 in the comments!",
+"A powerful slog sweep! The spinner had no chance at all! That's gone miles over the leg side boundary! Is this the turning point of the match?",
+"A reverse shot and what innovation! The batter deceives everyone and sends it into the stands! Did you see that coming? Let us know!",
+"Under pressure in the final overs and still manages a six! Nerves of steel! Could this be the match-winning shot?",
+"Full toss and straight into the crowd! No mercy shown at all! The batter makes full use of the opportunity!",
+"A change of gears and instantly a six! The batter is now in full attack mode!",
+"Right off the sweet spot! The sound alone told the story—that's a maximum!",
+"Almost a yorker, but somehow lifted for six! Outstanding skill and execution!",
+"There was a fielder out there, but it didn't matter! Straight into the stands!",
+"An elegant six over deep extra cover! Pure class from the batter!",
+"Off balance on one leg and still clears the boundary! Confidence at its highest!",
+"A six in a pressure situation! This is where great players separate themselves!",
+"Out of the stadium! What a gigantic six! The crowd has gone absolutely wild!"
+],
+
+"FOUR": [
+"FOUR! The batter finds the gap perfectly! The ball races away to the boundary in no time!",
+"Pure timing! The moment it left the bat, it was always heading for four!",
+"Beautifully placed into the gap! The fielders had absolutely no chance!",
+"What a cover drive! Straight out of the coaching manual!",
+"No power required—just exquisite timing!",
+"A brilliant back-foot punch with complete control!",
+"An easy boundary! The fielder could only watch it go past!",
+"A fine glance down to fine leg for four runs!",
+"The field setting has been broken apart with that boundary!",
+"Another boundary! The batter is in red-hot form!"
+],
+
+"DOUBLE": [
+"Two runs! Excellent understanding and quick running between the wickets!",
+"Smart running! The batters outsmart the fielders and collect two!",
+"A tight gap but executed perfectly for a couple!",
+"They make good use of the gap at midwicket!",
+"A quick two runs! The pressure continues to build on the bowler!",
+"Fitness and communication at their best! Excellent running!",
+"The fielder was slow to react and the batters take advantage!",
+"Great calling between the wickets! Two runs added safely!",
+"No risks taken and two runs collected!",
+"The momentum of the match is slowly shifting!"
+],
+
+"TRIPLE": [
+"Three runs! Outstanding fitness and determination!",
+"A superbly run three through the gap!",
+"The fielding delay allows the batters to come back for three!",
+"From one to three! Brilliant running between the wickets!",
+"Smart cricket and excellent decision-making!",
+"Top-class effort! Three runs secured!"
+],
+
+"SINGLE": [
+"An easy single! Good strike rotation!",
+"Smart running avoids the dot ball!",
+"A quick single! Perfect understanding between the batters!",
+"Pushed into the gap and they take one!",
+"Ideal batting to relieve the pressure!",
+"Strike rotated and the innings stays under control!",
+"Smart cricket! One run added!",
+"A risk-free single!",
+"The innings is being built steadily!",
+"No dot ball this time as the score keeps moving!"
+],
+
+"DOT": [
+"Dot ball! Excellent bowling!",
+"The pressure is mounting on the batter!",
+"No run scored—complete control from the bowler!",
+"The batter is tied down here!",
+"The scoreboard remains unchanged!",
+"The bowler is in superb rhythm!",
+"Another dot ball! Pressure at its peak!",
+"No runs, only tension!",
+"They searched for a gap but found none!",
+"Bowler completely on top at the moment!"
+],
+
+"WIDE": [
+"Wide ball! An extra run conceded!",
+"The bowler misses the line completely!",
+"A free run gifted to the batting side!",
+"The pressure increases on the bowler!",
+"Another wide!",
+"The bowler is losing control here!",
+"Free runs for the batting team!",
+"The bowler pays the price for that mistake!",
+"Disappointment around the ground!",
+"Extra runs can change the course of a match!"
+],
+
+"NO_BALL": [
+"No ball! A huge opportunity for the batting side!",
+"A free hit is coming up next!",
+"A costly mistake from the bowler!",
+"The batter can now attack freely!",
+"This could be a game-changing moment!",
+"Extra run plus a free hit opportunity!",
+"The excitement level rises around the stadium!",
+"A golden chance for the batter!",
+"Pressure shifts firmly onto the bowler!",
+"A potentially game-changing delivery!"
+],
+
+"WICKET": [
+"OUT! The stadium erupts with excitement!",
+"A huge wicket! That's the breakthrough they needed!",
+"Caught! Brilliant work in the field!",
+"The batter's innings comes to an end!",
+"LBW! The finger goes up immediately!",
+"Bowled him! The stumps are shattered!",
+"Run out! A costly mix-up between the batters!",
+"A crucial wicket under pressure!",
+"A massive blow in the context of the match!",
+"What an unbelievable catch!"
+],
+
+"BOWLER_RUNUP": [
+    "{bowler} begins the run-up, and a deep silence falls over the stadium…",
+    "{bowler} moves in with rhythm and grace, eyes locked in complete focus…",
+    "{bowler} is charging in steadily, every step building the tension in the air…",
+    "{bowler} is ready for the delivery, the entire stadium holding its breath…",
+    "{bowler} approaches in a smooth rhythm, batter watching every movement closely…",
+    "{bowler} runs in with intent, this could be a crucial moment in the match…",
+    "{bowler} is it the yorker coming? Or is something unexpected waiting here…",
+    "{bowler} comes in full flow, waves of excitement rising in the crowd…",
+    "{bowler} reaches the final stride of the run-up, something special might be coming…",
+    "{bowler} charges in, this delivery could very well shape the outcome of the game…"
+],
+
+"BOWLED": [
+"Bowled! The stumps are sent flying!",
+"Clean bowled! What a delivery!",
+"Magical inswing bowling!",
+"The stumps have been shattered!",
+"The batter has been completely beaten!",
+"A perfect yorker does the job!",
+"A bowling masterclass!",
+"Stumps flying everywhere!"
+],
+
+"CATCH": [
+"What an incredible catch!",
+"Fielding brilliance on display!",
+"A spectacular catch near the boundary!",
+"Lightning-fast reflexes in the slips!",
+"A very important wicket!",
+"The crowd rises to applaud!",
+"A genuine match-changing catch!"
+],
+
+"RUN_OUT_CHECK": [
+"Run-out check in progress!",
+"We're going upstairs to the third umpire!",
+"A very close call!",
+"The replay is being reviewed!",
+"A crucial moment in the match!",
+"The stadium falls silent!",
+"The final decision is coming shortly!"
+],
+
+"TOSS_WIN_BAT": [
+"They've won the toss and elected to bat first!",
+"Aiming to post a big total on the board!",
+"The captain chooses to bat first!",
+"An aggressive decision at the toss!",
+"They want runs on the board early!"
+],
+
+"TOSS_WIN_BOWL": [
+"They've won the toss and chosen to bowl first!",
+"Looking for early wickets with the new ball!",
+"The conditions seem favorable for bowling!",
+"They want to apply pressure immediately!",
+"An attacking field is being set!"
+],
+
+"TOSS_LOSS": [
+"They've lost the toss and now face a challenge!",
+"The opposition has made their decision!",
+"The strategy may need some adjustment!",
+"The match is still wide open!",
+"Plenty of cricket left to be played!"
+],
+
+"POWERPLAY": [
+"The Powerplay begins!",
+"Time to attack!",
+"Fielding restrictions are in place!",
+"A great opportunity for big shots!",
+"The ideal phase to score quickly!"
+],
+
+"RAIN_DELAY": [
+"Rain has arrived!",
+"Play has been suspended!",
+"The covers are coming onto the field!",
+"We're currently in a rain break!",
+"The weather is causing a delay!"
+],
+
+"MILESTONE_FIFTY": [
+"Fifty! What a fine innings!",
+"A well-deserved half-century!",
+"Outstanding batting display!",
+"The crowd applauds warmly!",
+"A very smart innings!"
+],
+
+"MILESTONE_HUNDRED": [
+"Century! A remarkable achievement!",
+"One hundred runs completed!",
+"What an extraordinary innings!",
+"The entire stadium is on its feet!",
+"Magical batting from the batter!"
+],
+
+"INNINGS_BREAK": [
+"The innings comes to an end!",
+"The target has been set!",
+"Discussions underway in the dressing rooms!",
+"The match remains wide open!",
+"The teams prepare for the second innings!"
+],
+
+"OVER_SUMMARY": [
+"That's the end of the over!",
+"An over with both runs and opportunities!",
+"A balanced over overall!",
+"The match remains finely poised!",
+"The next over could be crucial!"
+],
+
+"MAIDEN_OVER": [
+"A maiden over!",
+"Not a single run scored!",
+"Excellent bowling throughout!",
+"Pressure continues to build!",
+"Perfect control from the bowler!"
+],
+
+"TIME_OUT": [
+"Time out!",
+"Teams are discussing their plans!",
+"A quick meeting in the dressing room!",
+"A short break in play!",
+"The match pauses momentarily!"
+],
+
+"STRATEGIC_TIMEOUT": [
+"Strategic timeout!",
+"Important planning underway!",
+"The coaches are sharing instructions!",
+"A brief break in the match!",
+"Tactical adjustments are being made!"
+]
+}
+COMMENTARY_ENG_old = {
     "SIX": [
         "Ohhh! What a six! The ball has flown straight into the top tier of the crowd—incredible timing, absolutely perfect shot! Hit right out of the middle of the bat, and the fans have gone absolutely crazy!",
         "That is MASSIVE! Over long on and out of the stadium! The crowd is on its feet celebrating, and there's a little smile on the batter's face—he knows exactly what he's done!",
