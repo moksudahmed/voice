@@ -19,7 +19,7 @@ from commentry import generate_continuous_commentary, bangla_commentary, generat
 from bangla_commentry import generate_current_match_status
 from game_status import detect_game_status, handle_break_period, detect_live_status
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES
-from commentry_dic import COMMENTARY
+from commentry_dic import COMMENTARY, EXTRA_COMMENTARY
 from fastapi.templating import Jinja2Templates
 from utill import number_to_bangla_words
 import re
@@ -28,6 +28,9 @@ from pydantic import BaseModel
 from voice import speak_bangla, stop_current_tts, reset_stop_flag
 from scraper import scrap_page
 from live_matches import get_live_matches
+from live_status import get_event_key, get_event_string
+from run_events import detect_event, detect_event_advanced ,EVENT_MAP
+
 # =========================================================
 # APP
 # =========================================================
@@ -113,6 +116,12 @@ RUN_EVENT_MAP = {
     "No Ball": "NO_BALL",
     "Bye": "BYE",
     "Wicket": "WICKET",
+    "Bowled": "WICKET",
+    "Caught Out":"WICKET",
+    "Run Out": "WICKET",
+    "Bowler Stopped":"",
+    "Run Out Check":"",
+    "Boundary Check":"",
     "Over": "OVER_COMPLETE"
 }
 
@@ -139,41 +148,6 @@ BREAK_EVENT_MAP = {
 # 🎯 EVENT DETECTION (FAST)
 # =====================================================
 
-# =========================
-# COMMENTARY GENERATOR
-# =========================
-RUN_COMMENTARY = {
-    "0": "ডট বল! কোনো রান হয়নি।",
-    "1": "এক রান নেওয়া হলো।",
-    "2": "দারুণ দৌড়ে দুই রান!",
-    "3": "খুব ভালো রানিং, তিন রান!",
-    "4": "চার রান! দারুণ শট, বাউন্ডারি!",
-    "6": "ছক্কা! বলটা স্টেডিয়ামের বাইরে!",
-}
-EXTRA_COMMENTARY = {
-    "Wide": "ওয়াইড বল! অতিরিক্ত রান পেল ব্যাটিং দল।",
-    "No Ball": "নো বল! ফ্রি হিটের সুযোগ আসতে পারে।",
-    "Bye": "বাই রান! ব্যাটে না লেগেই রান এসেছে।",
-}
-WICKET_COMMENTARY = {
-    "Wicket": "উইকেট! ব্যাটসম্যান আউট! দর্শকরা উল্লাসে ফেটে পড়ছে!",
-}
-BREAK_COMMENTARY = {
-    "Innings Break": "ইনিংস বিরতি! এখন দ্বিতীয় ইনিংসের প্রস্তুতি চলছে।",
-    "Drinks Break": "পানীয় বিরতি চলছে, খেলোয়াড়রা বিশ্রামে।",
-    "Tea Break": "টি ব্রেক চলছে, খেলায় সাময়িক বিরতি।",
-    "Lunch Break": "লাঞ্চ বিরতি! প্রথম সেশন শেষ।",
-    "Rain Break": "বৃষ্টির কারণে খেলা বন্ধ আছে।",
-    "Rain Break (Delayed)": "বৃষ্টির কারণে খেলা দেরিতে শুরু হবে।",
-}
-def get_bangla_commentary(event):
-    return (
-        RUN_COMMENTARY.get(event)
-        or EXTRA_COMMENTARY.get(event)
-        or WICKET_COMMENTARY.get(event)
-        or BREAK_COMMENTARY.get(event)
-        or "যারা নতুন যুক্ত হয়েছেন, স্বাগতম!"
-    )
 
 def generate_welcome_message(team1, team2):
     template = random.choice(WELCOME_COMMENTARY_TEMPLATES)
@@ -184,7 +158,7 @@ def generate_welcome_message(team1, team2):
 # 🎯 EVENT DETECTION (FAST + SAFE FALLBACK)
 # =====================================================
 
-def detect_event(event):
+def detect_event2(event):
 
     # normalize input (helps avoid mismatch like "wide " or "WIDE")
     if event is None:
@@ -664,7 +638,20 @@ def parse_batsmen(data):
                 "balls": int(non_striker_balls),
             },
         ]
-
+        
+def process_event(result):
+    status=""
+    event_key=""
+    event = detect_event(result)
+    if event == "UNKNOWN_EVENT":
+        event = detect_event_advanced(result)
+        if event == "UNKNOWN_EVENT":
+            event_key = get_event_key(result)   
+            
+            return event_key
+    else:
+        return event
+        
 async def scraper():
 
     playwright = await async_playwright().start()
@@ -675,7 +662,7 @@ async def scraper():
     last_event = ""
     match_title=""
     current_status = "Live"
-    print("Check Point")
+    print("Start Scraping")
     while True:
 
         try:
@@ -733,134 +720,295 @@ async def scraper():
             # =====================================================
             # SEND ONLY IF CHANGED (FAST HASH STYLE OPTIONAL)
             # =====================================================
-            
-            result = parsed["result_boxes"][0]
-            event = detect_event(result)        
-            #print("check event", event)
-            if event == "UNKNOWN_EVENT":
-                current_status = detect_live_status(parsed["result_boxes"][0])
-                #print("Hello Check", current_status)
-
-           
-            # Check for completed match with result FIRST
-            if "Completed" in current_status:
-                result_text = current_status.replace("Completed - ", "")
-                #commentary = get_winning_commentary(**match_data)
-                print("Hello")
-                result = generate_full_commentary(result_text, match_title )
-                print(result)
-                print(f"\n{'='*60}")
-                print(f"🏆 MATCH FINISHED! {result_text}")
-                print(f"{'='*60}")
-                print("✅ Exiting...")
-                break
-            # Handle breaks
-            elif "Break" in current_status:
-                print(f"\n{'='*50}")
-                print(f"⏸️ BREAK DETECTED: {current_status}")
-                print(f"{'='*50}")
-                score_data = parse_score(parsed["score"])
-                print("PARSED:", score_data)
-                runs, wickets, over, ball = score_data
-                
-                new_status = handle_break_period(current_status, page, browser, STATE["flags"].get("team_a_name") or "TEAM A", runs, wickets)
-                
-                if new_status == "Live":
-                    current_status = new_status
-                    print(f"\n🎬 Match resumed! Continuing monitoring...\n")
-                    continue
-                elif "Completed" in new_status:
-                    result_text = new_status.replace("Completed - ", "")
-                    print(f"\n🏆 MATCH FINISHED! {result_text}")
-                    break
-                else:                            
-                    if new_status ==  "Innings Break": 
-                        #if event == "Innings Break" and not innings_state and is_valid_flags(STATE.get("flags")):                
-                        #print("Check innings break")
-                        swap_teams(STATE["flags"])
-                        #print("State Changed:", STATE["flags"])
-                        innings_state = True                               
-                        print(f"Match status after break: {new_status}")                                                            
-                        
-                    else:
-                        print(f"Match status after break: {new_status}")                            
-                    break
-            # Check if match is no longer live
-            elif "Abandoned" in current_status:
-                print("\n❌ MATCH ABANDONED! Exiting...")
-                break
-            elif "Suspended" in current_status:
-                print("\n⏸️ MATCH SUSPENDED! Exiting...")
-                break
+          
             # Extract match data for live matches
+            status =""
+            event_key = None
+            commentary_text =None
+            status=None
+            event=None
+            print("*******")
+            result=""
             if "Live" in current_status:
                 # parse result
-                data = parse_match_result(parsed["result_boxes"][0])
-
-                    # use dictionary correctly
-                if data:
-                        print(data["winner"])
-                        print(data["margin"])
-                        print(data["type"])
-                if data:
-                        commentary =  bangla_commentary(data)
-                        speak_bangla(commentary) 
-                        print(commentary)
-                
-                
-                if parsed != last_state:
-                    last_state = parsed
-                    STATE["data"] = parsed
-                    
-
-                    # scraped text
-                    #text = "Dragons Women won by 8 runs 🏆"
-
-                    
-                    
-                    #commentary= bangla_commentary(event)
-                    #STATE["data"]["commentary"]= event
-                    #batsmen = parsed["result_boxes"][0]
-                
-                    batsman = parse_batsmen(parsed)
-                    
-                    bowler = parse_bowler(parsed["live_players"]['bowler'])                          
-                    
-                    full_over = int(parsed["overs"].split(".")[0])
-                    #STATE["data"]["result_boxes"] = "4"
-                    if event != last_event:
+                result = parsed["result_boxes"][0]
+                event_key = process_event(result)
+                print(event_key)
+                if event_key in EVENT_MAP:                 
+                    if parsed != last_state:
+                        last_state = parsed
+                        STATE["data"] = parsed
                         
 
-                        teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
-                        teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"
+                        # scraped text
+                        #text = "Dragons Women won by 8 runs 🏆"
+
                         
-                        commentary = generate_continuous_commentary(event, batsman, bowler, parsed["score"], 
-                                                                        full_over, teamA, 
-                                                                        teamB, event)
-                        #commentary = get_bangla_commentary(event)  
                         
-                        if commentary:
+                        #commentary= bangla_commentary(event)
+                        #STATE["data"]["commentary"]= event
+                        #batsmen = parsed["result_boxes"][0]
+                    
+                        batsman = parse_batsmen(parsed)
+                        
+                        bowler = parse_bowler(parsed["live_players"]['bowler'])                          
+                        
+                        full_over = int(parsed["overs"].split(".")[0])
+                        #STATE["data"]["result_boxes"] = "4"
+                        if event_key != last_event:
                             
-                            STATE["data"]["commentary"] = commentary
-                            
-                            speak_bangla(commentary) 
-                            print(commentary)
-                        last_event = event
-                    dead = []
-                    
-                    
-                    for ws in list(clients):
-                        try:
-                        # await ws.send_json(parsed)
-                            await ws.send_json({
-                                **STATE["data"],
-                                "flags": STATE["flags"]
-                            })
-                        except:
-                            dead.append(ws)
 
-                    for d in dead:
-                        clients.remove(d)
+                            teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
+                            teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"
+                            
+                            commentary = generate_continuous_commentary(event_key, batsman, bowler, parsed["score"], 
+                                                                            full_over, teamA, 
+                                                                            teamB, event_key)
+                            
+                            
+                            if commentary:
+                                
+                                STATE["data"]["commentary"] = commentary
+                                
+                                speak_bangla(commentary) 
+                                print(commentary)
+                            last_event = event_key
+                        dead = []
+                        
+                        
+                        for ws in list(clients):
+                            try:
+                            # await ws.send_json(parsed)
+                                await ws.send_json({
+                                    **STATE["data"],
+                                    "flags": STATE["flags"]
+                                })
+                            except:
+                                dead.append(ws)
+
+                        for d in dead:
+                            clients.remove(d)
+                
+                    #print("📡 UPDATE:", parsed["score"], parsed["overs"])
+                else:
+                    try:
+                        # Safe fetch from dictionary
+                        commentary_list = EXTRA_COMMENTARY.get(event_key)
+
+                        if commentary_list and len(commentary_list) > 0:
+                            commentary_text = random.choice(commentary_list)
+                        else:
+                            commentary_text = f"📢 {event_key}"  # fallback if no commentary available
+
+                        print(commentary_text)
+                        speak_bangla(commentary_text)
+                        commentary_text=""
+                        
+                    except Exception as e:
+                        print("❌ ERROR TYPE:", type(e).__name__)
+                        print("❌ ERROR:", str(e))
+                        print("❌ EVENT KEY:", repr(event_key))
+
+                        # Safe fallback so system never breaks
+                        fallback_text = f"📢 {status}"
+                        print(fallback_text)
+                        speak_bangla(fallback_text)
+          
+                    
+                    #commentary =  bangla_commentary(data)
+            
+            # 9. Unknown status
+            #if "Unknown" in current_status:
+            #    print("⚠️ Could not determine match status. Exiting.")
+                
+            await asyncio.sleep(0.12)
+        
+        except KeyboardInterrupt:
+                print("\n👋 Manual stop requested. Exiting gracefully...")                
+        except Exception as e:
+            print("❌ SCRAPER ERROR:", e)
+            STATE["connected"] = False
+            await asyncio.sleep(2)
+
+async def scraper2():
+
+    playwright = await async_playwright().start()
+    browser = await playwright.chromium.launch(headless=True)
+    page = await browser.new_page()
+    innings_state = False
+    last_state = None
+    last_event = ""
+    match_title=""
+    current_status = "Live"
+    print("Start Scraping")
+    while True:
+
+        try:
+
+            if not STATE["url"]:
+                await asyncio.sleep(0.15)
+                continue
+
+            # =====================================================
+            # FIRST LOAD ONLY
+            # =====================================================
+            if not STATE["connected"]:
+
+                await page.goto(
+                    STATE["url"],
+                    wait_until="domcontentloaded"
+                )
+
+                await page.wait_for_timeout(2000)
+
+                # 🔥 fast mutation flag
+                await page.evaluate("""
+                    window.__dirty = true;
+
+                    const obs = new MutationObserver(() => {
+                        window.__dirty = true;
+                    });
+
+                    obs.observe(document.body, {
+                        childList: true,
+                        subtree: true,
+                        characterData: true
+                    });
+                """)
+
+                STATE["connected"] = True
+
+            # =====================================================
+            # SKIP IF NO CHANGE
+            # =====================================================
+            if not await page.evaluate("window.__dirty"):
+                await asyncio.sleep(0.12)
+                continue
+
+            await page.evaluate("window.__dirty = false")
+
+            # =====================================================
+            # 🔥 FULL HYBRID DOM + TEXT ENGINE
+            # =====================================================
+            # =====================================================
+            # 🔥 FULL HYBRID DOM + TEXT ENGINE (REWRITTEN)
+            # =====================================================
+
+            parsed = await scrap_page(page)
+            # =====================================================
+            # SEND ONLY IF CHANGED (FAST HASH STYLE OPTIONAL)
+            # =====================================================
+          
+            # Extract match data for live matches
+            status =""
+            event_key = None
+            commentary_text =None
+            status=None
+            event=None
+            print("*******")
+            result=""
+            if "Live" in current_status:
+                # parse result
+                result = parsed["result_boxes"][0]
+                process_event(result)
+                event = detect_event(result)
+                
+                if event == "UNKNOWN_EVENT":
+                    event = detect_event_advanced(result)
+                print("check event", event)
+                #data = parse_match_result(parsed["result_boxes"][0])
+                print("Event", event)
+                if event == "UNKNOWN_EVENT":
+                    event_key = get_event_key(result)
+                    
+                    print("Event key", event_key)
+                    #status = get_event_string(event_key)
+                    if event_key:
+                        status = get_event_string(event_key)
+                        if status:
+
+                            try:
+                                # Safe fetch from dictionary
+                                commentary_list = EXTRA_COMMENTARY.get(event_key)
+
+                                if commentary_list and len(commentary_list) > 0:
+                                    commentary_text = random.choice(commentary_list)
+                                else:
+                                    commentary_text = f"📢 {status}"  # fallback if no commentary available
+
+                                print(commentary_text)
+                                speak_bangla(commentary_text)
+                                commentary_text=""
+                                
+                            except Exception as e:
+                                print("❌ ERROR TYPE:", type(e).__name__)
+                                print("❌ ERROR:", str(e))
+                                print("❌ EVENT KEY:", repr(event_key))
+
+                                # Safe fallback so system never breaks
+                                fallback_text = f"📢 {status}"
+                                print(fallback_text)
+                                speak_bangla(fallback_text)
+                  
+                            
+                            #commentary =  bangla_commentary(data)
+                    
+                            
+                
+                else:
+                    if parsed != last_state:
+                        last_state = parsed
+                        STATE["data"] = parsed
+                        
+
+                        # scraped text
+                        #text = "Dragons Women won by 8 runs 🏆"
+
+                        
+                        
+                        #commentary= bangla_commentary(event)
+                        #STATE["data"]["commentary"]= event
+                        #batsmen = parsed["result_boxes"][0]
+                    
+                        batsman = parse_batsmen(parsed)
+                        
+                        bowler = parse_bowler(parsed["live_players"]['bowler'])                          
+                        
+                        full_over = int(parsed["overs"].split(".")[0])
+                        #STATE["data"]["result_boxes"] = "4"
+                        if event != last_event:
+                            
+
+                            teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
+                            teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"
+                            
+                            commentary = generate_continuous_commentary(event, batsman, bowler, parsed["score"], 
+                                                                            full_over, teamA, 
+                                                                            teamB, event)
+                            
+                            
+                            if commentary:
+                                
+                                STATE["data"]["commentary"] = commentary
+                                
+                                speak_bangla(commentary) 
+                                print(commentary)
+                            last_event = event
+                        dead = []
+                        
+                        
+                        for ws in list(clients):
+                            try:
+                            # await ws.send_json(parsed)
+                                await ws.send_json({
+                                    **STATE["data"],
+                                    "flags": STATE["flags"]
+                                })
+                            except:
+                                dead.append(ws)
+
+                        for d in dead:
+                            clients.remove(d)
                 
                     #print("📡 UPDATE:", parsed["score"], parsed["overs"])
                 
@@ -1382,7 +1530,12 @@ async def set_url(payload: dict):
 
     STATE["url"] = payload.get("url", "")
     STATE["connected"] = False
-
+    # =========================
+    # LOAD FLAGS ONLY ONCE
+    # =========================
+    await ensure_flags_loaded()
+    if STATE["url"]:        
+        data = await get_playing_xi(STATE["url"])
     return {"ok": True}
 
 
@@ -1432,10 +1585,10 @@ async def ws(websocket: WebSocket):
         # =========================
         # LOAD FLAGS ONLY ONCE
         # =========================
-        await ensure_flags_loaded()
+        """await ensure_flags_loaded()
         if STATE["url"]:        
             data = await get_playing_xi(STATE["url"])
-            #print(data)
+            #print(data)"""
 
 
         while True:
