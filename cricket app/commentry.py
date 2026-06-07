@@ -177,7 +177,7 @@ def generate_continuous_commentary(
     # -------------------------
     def txt(en_text, bn_text):
         return bn_text if lang == "bn" else en_text
-
+    
     # -------------------------
     # BOWLER RUN-UP
     # -------------------------
@@ -274,13 +274,8 @@ def generate_continuous_commentary(
     else:
         try:
             # Safe fetch from dictionary
-            commentary_list = EXTRA_COMMENTARY.get(event)
-
-            if commentary_list and len(commentary_list) > 0:
-                commentary_text = random.choice(commentary_list)
-            #else:
-            #    commentary_text = f"📢 {event}"  # fallback if no commentary available
-                parts.append(commentary_text)
+            commentary_text = random.choice(EXTRA_COMMENTARY[events])
+            parts.append(commentary_text)
             
         except Exception as e:
             print("❌ ERROR TYPE:", type(e).__name__)

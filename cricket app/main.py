@@ -736,23 +736,12 @@ async def scraper():
                 # parse result
                 result = parsed["result_boxes"][0]
                 event_key = process_event(result)
-                print(result)
-                print(event_key)
-                if event_key in EVENT_MAP:                 
+                
+                if event_key:                 
                     if parsed != last_state:
                         last_state = parsed
                         STATE["data"] = parsed
-                        
-
-                        # scraped text
-                        #text = "Dragons Women won by 8 runs 🏆"
-
-                        
-                        
-                        #commentary= bangla_commentary(event)
-                        #STATE["data"]["commentary"]= event
-                        #batsmen = parsed["result_boxes"][0]
-                    
+                       
                         batsman = parse_batsmen(parsed)
                         
                         bowler = parse_bowler(parsed["live_players"]['bowler'])                          
@@ -760,7 +749,8 @@ async def scraper():
                         full_over = int(parsed["overs"].split(".")[0])
                         #STATE["data"]["result_boxes"] = "4"
                         if event_key != last_event:                           
-
+                            print("check",result)
+                            print(event_key)
                             teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
                             teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"
                             
