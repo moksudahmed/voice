@@ -1,6 +1,7 @@
 import random
 import re
-from commentry_dic import COMMENTARY, WINNING_COMMENTARY_TEMPLATES
+from commentry_dic import COMMENTARY, WINNING_COMMENTARY_TEMPLATES, EXTRA_COMMENTARY
+
 from utill import number_to_bangla_words
 # -----------------------------
 # Number → Bangla Words
@@ -270,6 +271,26 @@ def generate_continuous_commentary(
                     f"স্বাগতম! {team1} বনাম {team2} ম্যাচ চলছে। স্কোর {runs} রানে {wickets} উইকেট, {over} ওভার শেষ।"
                 )
             )
+    else:
+        try:
+            # Safe fetch from dictionary
+            commentary_list = EXTRA_COMMENTARY.get(event)
+
+            if commentary_list and len(commentary_list) > 0:
+                commentary_text = random.choice(commentary_list)
+            #else:
+            #    commentary_text = f"📢 {event}"  # fallback if no commentary available
+                parts.append(commentary_text)
+            
+        except Exception as e:
+            print("❌ ERROR TYPE:", type(e).__name__)
+            print("❌ ERROR:", str(e))
+            print("❌ EVENT KEY:", repr(event))
+
+            # Safe fallback so system never breaks
+            fallback_text = f"📢 {event}"
+            print(fallback_text)
+            parts.append(fallback_text)            
 
     # -------------------------
     # FINAL OUTPUT

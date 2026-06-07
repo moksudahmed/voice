@@ -140,7 +140,19 @@ EVENT_KEY_MAP = {
     "Players Entering the Field": "PLAYERS_ENTERING",
 }
 
+def detect_match_event2(event):
 
+    # normalize input (helps avoid mismatch like "wide " or "WIDE")
+    if event is None:
+        return "UNKNOWN_EVENT"
+
+    key = str(event).strip()
+
+    # priority order: RUN → EXTRA → BREAK
+    return (
+        EVENT_KEY_MAP.get(key)        
+        or "UNKNOWN_EVENT"
+    )
 # ==================== EVENT DETECTION FUNCTIONS ====================
 
 def get_rain_event_key(text):
@@ -219,7 +231,7 @@ def get_rain_event_key(text):
     return None
 
 
-def get_event_key(data):
+def detect_match_event(data):
     """
     Unified function to detect game events and return only the event key.
     
@@ -397,5 +409,5 @@ if __name__ == "__main__":
     print("-" * 70)
     for test in test_inputs[:15]:
         event_key = get_event_key(test)
-        event_string = get_event_string(event_key)
-        print(f"Input: {test:35} → {event_key:25} → {event_string}")"""
+        #event_string = get_event_string(event_key)
+        print(f"Input: {test:35} → {event_key:25}")"""

@@ -28,7 +28,7 @@ from pydantic import BaseModel
 from voice import speak_bangla, stop_current_tts, reset_stop_flag
 from scraper import scrap_page
 from live_matches import get_live_matches
-from live_status import get_event_key, get_event_string
+from live_status import detect_match_event, get_event_string
 from run_events import detect_event, detect_event_advanced ,EVENT_MAP
 
 # =========================================================
@@ -639,16 +639,19 @@ def parse_batsmen(data):
             },
         ]
         
-def process_event(result):
-    status=""
+def process_event(res):    
     event_key=""
+    result = res.lower()
     event = detect_event(result)
+    print("Basic",event)
     if event == "UNKNOWN_EVENT":
-        event = detect_event_advanced(result)
+        event = detect_event_advanced(result)        
+        print("Advance",event)
         if event == "UNKNOWN_EVENT":
-            event_key = get_event_key(result)   
-            
-            return event_key
+           event_key = detect_match_event(result)                   
+           print("Match Status",event_key)
+           return event_key
+        return event    
     else:
         return event
         
@@ -733,6 +736,7 @@ async def scraper():
                 # parse result
                 result = parsed["result_boxes"][0]
                 event_key = process_event(result)
+                print(result)
                 print(event_key)
                 if event_key in EVENT_MAP:                 
                     if parsed != last_state:
@@ -755,8 +759,7 @@ async def scraper():
                         
                         full_over = int(parsed["overs"].split(".")[0])
                         #STATE["data"]["result_boxes"] = "4"
-                        if event_key != last_event:
-                            
+                        if event_key != last_event:                           
 
                             teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
                             teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"
@@ -790,7 +793,7 @@ async def scraper():
                             clients.remove(d)
                 
                     #print("📡 UPDATE:", parsed["score"], parsed["overs"])
-                else:
+                """else:
                     try:
                         # Safe fetch from dictionary
                         commentary_list = EXTRA_COMMENTARY.get(event_key)
@@ -815,7 +818,7 @@ async def scraper():
                         speak_bangla(fallback_text)
           
                     
-                    #commentary =  bangla_commentary(data)
+                    #commentary =  bangla_commentary(data)"""
             
             # 9. Unknown status
             #if "Unknown" in current_status:

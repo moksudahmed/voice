@@ -1,5 +1,5 @@
 import re
-from live_status import get_event_key, get_event_string
+from live_status import detect_match_event, get_event_string
 # ==================== EVENT MAPPING TABLES ====================
 EVENT_MAP = [
     "DOT",
@@ -10,6 +10,7 @@ EVENT_MAP = [
     "SIX",
     "BOWLER_RUNUP",
     "WIDE",
+    "BALL",
     "NO_BALL",
     "BYE",
     "LEG_BYE",
@@ -24,17 +25,13 @@ EVENT_MAP = [
     "WICKET_OBSTRUCTING",
     "WICKET_RETIRED_OUT",
     "WICKET_TIMED_OUT",
-    "OVER_COMPLETE",
-    """"INNINGS_BREAK",
-    "STRATEGIC_TIMEOUT",
-    "DRINKS_BREAK",
-    "RAIN_BREAK",
-    "RAIN_DELAY",
-    "MATCH_ABANDONED",
-    "MATCH_STOPPED",
-    "PLAYERS_ENTERING",
-    "LIVE",
-    "COMPLETED_WITH_RESULT"""
+    "OVER_COMPLETE",    
+    "MAIDEN_OVER",
+    "WICKET_MAIDEN_OVER",
+    "DROP_CATCH",
+    "APPEAL",
+    "REVIEW_LOST",
+    "BOUNDARY_CHECK"
 ]
 
 RUN_EVENT_MAP = {
@@ -61,6 +58,7 @@ EXTRA_EVENT_MAP = {
     "leg bye": "LEG_BYE",
     "legbye": "LEG_BYE",
     "penalty": "PENALTY",
+    "catch drop":"DROP_CATCH"
 }
 
 WICKET_EVENT_MAP = {
@@ -73,24 +71,19 @@ WICKET_EVENT_MAP = {
     "stumped": "WICKET_STUMPED",
     "lbw": "WICKET_LBW",
     "hit wicket": "WICKET_HIT_WICKET",
-    "obstructing": "WICKET_OBSTRUCTING",
-    "retired out": "WICKET_RETIRED_OUT",
-    "timed out": "WICKET_TIMED_OUT",
+    "obstructing": "WICKET_OBSTRUCTING",    
 }
 
 MATCH_EVENT_MAP = {
     "over": "OVER_COMPLETE",
+    "maiden over": "MAIDEN_OVER",
+    "wicket maiden over": "WICKET_MAIDEN_OVER",
     "end of over": "OVER_COMPLETE",
-    "innings break": "INNINGS_BREAK",
-    "strategic timeout": "STRATEGIC_TIMEOUT",
-    "drinks break": "DRINKS_BREAK",
-    "rain break": "RAIN_BREAK",
-    "rain delay": "RAIN_DELAY",
-    "match abandoned": "MATCH_ABANDONED",
-    "match stopped": "MATCH_STOPPED",
-    "players entering": "PLAYERS_ENTERING",
-    "live": "LIVE",
-    "result": "COMPLETED_WITH_RESULT",
+    "free hit": "FREE_HIT",
+    "retired out": "WICKET_RETIRED_OUT",
+    "appeal":"APPEAL",
+    "review lost":"REVIEW_LOST",
+    "boundary check": "BOUNDARY_CHECK"  
 }
 
 # Pattern-based detection (for complex strings)
@@ -129,6 +122,23 @@ PATTERN_MAP = [
 # ==================== INTELLIGENT EVENT DETECTION ====================
 
 def detect_event(event):
+
+    # normalize input (helps avoid mismatch like "wide " or "WIDE")
+    if event is None:
+        return "UNKNOWN_EVENT"
+
+    key = str(event).strip()
+
+    # priority order: RUN → EXTRA → BREAK
+    return (
+        RUN_EVENT_MAP.get(key)
+        or EXTRA_EVENT_MAP.get(key)
+        or MATCH_EVENT_MAP.get(key)
+        or WICKET_EVENT_MAP.get(key)
+        or "UNKNOWN_EVENT"
+    )
+
+def detect_event2(event):
     """
     Intelligently detects cricket events from various input formats.
     
@@ -235,26 +245,28 @@ def detect_event_advanced(event_text, context=None):
         event_lower = str(event_text).lower()
         
         # Check for runs (0-6)
-        run_match = re.search(r'\b([0-6])\b', event_lower)
+        """run_match = re.search(r'\b([0-6])\b', event_lower)
         if run_match:
             runs = int(run_match.group(1))
             run_map = {0: "DOT", 1: "SINGLE", 2: "DOUBLE", 3: "TRIPLE", 4: "FOUR", 6: "SIX"}
-            return run_map.get(runs, "UNKNOWN_EVENT")
+            return run_map.get(runs, "UNKNOWN_EVENT")"""
         
         # Check for wickets
-        if any(word in event_lower for word in ['wicket', 'out', 'dismissed', 'caught', 'bowled', 'stumped', 'lbw']):
-            if 'caught' in event_lower:
-                return "WICKET_CAUGHT"
-            elif 'bowled' in event_lower:
-                return "WICKET_BOWLED"
-            elif 'run out' in event_lower or 'runout' in event_lower:
-                return "WICKET_RUN_OUT"
-            elif 'stumped' in event_lower:
-                return "WICKET_STUMPED"
-            elif 'lbw' in event_lower:
-                return "WICKET_LBW"
-            else:
-                return "WICKET"
+        extra_words =['win','won', 'by','beat']
+        if not any(keyword in event_lower for keyword in extra_words):
+            if any(word in event_lower for word in ['wicket', 'out', 'dismissed', 'caught', 'bowled', 'stumped', 'lbw']):
+                if 'caught' in event_lower:
+                    return "WICKET_CAUGHT"
+                elif 'bowled' in event_lower:
+                    return "WICKET_BOWLED"
+                elif 'run out' in event_lower or 'runout' in event_lower:
+                    return "WICKET_RUN_OUT"
+                elif 'stumped' in event_lower:
+                    return "WICKET_STUMPED"
+                elif 'lbw' in event_lower:
+                    return "WICKET_LBW"
+                else:
+                    return "WICKET"
         
         # Check for extras
         extra_map = {
@@ -268,6 +280,7 @@ def detect_event_advanced(event_text, context=None):
                 return extra_type
     
     return event_type
+    
 def detect_event_advanced2(event_text, context=None):
     """
     Advanced event detection with contextual information.
@@ -407,79 +420,22 @@ def parse_ball_event(commentary):
 
 
 # ==================== USAGE EXAMPLES ====================
-
-"""if __name__ == "__main__":
-    test_events = [
-        # Run events
-        "0", "1", "2", "3", "4", "6",
-        "dot", "single", "double", "four", "six",
-        
-        # Wicket events
-        "wicket", "bowled", "caught out", "run out", "stumped", "lbw",
-        "caught at deep midwicket", "bowled him round his legs",
-        "run out at non-striker's end",
-        
-        # Extra events
-        "wide", "no ball", "bye", "leg bye",
-        "Wide down the leg side", "No ball for overstepping",
-        
-        # Complex strings
-        "4 runs", "6 runs", "1 run taken",
-        "He's out! Caught at long off!",
-        "That's a huge six! Maximum!",
-        "Dot ball! No run there.",
-        
-        # Match events
-        "over", "end of over", "innings break",
-        "strategic timeout", "drinks break", "rain delay",
-    ]
-    
-    print("=== Simple Event Detection ===")
-    print("-" * 60)
-    for event in test_events:
-        result = detect_event(event)
-        print(f"Input: {event:35} → {result}")
-    
-    print("\n=== Advanced Event Detection ===")
-    print("-" * 60)
-    advanced_tests = [
-        "6 runs! Massive hit!",
-        "Wicket! Bowled him!",
-        "Wide ball down leg side",
-        "Caught at long on!",
-        "No ball! Free hit coming up",
-        "Leg bye, they take 2 runs",
-    ]
-    
-    for test in advanced_tests:
-        result = detect_event_advanced(test)
-        print(f"Input: {test:40}")
-        print(f"  Event Type: {result['event_type']}")
-        print(f"  Runs: {result['runs']}")
-        print(f"  Is Wicket: {result['is_wicket']}")
-        print(f"  Is Extra: {result['is_extra']}")
-        print(f"  Confidence: {result['confidence']}")
-        print()
-    
-    print("\n=== Ball-by-Ball Parsing ===")
-    print("-" * 60)
-    ball_commentaries = [
-        "4 runs through covers",
-        "OUT! Caught at long off!",
-        "Wide down leg side",
-        "No ball! And he hits it for 6!",
-        "Dot ball, good delivery",
-    ]
-    
-    for commentary in ball_commentaries:
-        result = parse_ball_event(commentary)
-        print(f"Commentary: '{commentary}'")
-        print(f"  Events: {result['events']}")
-        print(f"  Runs: {result['runs']}")
-        print(f"  Wicket: {result['wicket']}")
-        print(f"  Extras: {result['extras']}")
-        print()
-        # Match events
-        "over", "end of over", "innings break",
-        "strategic timeout", "drinks break", "rain delay",
-    print(process_event("drinks break"))"""
+"""def process_event(res):    
+    event_key=""
+    result = res.lower()
+    event = detect_event(result)
+    print("Basic",event)
+    if event == "UNKNOWN_EVENT":
+        event = detect_event_advanced(result)        
+        print("Advance",event)
+        if event == "UNKNOWN_EVENT":
+           event_key = detect_match_event(result)                   
+           print("Match Status",event_key)
+           return event_key
+        return event    
+    else:
+        return event
+  
+if __name__ == "__main__":
+   
+    print(process_event("ball"))"""
