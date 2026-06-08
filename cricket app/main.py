@@ -736,7 +736,9 @@ async def scraper():
                 # parse result
                 result = parsed["result_boxes"][0]
                 event_key = process_event(result)
-                
+                if event_key in list(EXTRA_COMMENTARY.values()):
+                        commentary_text = random.choice(EXTRA_COMMENTARY[event_key])
+                        speak_bangla(commentary_text) 
                 if event_key:                 
                     if parsed != last_state:
                         last_state = parsed

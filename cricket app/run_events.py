@@ -31,7 +31,8 @@ EVENT_MAP = [
     "DROP_CATCH",
     "APPEAL",
     "REVIEW_LOST",
-    "BOUNDARY_CHECK"
+    "BOUNDARY_CHECK",
+    "BALL_IN_AIR"
 ]
 
 RUN_EVENT_MAP = {
@@ -58,7 +59,8 @@ EXTRA_EVENT_MAP = {
     "leg bye": "LEG_BYE",
     "legbye": "LEG_BYE",
     "penalty": "PENALTY",
-    "catch drop":"DROP_CATCH"
+    "catch drop":"DROP_CATCH",
+    "ball in air": "BALL_IN_AIR"
 }
 
 WICKET_EVENT_MAP = {
