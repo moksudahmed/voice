@@ -745,7 +745,7 @@ async def scraper():
                         batsman = parse_batsmen(parsed)
                         
                         bowler = parse_bowler(parsed["live_players"]['bowler'])                          
-                        
+                        print("batsman", batsman)
                         full_over = int(parsed["overs"].split(".")[0])
                         #STATE["data"]["result_boxes"] = "4"
                         if event_key != last_event:                           
@@ -965,7 +965,7 @@ async def scraper2():
                     
                         batsman = parse_batsmen(parsed)
                         
-                        bowler = parse_bowler(parsed["live_players"]['bowler'])                          
+                        bowler = parse_bowler(parsed["live_players"]['bowler'])                         
                         
                         full_over = int(parsed["overs"].split(".")[0])
                         #STATE["data"]["result_boxes"] = "4"
