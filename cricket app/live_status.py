@@ -9,13 +9,14 @@ EVENT_PATTERNS = [
     (r'\b(suspended|postponed)\b', "SUSPENDED"),
     (r'\b(deferred|delayed start)\b', "DEFERRED"),
     
-    # Toss and batting decisions
+    # Toss and batting decisions - MORE FLEXIBLE PATTERNS
     (r'opt\s+to\s+bat', "TOSS_WON_BAT_FIRST"),
-    (r'opt\s+to\s+field', "TOSS_WON_BOWL_FIRST"),
+    (r'opt\s+to\s+field|opt\s+to\s+bowl', "TOSS_WON_BOWL_FIRST"),  # Added 'bowl' as alternative
     (r'elect(?:ed)?\s+to\s+bat', "TOSS_WON_BAT_FIRST"),
-    (r'elect(?:ed)?\s+to\s+field', "TOSS_WON_BOWL_FIRST"),
+    (r'elect(?:ed)?\s+to\s+field|elect(?:ed)?\s+to\s+bowl', "TOSS_WON_BOWL_FIRST"),  # Added 'bowl'
     (r'won the toss and elected to bat', "TOSS_WON_BAT_FIRST"),
     (r'won the toss and elected to field', "TOSS_WON_BOWL_FIRST"),
+    (r'won the toss and elected to bowl', "TOSS_WON_BOWL_FIRST"),  # Added
     (r'won the toss', "TOSS_COMPLETED"),
     (r'toss', "TOSS_COMPLETED"),
     
@@ -110,12 +111,6 @@ EVENT_OUTPUT_MAP = {
 def detect_match_event(data):
     """
     Intelligently detect match situation (breaks, stoppages, rain, wins, toss, etc.)
-    
-    Parameters:
-    - data: Input string to analyze (match status text)
-    
-    Returns:
-    - str: Event key (e.g., "MATCH_ABANDONED", "RAIN_DELAY", "TOSS_WON_BAT_FIRST", etc.)
     """
     
     # Input validation
@@ -131,6 +126,14 @@ def detect_match_event(data):
         return "UNKNOWN_EVENT"
     
     text_lower = text.lower()
+    
+    # ========== SPECIAL HANDLING for "opt to bowl/field" ==========
+    # Check for bowl/field patterns even with typos or extra spaces
+    if re.search(r'opt\s+to\s+bowl', text_lower) or re.search(r'opt\s+to\s+field', text_lower):
+        return "TOSS_WON_BOWL_FIRST"
+    
+    if re.search(r'opt\s+to\s+bat', text_lower):
+        return "TOSS_WON_BAT_FIRST"
     
     # ========== STEP 1: Check for inactive/resumed states ==========
     inactive_patterns = [
@@ -154,14 +157,13 @@ def detect_match_event(data):
             return event_key
     
     # ========== STEP 4: Keyword-based fallback ==========
-    # Check for bat/field decisions without "opt" or "elect"
-    if 'bat' in text_lower and ('to' in text_lower or 'will' in text_lower):
-        if any(word in text_lower for word in ['opt', 'elect', 'choose', 'decide']):
-            return "TOSS_WON_BAT_FIRST"
-    
-    if 'field' in text_lower and ('to' in text_lower or 'will' in text_lower):
-        if any(word in text_lower for word in ['opt', 'elect', 'choose', 'decide']):
+    # Check for bowl/field decision without "opt" or "elect"
+    if 'bowl' in text_lower or 'field' in text_lower:
+        if 'to' in text_lower:
             return "TOSS_WON_BOWL_FIRST"
+    
+    if 'bat' in text_lower and 'to' in text_lower:
+        return "TOSS_WON_BAT_FIRST"
     
     # Check for result indicators
     if any(word in text_lower for word in ['won', 'beat', 'defeated', 'champion']):
@@ -220,40 +222,21 @@ def get_event_string(event_key):
     return EVENT_OUTPUT_MAP.get(event_key, event_key)
 
 
-# ==================== USAGE EXAMPLES ====================
-"""
-if __name__ == "__main__":
-    test_cases = [
-        # Toss and batting decisions
-        ("SA-A opt to bat 🏏", "TOSS_WON_BAT_FIRST"),
-        ("SA-A opt to bat", "TOSS_WON_BAT_FIRST"),
-        ("India opt to field", "TOSS_WON_BOWL_FIRST"),
-        ("Australia won the toss and elected to bat", "TOSS_WON_BAT_FIRST"),
-        ("England won the toss", "TOSS_COMPLETED"),
-        ("Toss delayed due to rain", "YET_TO_START"),
-        
-        # Rain events
-        ("Match paused due to rain", "MATCH_STOPPED_RAIN"),
-        ("Match stopped due to rain", "MATCH_STOPPED_RAIN"),
-        ("Rain Break", "RAIN_BREAK"),
-        ("Rain Delay", "RAIN_DELAY"),
-        ("Start Delayed Due to rain", "RAIN_DELAY"),
-        
-        # Match results
-        ("Worcestershire Women won by 3 runs 🏆", "COMPLETED_WITH_RESULT"),
-        ("Pakistan won by 4 wickets", "COMPLETED_WITH_RESULT"),
-        
-        # Other events
-        ("Live", "LIVE"),
-        ("Innings Break", "INNINGS_BREAK"),
-        ("Players entering the field", "PLAYERS_ENTERING"),
+# ==================== TEST ====================
+"""if __name__ == "__main__":
+    test_texts = [
+        "Res asa opt to bowl",  # With typo
+        "SA-A opt to bat",
+        "India opt to field",
+        "opt to bowl",
+        "opt to bat",
+        "Res asa opt to bat",
     ]
     
-    print("=" * 80)
-    print("MATCH SITUATION DETECTION (With Toss Detection)")
-    print("=" * 80)
+    print("=" * 60)
+    print("TESTING TOSS DETECTION")
+    print("=" * 60)
     
-    for input_text, expected in test_cases:
-        result = detect_match_event(input_text)
-        status = "✅" if result == expected else "❌"
-        print(f"{status} Input: {input_text:45} → {result:30} (Expected: {expected})")"""
+    for text in test_texts:
+        result = detect_match_event(text)
+        print(f"Input: '{text:30}' → {result}")"""

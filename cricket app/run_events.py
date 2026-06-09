@@ -65,7 +65,8 @@ EXTRA_EVENT_MAP = {
     "penalty": "PENALTY",
     "catch drop":"DROP_CATCH",
     "ball in air": "BALL_IN_AIR",
-    "overthrow" :"'OVERTHROW'"
+    "overthrow" :"OVERTHROW",
+    "no ball check":"No_Ball_Check"
 }
 
 WICKET_EVENT_MAP = {
