@@ -767,7 +767,13 @@ async def scraper():
                                 
                                 speak_bangla(commentary) 
                                 print(commentary)
+                            
+                                
+                            if event_key == "INNINGS_BREAK":
+                                swap_teams(STATE["flags"])
+                            
                             last_event = event_key
+                            
                         dead = []
                         
                         
