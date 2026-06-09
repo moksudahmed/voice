@@ -1036,10 +1036,10 @@ def generate_continuous_commentary(
         # -------------------------
         # OVER COMPLETION
         # -------------------------      
-        print(list(MATCH_EVENT_MAP.values()), events)  
+        
         if events in list(MATCH_EVENT_MAP.values()):            
             over_comment = '' #random.choice(COMMENTARY[events])            
-            print("test",events)
+           
             over_comment += txt(
                 f" Over {over} is completed. Score is {runs} runs {wickets} wickets.",
                 f"{number_to_bangla_words(over)} ওভার শেষ। স্কোর এখন {number_to_bangla_words(runs)} রান, {number_to_bangla_words(wickets)} উইকেট।"

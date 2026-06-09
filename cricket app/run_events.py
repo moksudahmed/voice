@@ -1,6 +1,7 @@
 import re
 from live_status import detect_match_event, get_event_string
 # ==================== EVENT MAPPING TABLES ====================
+
 EVENT_MAP = [
     "DOT",
     "SINGLE",
@@ -32,7 +33,10 @@ EVENT_MAP = [
     "APPEAL",
     "REVIEW_LOST",
     "BOUNDARY_CHECK",
-    "BALL_IN_AIR"
+    "BALL_IN_AIR",
+    "FREE_HIT",
+    "REVIEW_RETAINDE",
+    "OVERTHROW"
 ]
 
 RUN_EVENT_MAP = {
@@ -60,7 +64,8 @@ EXTRA_EVENT_MAP = {
     "legbye": "LEG_BYE",
     "penalty": "PENALTY",
     "catch drop":"DROP_CATCH",
-    "ball in air": "BALL_IN_AIR"
+    "ball in air": "BALL_IN_AIR",
+    "overthrow" :"'OVERTHROW'"
 }
 
 WICKET_EVENT_MAP = {
@@ -85,7 +90,8 @@ MATCH_EVENT_MAP = {
     "retired out": "WICKET_RETIRED_OUT",
     "appeal":"APPEAL",
     "review lost":"REVIEW_LOST",
-    "boundary check": "BOUNDARY_CHECK"  
+    "boundary check":"BOUNDARY_CHECK",
+    "review retained ":"REVIEW_RETAINDE"
 }
 
 # Pattern-based detection (for complex strings)
@@ -275,7 +281,8 @@ def detect_event_advanced(event_text, context=None):
             'wide': 'WIDE',
             'no ball': 'NO_BALL',
             'bye': 'BYE',
-            'leg bye': 'LEG_BYE'
+            'leg bye': 'LEG_BYE',
+            'Overthrow':'OVERTHROW'
         }
         for keyword, extra_type in extra_map.items():
             if keyword in event_lower:

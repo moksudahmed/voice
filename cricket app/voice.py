@@ -4,144 +4,254 @@ import edge_tts
 import sounddevice as sd
 import soundfile as sf
 import pyttsx3
-import numpy as np
-import obswebsocket
-from obswebsocket import requests as obs_requests
-import pygame
-import io
-from pygame import mixer
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Body, BackgroundTasks
-from fastapi.responses import JSONResponse
-import time
 import tempfile
 import os
+import hashlib
+
+# ============================================================
+# GLOBALS
+# ============================================================
 
 speech_lock = threading.Lock()
 
-# Global flag to stop current TTS
-current_tts_thread = None
 stop_tts_flag = threading.Event()
-current_mixer = None
-is_playing = False
-last_play_time = 0
 
-def stop_current_tts():
-    """Stop any currently playing TTS immediately"""
-    global current_mixer, current_tts_thread, is_playing
-    print("🛑 STOP COMMAND RECEIVED - Stopping TTS...")
-    stop_tts_flag.set()
-    is_playing = False
-    
-    # Stop pygame mixer if active
-    if current_mixer:
-        try:
-            current_mixer.music.stop()
-            current_mixer.quit()
-        except:
-            pass
-        current_mixer = None
-    
-    # Stop sounddevice if active
-    try:
-        sd.stop()
-    except:
-        pass
-    
-    print("✅ TTS STOPPED SUCCESSFULLY")
-    return True
+current_thread = None
+
+is_playing = False
+
+last_text_hash = None
+
+# ============================================================
+# RESET FLAG
+# ============================================================
 
 def reset_stop_flag():
-    """Reset the stop flag (call before starting new TTS)"""
-    global stop_tts_flag, is_playing
+    """
+    Compatibility function.
+    Keeps old imports working.
+    """
     stop_tts_flag.clear()
-    is_playing = True
-    print("🎵 Stop flag cleared, ready to play")
 
-# ======================= FIXED speak_bangla (with device check) =======================
-def speak_bangla(text: str):
+
+# ============================================================
+# STOP CURRENT TTS
+# ============================================================
+
+def stop_current_tts():
+    global is_playing
+
+    print("🛑 STOPPING CURRENT TTS")
+
+    stop_tts_flag.set()
+
+    try:
+        sd.stop()
+    except Exception:
+        pass
+
+    is_playing = False
+
+    print("✅ TTS STOPPED")
+
+
+# ============================================================
+# BANGLA TTS
+# ============================================================
+
+def speak_bangla(text: str, force=False):
+
+    global current_thread
+    global is_playing
+    global last_text_hash
+
+    text = str(text).strip()
+
+    if not text:
+        return
+
+    text_hash = hashlib.md5(text.encode("utf-8")).hexdigest()
+
+    # --------------------------------------------------------
+    # Skip duplicate messages
+    # --------------------------------------------------------
+
+    if not force and text_hash == last_text_hash:
+        print("⏭ Duplicate speech skipped")
+        return
+
+    # --------------------------------------------------------
+    # Prevent overlapping voices
+    # --------------------------------------------------------
+
+    if is_playing:
+        print("🎙 Voice already playing")
+        return
+
+    stop_tts_flag.clear()
+
     async def _speak():
-        global current_mixer, stop_tts_flag, is_playing, last_play_time
+
+        global is_playing
+        global last_text_hash
+
+        temp_file = None
+
         try:
-            # Ensure previous playback is cleaned up
-            await asyncio.sleep(0.1)
-            
-            print(f"🎙 Starting TTS: {text[:50]}...")
-            
-            tts = edge_tts.Communicate(text, "bn-BD-NabanitaNeural")
-            
-            # Collect audio chunks
-            audio_data = b""
+
+            is_playing = True
+
+            print(f"🎙 SPEAKING: {text}")
+
+            tts = edge_tts.Communicate(
+                text=text,
+                voice="bn-BD-NabanitaNeural"
+            )
+
+            audio_bytes = b""
+
             async for chunk in tts.stream():
+
+                if stop_tts_flag.is_set():
+                    print("⏹ Speech interrupted")
+                    return
+
                 if chunk["type"] == "audio":
-                    audio_data += chunk["data"]
-            
-            # Save to temp file
-            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
-                f.write(audio_data)
+                    audio_bytes += chunk["data"]
+
+            with tempfile.NamedTemporaryFile(
+                suffix=".mp3",
+                delete=False
+            ) as f:
+
                 temp_file = f.name
-            
-            try:
-                # Use sounddevice which is more reliable than pygame
-                data, fs = sf.read(temp_file)
-                
-                # Play audio
-                sd.play(data, fs)
-                print("🎵 TTS playing...")
-                
-                # Wait for completion with stop checks
-                while sd.get_stream() and sd.get_stream().active:
-                    await asyncio.sleep(0.1)
-                    if stop_tts_flag.is_set():
+                f.write(audio_bytes)
+
+            data, sample_rate = sf.read(temp_file)
+
+            sd.play(data, sample_rate)
+
+            while True:
+
+                if stop_tts_flag.is_set():
+
+                    try:
                         sd.stop()
-                        print("⏹️ TTS stopped by user")
-                        return
-                
-                print("✅ TTS completed naturally")
-                
-            finally:
-                # Clean up temp file
+                    except:
+                        pass
+
+                    print("⏹ Playback stopped")
+                    return
+
+                stream = sd.get_stream()
+
+                if stream is None:
+                    break
+
+                if not stream.active:
+                    break
+
+                await asyncio.sleep(0.1)
+
+            last_text_hash = text_hash
+
+            print("✅ Speech completed")
+
+        except Exception as e:
+
+            print(f"❌ Bangla TTS Error: {e}")
+
+        finally:
+
+            is_playing = False
+
+            try:
+                sd.stop()
+            except:
+                pass
+
+            if temp_file and os.path.exists(temp_file):
+
                 try:
-                    os.unlink(temp_file)
+                    os.remove(temp_file)
                 except:
                     pass
-                
-        except Exception as e:
-            print(f"❌ TTS ERROR: {e}")
-        finally:
-            is_playing = False
-    
-    def runner():
-        with speech_lock:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(_speak())
-            loop.close()
-    
-    # Stop any existing TTS before starting new one
-    #stop_current_tts()
-    time.sleep(0.1)  # Small delay to ensure cleanup
-    reset_stop_flag()
-    
-    thread = threading.Thread(target=runner, daemon=True)
-    thread.start()
-    return thread
 
+    def runner():
+
+        with speech_lock:
+
+            loop = asyncio.new_event_loop()
+
+            try:
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(_speak())
+
+            finally:
+                loop.close()
+
+    current_thread = threading.Thread(
+        target=runner,
+        daemon=True
+    )
+
+    current_thread.start()
+
+    return current_thread
+
+
+# ============================================================
+# ENGLISH TTS
+# ============================================================
 
 def speak_english(text: str):
+
     def run():
-        with speech_lock:
-            try:
-                print("🎙 SPEAKING:", text)
 
-                engine = pyttsx3.init()   # 🔥 NEW ENGINE EVERY TIME
-                engine.setProperty("rate", 170)
-                engine.setProperty("volume", 1.0)                
+        global is_playing
 
-                engine.say(text)
-                engine.runAndWait()
+        if is_playing:
+            return
 
-            except Exception as e:
-                print("TTS ERROR:", e)
+        try:
 
-    threading.Thread(target=run, daemon=True).start()
+            is_playing = True
 
+            print(f"🎙 ENGLISH: {text}")
+
+            engine = pyttsx3.init()
+
+            engine.setProperty("rate", 170)
+            engine.setProperty("volume", 1.0)
+
+            engine.say(text)
+
+            engine.runAndWait()
+
+            engine.stop()
+
+        except Exception as e:
+
+            print(f"❌ English TTS Error: {e}")
+
+        finally:
+
+            is_playing = False
+
+    threading.Thread(
+        target=run,
+        daemon=True
+    ).start()
+
+
+# ============================================================
+# TEST
+# ============================================================
+"""
+if __name__ == "__main__":
+
+    speak_bangla("বাংলাদেশ ক্রিকেট দলের সবাইকে স্বাগতম")
+
+    input("Press Enter to stop...\n")
+
+    stop_current_tts()"""
