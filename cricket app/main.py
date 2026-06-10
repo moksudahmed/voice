@@ -17,7 +17,7 @@ import re
 from player_list import get_playing_xi, generate_team_html
 from commentry import generate_continuous_commentary, bangla_commentary, generate_full_commentary
 from bangla_commentry import generate_current_match_status
-from game_status import detect_game_status, handle_break_period, detect_live_status
+from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES, WINNING_COMMENTARY_TEMPLATES
 from commentry_dic import COMMENTARY, EXTRA_COMMENTARY
 from fastapi.templating import Jinja2Templates
@@ -670,17 +670,17 @@ async def scraper():
 
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch(headless=True)
-    page = await browser.new_page()
-    innings_state = False
+    page = await browser.new_page()    
     last_state = None
-    last_event = ""
-    match_title=""
+    last_event = ""    
     current_status = "Live"
     teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
-    teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"
-                            
+    teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"                            
     match_event_list = list(EVENT_OUTPUT_MAP.keys())
     print("Start Scraping")
+    if init_obs():
+        switch_scene("LIVE")
+
     while True:
 
         try:
@@ -850,8 +850,9 @@ def api_response(
     data=None
 ):
     # Create async task for voice worker without blocking
-    if action and action in ["WAIT", "LIVE", "COMPLETE", "STOP", "PAUSE", "ERROR", "UNKNOWN", "REFRESH"]:
-        asyncio.create_task(voice_announce_once(action, status, message))
+    #if action and action in ["WAIT", "LIVE", "COMPLETE", "STOP", "PAUSE", "ERROR", "UNKNOWN", "REFRESH"]:
+
+    #    asyncio.create_task(voice_announce_once(action, status, message))
     
     return {
         "success": success,
@@ -862,6 +863,151 @@ def api_response(
     }
 
 async def run_ai_engine():
+    """
+    Scrape match page and return status information
+    suitable for frontend consumption.
+    """
+
+    playwright = None
+    browser = None
+
+    url = STATE.get("url")
+
+    if not url:
+        return api_response(
+            success=False,
+            status="Invalid URL",
+            message="No match URL found."
+        )
+
+    try:
+        playwright = await async_playwright().start()
+
+        browser = await playwright.chromium.launch(
+            headless=True
+        )
+
+        page = await browser.new_page()
+
+        print(f"🌐 Opening: {url}")
+
+        await page.goto(url, timeout=60000)
+        await page.wait_for_load_state("networkidle")
+        await page.wait_for_timeout(3000)
+
+        print("🚀 SYSTEM STARTED...")
+
+        text = await page.inner_text("body")
+        lines = text.splitlines()
+
+        status = detect_game_status(lines)
+
+        print(f"📊 Current Status: {status}")
+
+        # ==================================================
+        # LIVE / BREAK
+        # ==================================================
+       
+               
+        if "LIVE" in status or "BREAK" in status:
+
+            print("🎬 MATCH IS LIVE")
+            # Run scraper in background
+            #asyncio.create_task(scraper())
+            await scraper()
+
+        else:
+            
+            if "Today at" in status:
+                time_match = re.search(
+                    r'(\d{1,2}:\d{2}\s*(?:AM|PM))',
+                    status
+                )
+
+                if time_match:
+
+                    match_time_str = time_match.group(1)
+
+                    now = datetime.now()
+
+                    match_time = datetime.strptime(
+                        match_time_str,
+                        "%I:%M %p"
+                    )
+
+                    match_time = now.replace(
+                        hour=match_time.hour,
+                        minute=match_time.minute,
+                        second=0,
+                        microsecond=0
+                    )
+
+                    if now > match_time:
+
+                        await page.reload()
+                        await page.wait_for_timeout(2000)
+
+                        text = await page.inner_text("body")
+                        lines = text.splitlines()
+
+                        updated_status = detect_game_status(lines)
+
+                        return api_response(
+                            status=updated_status,
+                            message=f"Status updated: {updated_status}",
+                            action="REFRESH"
+                        )
+
+                    wait_seconds = (
+                        match_time - now
+                    ).total_seconds()
+
+                    return api_response(
+                        status=status,
+                        message=f"Match starts at {match_time_str}",
+                        action="WAIT",
+                        data={
+                            "wait_seconds": int(wait_seconds)
+                        }
+                    )
+            else:
+                commentary_text = random.choice(EXTRA_COMMENTARY[status])
+                print("Match Event",commentary_text)
+                speak_bangla(commentary_text)
+            if init_obs():
+                switch_scene("CROWD")
+                #
+#        switch_scene("LIVE")
+        #switch_scene("REPLAY")
+        # 
+        # switch_scene("DRONE")"""   
+
+        # ==================================================
+        # UNKNOWN
+        # ==================================================
+
+      
+
+    except Exception as e:
+
+        print(f"❌ ERROR in run_ai_engine: {e}")
+
+        return api_response(
+            success=False,
+            status="Error",
+            message=str(e),
+            action="ERROR"
+        )
+
+    finally:
+
+        if browser:
+            await browser.close()
+
+        if playwright:
+            await playwright.stop()
+
+async def get_match_status():
     """
     Scrape match page and return status information
     suitable for frontend consumption.
@@ -1039,7 +1185,7 @@ async def run_ai_engine():
         # LIVE / BREAK
         # ==================================================
        
-        print(status)
+       
         if "Live" in status or "Break" in status:
 
             print("🎬 MATCH IS LIVE")
@@ -1095,12 +1241,7 @@ async def run_ai_engine():
             await playwright.stop()
 
 
-
-#if init_obs():
-#        switch_scene("LIVE")
-        #switch_scene("REPLAY")
-        # switch_scene("CROWD")
-        # switch_scene("DRONE")"""    
+ 
 async def engine_loop():
     """
     Safe continuous engine for FastAPI
@@ -1177,8 +1318,9 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/api/match-status")
-async def get_match_status():
-    data = await run_ai_engine()
+async def get_match_status_api():
+    data = await get_match_status()
+    print(data)
     return JSONResponse(content=data)
 
 @app.get("/live-match-status", response_class=HTMLResponse)

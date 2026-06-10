@@ -102,6 +102,8 @@ EVENT_OUTPUT_MAP = {
     "YET_TO_START": "Yet to Start",
     "MATCH_STOPPED": "Match Stopped",
     "LIVE": "Live",
+    "TOMORROW": "Tomorrow",
+    "TODAY": "Today",
     "LIVE_COUNTDOWN": "Live (Countdown)",
     "SCHEDULED": "Scheduled",
     "UNKNOWN_EVENT": "Unknown Event",
