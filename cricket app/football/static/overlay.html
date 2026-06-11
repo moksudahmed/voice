@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FIFA World Cup 2026 | Broadcast Scoreboard | OBS 1920x1080</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* prevents accidental selection, good for OBS overlay */
+        }
+
+        /* BASE: 1920x1080 EXACT CANVAS - OBS ready */
+        body {
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            background: transparent;
+            font-family: 'Titillium Web', 'Poppins', 'Segoe UI', 'Arial', system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* MAIN SCOREBOARD WRAPPER — glassmorphic premium design */
+        .scoreboard-container {
+            width: 1700px;
+            max-width: 92%;
+            background: linear-gradient(135deg, rgba(8, 12, 25, 0.92) 0%, rgba(2, 6, 18, 0.96) 100%);
+            backdrop-filter: blur(12px);
+            border-radius: 56px;
+            border: 1px solid rgba(255, 215, 0, 0.35);
+            box-shadow: 0 30px 55px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 215, 0, 0.15) inset, 0 0 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ANIMATED GRADIENT OVERLAY (COLORFUL TOUCH) */
+        .scoreboard-container::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 70, 120, 0.2), rgba(0, 200, 255, 0.1), rgba(255, 215, 0, 0.05));
+            animation: auroraShift 14s infinite alternate ease-in-out;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes auroraShift {
+            0% { transform: translate(0%, 0%) rotate(0deg); opacity: 0.4; }
+            100% { transform: translate(4%, 3%) rotate(2deg); opacity: 0.8; }
+        }
+
+        /* HEADER SECTION — WORLD CUP BRANDING */
+        .tournament-header {
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(90deg, #0a0f1c, #0c1120, #0a0f1c);
+            padding: 24px 40px 20px 40px;
+            text-align: center;
+            border-bottom: 3px solid #FFD966;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .fifa-logo-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 18px;
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+        }
+
+        .fifa-text {
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #E6E6FA, #FFD966);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .worldcup-title {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #F9E79F, #F7DC6F, #D4AF37);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .host-nations {
+            display: flex;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: #F7DC6F;
+            font-size: 18px;
+        }
+
+        /* MATCH INFO CENTER */
+        .match-core {
+            padding: 38px 42px 36px 42px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* TEAMS LAYOUT - FLEX WITH PREMIUM EFFECTS */
+        .battle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 35px;
+            flex-wrap: wrap;
+        }
+
+        .team-block {
+            flex: 1;
+            background: rgba(12, 18, 32, 0.65);
+            backdrop-filter: blur(16px);
+            border-radius: 48px;
+            padding: 28px 16px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            border: 1px solid rgba(255, 200, 100, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .team-block:hover {
+            transform: translateY(-5px);
+            border-color: #ffd966aa;
+            box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.6);
+        }
+
+        .flag-emblem {
+            font-size: 88px;
+            filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.5));
+            margin-bottom: 18px;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .team-name {
+            font-size: 44px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFFFFF, #FFE6B3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1.5px;
+            word-break: break-word;
+            line-height: 1.2;
+        }
+
+        /* SCORE MONOLITH — CENTERPIECE */
+        .score-giant {
+            background: radial-gradient(ellipse at 30% 40%, #010101, #0b0e17);
+            border-radius: 80px;
+            padding: 15px 30px;
+            min-width: 280px;
+            text-align: center;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.7), 0 25px 35px -12px black;
+            backdrop-filter: blur(8px);
+            margin: 0 12px;
+        }
+
+        .score-digits-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+        }
+
+        .score-number {
+            font-size: 108px;
+            font-weight: 900;
+            font-family: 'Titillium Web', 'Courier New', monospace;
+            background: linear-gradient(145deg, #FBFBFB, #E5E7EB);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            min-width: 130px;
+            letter-spacing: 6px;
+        }
+
+        .score-divider {
+            font-size: 98px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #F5D742, #E8B50C);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        /* STATUS BAR — DYNAMIC AND VIBRANT */
+        .info-status-container {
+            margin-top: 45px;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 18px 25px;
+            border: 1px solid rgba(255, 200, 80, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 18px;
+        }
+
+        .match-status {
+            font-size: 32px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 8px 30px;
+            border-radius: 60px;
+            letter-spacing: 1px;
+        }
+
+        .live-pulse {
+            background: #E31B23;
+            color: white;
+            font-size: 28px;
+            font-weight: 800;
+            padding: 8px 28px;
+            border-radius: 60px;
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 0 18px #ff3366;
+            animation: liveGlow 1.2s infinite;
+        }
+
+        .countdown-timer {
+            background: #1E293B;
+            font-family: monospace;
+            font-size: 32px;
+            font-weight: 700;
+            padding: 8px 32px;
+            border-radius: 70px;
+            color: #FACC15;
+            letter-spacing: 3px;
+        }
+
+        .fulltime-badge {
+            background: #2D3E50;
+            padding: 8px 32px;
+            border-radius: 60px;
+            font-size: 30px;
+            font-weight: 600;
+            color: #B9D0F0;
+        }
+
+        .extra-info {
+            font-size: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 6px 24px;
+            border-radius: 50px;
+            color: #FFD966;
+        }
+
+        @keyframes liveGlow {
+            0% { box-shadow: 0 0 0px #E31B23; opacity: 0.9; }
+            50% { box-shadow: 0 0 22px #E31B23; opacity: 1; transform: scale(1.02);}
+            100% { box-shadow: 0 0 0px #E31B23; opacity: 0.9; }
+        }
+
+        .live-dot-big {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            background: #ff3a4d;
+            border-radius: 50%;
+            animation: blinkRedFast 0.9s infinite;
+            box-shadow: 0 0 8px red;
+        }
+
+        @keyframes blinkRedFast {
+            0%, 100% { opacity: 1; transform: scale(1);}
+            50% { opacity: 0.3; transform: scale(0.85);}
+        }
+
+        .error-styling {
+            background: #4A1E2C;
+            color: #FFB347;
+            padding: 12px 32px;
+            border-radius: 60px;
+            font-size: 28px;
+            font-weight: 500;
+        }
+
+        /* FOOTER / BROADCAST DETAILS */
+        .broadcast-footer {
+            padding: 22px 42px 24px;
+            border-top: 1px solid rgba(212, 175, 55, 0.4);
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            color: #A5B4CB;
+            background: rgba(0, 0, 0, 0.3);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            z-index: 2;
+            position: relative;
+        }
+
+        @media (max-width: 1400px) {
+            .team-name { font-size: 32px; }
+            .score-number { font-size: 78px; min-width: 90px; }
+            .score-divider { font-size: 74px; }
+            .flag-emblem { font-size: 68px; }
+            .match-status { font-size: 26px; }
+            .live-pulse { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="scoreboard-container">
+    <div class="tournament-header">
+        <div class="fifa-logo-badge">
+            <span style="font-size: 28px;">⚽</span>
+            <span class="fifa-text">FIFA</span>
+        </div>
+        <div class="worldcup-title">
+            WORLD CUP 2026
+        </div>
+        <div class="host-nations">
+            <span>🇺🇸 USA</span>
+            <span>🇨🇦 CAN</span>
+            <span>🇲🇽 MEX</span>
+        </div>
+    </div>
+
+    <div class="match-core">
+        <div class="battle-row">
+            <!-- HOME TEAM (LEFT) -->
+            <div class="team-block" id="homeBlock">
+                <div class="flag-emblem" id="homeFlagSpan">🏆</div>
+                <div class="team-name" id="homeTeamName">HOME TEAM</div>
+                <div style="font-size: 18px; margin-top: 8px; color:#FFD966; letter-spacing: 2px;" id="homeCode"> </div>
+            </div>
+
+            <!-- CENTER SCORE PANEL -->
+            <div class="score-giant">
+                <div class="score-digits-panel">
+                    <span class="score-number" id="homeScoreDisplay">0</span>
+                    <span class="score-divider">:</span>
+                    <span class="score-number" id="awayScoreDisplay">0</span>
+                </div>
+            </div>
+
+            <!-- AWAY TEAM (RIGHT) -->
+            <div class="team-block" id="awayBlock">
+                <div class="flag-emblem" id="awayFlagSpan">🏆</div>
+                <div class="team-name" id="awayTeamName">AWAY TEAM</div>
+                <div style="font-size: 18px; margin-top: 8px; color:#FFD966;" id="awayCode"> </div>
+            </div>
+        </div>
+
+        <!-- STATUS & TIME INFO (COLORFUL & PROFESSIONAL) -->
+        <div class="info-status-container">
+            <div class="match-status" id="matchStatusWidget">
+                <span>📡</span> LOADING...
+            </div>
+            <div class="extra-info" id="extraNote">
+                🏆 FIFA WORLD CUP
+            </div>
+        </div>
+    </div>
+
+    <div class="broadcast-footer">
+        <span>🔴 LIVE BROADCAST • OFFICIAL SCOREBOARD</span>
+        <span>⏱️ AUTO-UPDATE 5s • MATCH CENTRE</span>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // PROFESSIONAL FIFA 2026 SCOREBOARD (1920x1080 READY)
+    // Enhanced flag mapping + colorful dynamic status, OBS FRIENDLY
+    // --------------------------------------------------------------
+    
+    // EXTENSIVE FLAG & COUNTRY MAPPING (VIBRANT)
+    const flagDatabase = new Map([
+        ["USA", "🇺🇸"], ["UNITED STATES", "🇺🇸"], ["UNITED STATES OF AMERICA", "🇺🇸"],
+        ["CANADA", "🇨🇦"], ["MEXICO", "🇲🇽"], ["ARGENTINA", "🇦🇷"], ["BRAZIL", "🇧🇷"],
+        ["URUGUAY", "🇺🇾"], ["COLOMBIA", "🇨🇴"], ["ECUADOR", "🇪🇨"], ["CHILE", "🇨🇱"],
+        ["PERU", "🇵🇪"], ["FRANCE", "🇫🇷"], ["GERMANY", "🇩🇪"], ["SPAIN", "🇪🇸"],
+        ["PORTUGAL", "🇵🇹"], ["ENGLAND", "🏴󠁧󠁢󠁥󠁮󠁧󠁿"], ["NETHERLANDS", "🇳🇱"], ["BELGIUM", "🇧🇪"],
+        ["CROATIA", "🇭🇷"], ["ITALY", "🇮🇹"], ["SWITZERLAND", "🇨🇭"], ["DENMARK", "🇩🇰"],
+        ["POLAND", "🇵🇱"], ["SWEDEN", "🇸🇪"], ["SERBIA", "🇷🇸"], ["UKRAINE", "🇺🇦"],
+        ["MOROCCO", "🇲🇦"], ["SENEGAL", "🇸🇳"], ["TUNISIA", "🇹🇳"], ["CAMEROON", "🇨🇲"],
+        ["GHANA", "🇬🇭"], ["NIGERIA", "🇳🇬"], ["EGYPT", "🇪🇬"], ["JAPAN", "🇯🇵"],
+        ["SOUTH KOREA", "🇰🇷"], ["KOREA REPUBLIC", "🇰🇷"], ["AUSTRALIA", "🇦🇺"],
+        ["SAUDI ARABIA", "🇸🇦"], ["IRAN", "🇮🇷"], ["QATAR", "🇶🇦"], ["COSTA RICA", "🇨🇷"],
+        ["PANAMA", "🇵🇦"], ["JAMAICA", "🇯🇲"], ["NEW ZEALAND", "🇳🇿"]
+    ]);
+
+    function getFlagFromTeam(teamName) {
+        if (!teamName) return "⚽";
+        const upper = teamName.trim().toUpperCase();
+        if (flagDatabase.has(upper)) return flagDatabase.get(upper);
+        for (let [key, flag] of flagDatabase.entries()) {
+            if (upper.includes(key) || key.includes(upper)) return flag;
+        }
+        // quick smart fallback
+        if (upper.startsWith("BRA")) return "🇧🇷";
+        if (upper.startsWith("ARG")) return "🇦🇷";
+        if (upper.startsWith("FRA")) return "🇫🇷";
+        if (upper.startsWith("GER") || upper === "GERMANY") return "🇩🇪";
+        if (upper.startsWith("SPA")) return "🇪🇸";
+        if (upper.startsWith("POR")) return "🇵🇹";
+        if (upper.startsWith("ENG")) return "🏴󠁧󠁢󠁥󠁮󠁧󠁿";
+        if (upper.startsWith("MEX")) return "🇲🇽";
+        if (upper.startsWith("CAN")) return "🇨🇦";
+        return "🌍";
+    }
+
+    // Helper: get short country code (3 letters) for extra style
+    function getShortCode(teamName) {
+        if (!teamName) return "---";
+        const up = teamName.toUpperCase();
+        if (up.includes("USA")) return "USA";
+        if (up.includes("MEXICO")) return "MEX";
+        if (up.includes("CANADA")) return "CAN";
+        if (up.includes("ARGENTINA")) return "ARG";
+        if (up.includes("BRAZIL")) return "BRA";
+        if (up.includes("FRANCE")) return "FRA";
+        if (up.includes("GERMANY")) return "GER";
+        if (up.includes("ITALY")) return "ITA";
+        if (up.includes("SPAIN")) return "ESP";
+        if (up.includes("PORTUGAL")) return "POR";
+        if (up.includes("ENGLAND")) return "ENG";
+        if (up.includes("NETHERLANDS")) return "NED";
+        if (up.includes("CROATIA")) return "CRO";
+        if (up.includes("JAPAN")) return "JPN";
+        if (up.includes("KOREA")) return "KOR";
+        if (up.includes("AUSTRALIA")) return "AUS";
+        if (up.includes("MOROCCO")) return "MAR";
+        return teamName.substring(0, 3).toUpperCase();
+    }
+
+    // DOM elements
+    const homeTeamNameEl = document.getElementById("homeTeamName");
+    const awayTeamNameEl = document.getElementById("awayTeamName");
+    const homeFlagSpan = document.getElementById("homeFlagSpan");
+    const awayFlagSpan = document.getElementById("awayFlagSpan");
+    const homeScoreEl = document.getElementById("homeScoreDisplay");
+    const awayScoreEl = document.getElementById("awayScoreDisplay");
+    const statusWidget = document.getElementById("matchStatusWidget");
+    const homeCodeEl = document.getElementById("homeCode");
+    const awayCodeEl = document.getElementById("awayCode");
+    const extraNoteDiv = document.getElementById("extraNote");
+
+    // Keep last valid data for fallback on errors
+    let lastValidData = {
+        home: "TEAM A",
+        away: "TEAM B",
+        home_score: 0,
+        away_score: 0,
+        status: "TIMED",
+        utcDate: null
+    };
+
+    // update UI main function
+    function updateScoreboardUI(data) {
+        // update team names & flags
+        const homeName = data.home || lastValidData.home;
+        const awayName = data.away || lastValidData.away;
+        homeTeamNameEl.innerText = homeName;
+        awayTeamNameEl.innerText = awayName;
+        
+        const homeFlag = getFlagFromTeam(homeName);
+        const awayFlag = getFlagFromTeam(awayName);
+        homeFlagSpan.innerHTML = homeFlag;
+        awayFlagSpan.innerHTML = awayFlag;
+        
+        homeCodeEl.innerText = getShortCode(homeName);
+        awayCodeEl.innerText = getShortCode(awayName);
+        
+        // Scores
+        const homeScore = (data.home_score !== undefined && data.home_score !== null) ? data.home_score : lastValidData.home_score;
+        const awayScore = (data.away_score !== undefined && data.away_score !== null) ? data.away_score : lastValidData.away_score;
+        homeScoreEl.innerText = homeScore;
+        awayScoreEl.innerText = awayScore;
+        
+        const status = data.status || lastValidData.status;
+        const utcDate = data.utcDate || lastValidData.utcDate;
+        
+        // ---- PROFESSIONAL STATUS RENDERING (COLORFUL, ATTRACTIVE) ----
+        if (status === "IN_PLAY") {
+            statusWidget.innerHTML = `
+                <span class="live-dot-big"></span>
+                <span class="live-pulse" style="background:#E31B23; display:inline-flex; align-items:center; gap:12px;">
+                    🔴 LIVE
+                </span>
+                <span style="font-weight:600; background:#1e2a3a; padding:5px 20px; border-radius:40px;">⚽ MATCH IN PROGRESS</span>
+            `;
+            extraNoteDiv.innerHTML = "🔥 2ND HALF • INTENSE ACTION 🔥";
+        } 
+        else if (status === "TIMED") {
+            if (utcDate) {
+                const kickoff = new Date(utcDate);
+                const now = new Date();
+                const diff = kickoff - now;
+                if (diff > 0) {
+                    const mins = Math.floor(diff / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+                    statusWidget.innerHTML = `
+                        <span>⏳</span>
+                        <span class="countdown-timer">KICKOFF: ${mins}m ${secs.toString().padStart(2,'0')}s</span>
+                        <span style="font-size:24px;">🎫 COUNTDOWN</span>
+                    `;
+                } else {
+                    statusWidget.innerHTML = `<span>🚀 MATCH ABOUT TO START</span><span class="countdown-timer">KICKOFF IMMINENT</span>`;
+                }
+            } else {
+                statusWidget.innerHTML = `<span>📅 SCHEDULED</span><span style="background:#1e2f41; padding:5px 30px; border-radius:30px;">UPCOMING FIXTURE</span>`;
+            }
+            extraNoteDiv.innerHTML = "🏟️ GET READY • WORLD CUP SHOWDOWN";
+        }
+        else if (status === "FINISHED") {
+            statusWidget.innerHTML = `
+                <span>🏁</span>
+                <span class="fulltime-badge">FULL TIME • FINAL</span>
+                <span style="color:#FFE484;">⚡ MATCH CONCLUDED</span>
+            `;
+            extraNoteDiv.innerHTML = "✅ OFFICIAL RESULT • FULL TIME WHISTLE";
+        }
+        else if (status === "HALFTIME") {
+            statusWidget.innerHTML = `<span>⏸️</span><span style="background:#FFB347; color:#1E1A2F; padding:6px 36px; border-radius:60px; font-weight:bold;">HALF TIME</span><span>⚽ BREAK</span>`;
+            extraNoteDiv.innerHTML = "⏱️ HALF TIME • TEAMS RECHARGE";
+        } 
+        else {
+            statusWidget.innerHTML = `<span>🔄</span><span style="background:#1E2A3A; padding:8px 35px; border-radius:60px;">${status} • STAND BY</span>`;
+            extraNoteDiv.innerHTML = "🏆 FIFA WORLD CUP 2026";
+        }
+        
+        // additional effect: if extra time indicated but not standard we enhance
+        if (data.extra_time === true && status === "IN_PLAY") {
+            extraNoteDiv.innerHTML = "➕ EXTRA TIME • DRAMA MODE 🔥";
+        }
+        
+        // store as last valid
+        lastValidData = { home: homeName, away: awayName, home_score: homeScore, away_score: awayScore, status: status, utcDate: utcDate };
+    }
+    
+    function showError(message) {
+        statusWidget.innerHTML = `<span class="error-styling">⚠️ ${message}</span><span style="margin-left:10px;">🔄 RETRYING...</span>`;
+        extraNoteDiv.innerHTML = "🌐 CONNECTION ISSUE • CHECK API";
+        // keep last visible scores if any
+    }
+    
+    // FETCH FROM API WITH TIMEOUT
+    async function fetchMatchData() {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            const response = await fetch("http://127.0.0.1:8000/api/match", {
+                signal: controller.signal,
+                headers: { "Accept": "application/json" }
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const json = await response.json();
+            if (json && json.error === true) {
+                showError(json.message || "API returned error");
+                return;
+            }
+            // ensure structure
+            const normalized = {
+                home: json.home || lastValidData.home,
+                away: json.away || lastValidData.away,
+                home_score: (json.home_score !== undefined && json.home_score !== null) ? json.home_score : lastValidData.home_score,
+                away_score: (json.away_score !== undefined && json.away_score !== null) ? json.away_score : lastValidData.away_score,
+                status: json.status || "TIMED",
+                utcDate: json.utcDate || null,
+                extra_time: json.extra_time || false
+            };
+            updateScoreboardUI(normalized);
+        } catch (err) {
+            console.warn("Fetch error: ", err);
+            let msg = "API unreachable";
+            if (err.name === "AbortError") msg = "Request timeout";
+            else if (err.message.includes("Failed to fetch")) msg = "Cannot connect to score server";
+            else msg = err.message;
+            showError(msg);
+        }
+    }
+    
+    // initial load + interval 5 secs
+    let interval = null;
+    function init() {
+        // set initial demo beautiful placeholder
+        updateScoreboardUI({ home: "USA", away: "MEXICO", home_score: 0, away_score: 0, status: "TIMED", utcDate: new Date(Date.now() + 1000 * 90).toISOString() });
+        fetchMatchData();
+        interval = setInterval(fetchMatchData, 5000);
+    }
+    
+    window.addEventListener("DOMContentLoaded", init);
+    window.addEventListener("beforeunload", () => {
+        if (interval) clearInterval(interval);
+    });
+</script>
+</body>
+</html>
