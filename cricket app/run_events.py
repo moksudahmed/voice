@@ -65,7 +65,10 @@ EXTRA_EVENT_MAP = {
     "catch drop":"DROP_CATCH",
     "ball in air": "BALL_IN_AIR",
     "overthrow" :"OVERTHROW",
-    "no ball check":"No_Ball_Check"
+    "strategic timeout": "STRATEGIC_TIMEOUT",
+    "time out": "TIME_OUT",
+    "no ball check":"No_Ball_Check",
+    "Wide Ball Check":"Wide Ball Check",
 }
 
 WICKET_EVENT_MAP = {
@@ -429,22 +432,23 @@ def parse_ball_event(commentary):
 
 
 # ==================== USAGE EXAMPLES ====================
-"""def process_event(res):    
+def process_event(res):    
     event_key=""
     result = res.lower()
     event = detect_event(result)
-    print("Basic",event)
+    print("Res", result)       
     if event == "UNKNOWN_EVENT":
         event = detect_event_advanced(result)        
-        print("Advance",event)
+        print("Adv", event)
         if event == "UNKNOWN_EVENT":
-           event_key = detect_match_event(result)                   
-           print("Match Status",event_key)
+           event_key = detect_match_event(result)  
+           print("Match Adv", event)                 
            return event_key
         return event    
     else:
         return event
+
   
 if __name__ == "__main__":
    
-    print(process_event("ball"))"""
+    print(process_event("ball"))

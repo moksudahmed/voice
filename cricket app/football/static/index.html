@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FIFA World Cup 2026 - REALISTIC CROWD SOUND | Stadium Atmosphere</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 30% 40%, #0a0f1e, #020408);
+            font-family: 'Segoe UI', 'Poppins', 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .stadium-card {
+            max-width: 850px;
+            width: 100%;
+            background: linear-gradient(145deg, #0f172ae6, #0a0f1ae6);
+            backdrop-filter: blur(10px);
+            border-radius: 70px;
+            border: 1px solid rgba(255, 200, 80, 0.5);
+            box-shadow: 0 35px 60px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(212, 175, 55, 0.25) inset;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #1a1f2e, #0c1120);
+            padding: 28px 24px;
+            text-align: center;
+            border-bottom: 3px solid #facc15;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #FFE484, #f5b042, #d4af37);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: #9ca3af;
+            margin-top: 8px;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
+        .stadium-icon {
+            font-size: 64px;
+            display: inline-block;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+            animation: stadiumPulse 2s infinite ease;
+        }
+
+        @keyframes stadiumPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Dynamic Visualizer */
+        .sound-visualizer {
+            padding: 30px 30px 10px;
+        }
+
+        .wave-spectrum {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 8px;
+            height: 120px;
+            margin-bottom: 15px;
+        }
+
+        .freq-bar {
+            width: 14px;
+            background: linear-gradient(to top, #facc15, #f97316, #ef4444);
+            border-radius: 12px;
+            transition: height 0.05s cubic-bezier(0.2, 1.2, 0.4, 1);
+            box-shadow: 0 0 6px #ffb347;
+        }
+
+        .spectrum-label {
+            text-align: center;
+            color: #facc15cc;
+            font-size: 12px;
+            letter-spacing: 2px;
+            margin-top: 8px;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            padding: 20px 32px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .play-section {
+            display: flex;
+            justify-content: center;
+        }
+
+        .crowd-button {
+            background: radial-gradient(circle at 35% 30%, #dc2626, #991b1b);
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: none;
+            font-size: 72px;
+            cursor: pointer;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 5px #facc15, 0 0 0 12px rgba(250, 204, 21, 0.2);
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .crowd-button:active {
+            transform: scale(0.96);
+        }
+
+        /* Volume section */
+        .volume-section {
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 50px;
+            padding: 18px 24px;
+            backdrop-filter: blur(5px);
+        }
+
+        .volume-header {
+            display: flex;
+            justify-content: space-between;
+            color: #facc15;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #22c55e, #facc15, #ef4444);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #facc15;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            box-shadow: 0 0 12px gold;
+        }
+
+        /* FX Buttons - Real stadium effects */
+        .fx-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .fx-btn {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid #facc1566;
+            padding: 12px 22px;
+            border-radius: 60px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #f1f5f9;
+            cursor: pointer;
+            transition: 0.12s linear;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(4px);
+        }
+
+        .fx-btn:hover {
+            background: #facc15;
+            color: #0f172a;
+            transform: translateY(-2px);
+            border-color: #facc15;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            background: #00000066;
+            border-radius: 50px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            backdrop-filter: blur(6px);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .live-led {
+            width: 14px;
+            height: 14px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #22c55e;
+            animation: ledPulse 1s infinite;
+        }
+
+        @keyframes ledPulse {
+            0%, 100% { opacity: 1; transform: scale(1); background: #22c55e; }
+            50% { opacity: 0.5; transform: scale(1.2); background: #facc15; }
+        }
+
+        .footer {
+            background: #0b0f19;
+            padding: 16px;
+            text-align: center;
+            font-size: 12px;
+            color: #5b6e8c;
+            border-top: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="stadium-card">
+    <div class="header">
+        <div class="stadium-icon">🏟️⚽🔥</div>
+        <h1>FIFA WORLD CUP 2026</h1>
+        <p>🇺🇸 USA • 🇨🇦 CANADA • 🇲🇽 MEXICO | REALISTIC STADIUM CROWD</p>
+    </div>
+
+    <div class="sound-visualizer">
+        <div class="wave-spectrum" id="visualizerBars"></div>
+        <div class="spectrum-label">🔊 REAL-TIME CROWD INTENSITY</div>
+    </div>
+
+    <div class="control-panel">
+        <div class="play-section">
+            <button class="crowd-button" id="crowdToggleBtn">🔊</button>
+        </div>
+
+        <div class="volume-section">
+            <div class="volume-header">
+                <span>🎤 STADIUM VOLUME</span>
+                <span id="volumePercent">55%</span>
+            </div>
+            <input type="range" id="volumeSlider" min="0" max="100" value="55">
+        </div>
+
+        <div class="fx-grid">
+            <button class="fx-btn" data-fx="goal">🎉 GOAL EXPLOSION</button>
+            <button class="fx-btn" data-fx="cheer">📣 WAVE CHEER</button>
+            <button class="fx-btn" data-fx="clap">👏 APPLAUSE</button>
+            <button class="fx-btn" data-fx="whistle">🎺 WHISTLE + CHANT</button>
+            <button class="fx-btn" data-fx="roar">🔥 INTENSE ROAR</button>
+            <button class="fx-btn" data-fx="olé">💃 OLÉ OLE OLE</button>
+        </div>
+
+        <div class="status-indicator" id="statusPanel">
+            <div class="live-led" id="liveLed"></div>
+            <span id="statusText">⚪ CROWD SILENT • PRESS PLAY</span>
+        </div>
+    </div>
+    <div class="footer">
+        🎧 REALISTIC 3D CROWD ENGINE • AMBIENT STADIUM NOISE • CHANTS & REACTIONS • NO EXTERNAL FILES
+    </div>
+</div>
+
+<script>
+    // =========================================================================
+    //  PROFESSIONAL REALISTIC CROWD GENERATOR - NO EXTERNAL SAMPLES
+    //  Multi-layer brown noise + rhythmic crowd texture + impulse responses
+    //  Creates authentic stadium atmosphere with independent playback
+    // =========================================================================
+    
+    let audioContext = null;
+    let isCrowdPlaying = false;
+    
+    // Audio nodes
+    let masterGain = null;
+    let ambientGain = null;
+    let crowdNoiseNode = null;       // brown noise layer
+    let chatterNode = null;          // mid-frequency crowd texture
+    let lowRumbleNode = null;        // bass layer for stadium feel
+    
+    let analyserNode = null;         // for visualizer
+    let animationId = null;
+    
+    // DOM elements
+    const toggleBtn = document.getElementById("crowdToggleBtn");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const volumePercent = document.getElementById("volumePercent");
+    const statusTextSpan = document.getElementById("statusText");
+    const liveLed = document.getElementById("liveLed");
+    const visualizerContainer = document.getElementById("visualizerBars");
+    
+    // Create 24 frequency bars for visualizer
+    function buildVisualizerBars() {
+        visualizerContainer.innerHTML = "";
+        for (let i = 0; i < 28; i++) {
+            const bar = document.createElement("div");
+            bar.className = "freq-bar";
+            bar.style.height = "8px";
+            visualizerContainer.appendChild(bar);
+        }
+    }
+    buildVisualizerBars();
+    const freqBars = document.querySelectorAll(".freq-bar");
+    
+    // Initialize Web Audio
+    function initAudio() {
+        if (audioContext) return audioContext;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Master gain
+            masterGain = audioContext.createGain();
+            masterGain.gain.value = 0.55;
+            masterGain.connect(audioContext.destination);
+            
+            // Ambient gain (for crowd layers)
+            ambientGain = audioContext.createGain();
+            ambientGain.gain.value = 0.7;
+            ambientGain.connect(masterGain);
+            
+            // Analyser for visualization
+            analyserNode = audioContext.createAnalyser();
+            analyserNode.fftSize = 256;
+            ambientGain.connect(analyserNode);
+            
+            console.log("🎧 Audio engine ready - REALISTIC CROWD ENGINE");
+            return audioContext;
+        } catch(e) {
+            console.error("Web Audio error", e);
+            statusTextSpan.innerText = "❌ AUDIO NOT SUPPORTED";
+            return null;
+        }
+    }
+    
+    // Create Brown Noise (deep stadium rumble)
+    function createBrownNoiseLayer() {
+        if (!audioContext) return null;
+        const bufferSize = 4096;
+        const scriptNode = audioContext.createScriptProcessor(bufferSize, 1, 1);
+        let lastOut = 0;
+        
+        scriptNode.onaudioprocess = (event) => {
+            const output = event.outputBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                const brown = (lastOut + (0.02 * white)) / 1.02;
+                output[i] = brown * 0.65;
+                lastOut = brown;
+            }
+        };
+        
+        const lowPass = audioContext.createBiquadFilter();
+        lowPass.type = "lowpass";
+        lowPass.frequency.value = 550;
+        lowPass.Q.value = 1.2;
+        
+        scriptNode.connect(lowPass);
+        lowPass.connect(ambientGain);
+        return scriptNode;
+    }
+    
+    // Create "chatter" layer - mid-frequency crowd murmur (more realistic)
+    function createChatterLayer() {
+        if (!audioContext) return null;
+        const bufferSize = 2048;
+        const chatterNode = audioContext.createScriptProcessor(bufferSize, 1, 1);
+        let phase = 0;
+        
+        chatterNode.onaudioprocess = (event) => {
+            const output = event.outputBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                // modulated noise with occasional random spikes
+                let noise = (Math.random() * 2 - 1) * 0.35;
+                phase += 0.01;
+                const mod = 0.5 + 0.3 * Math.sin(phase * 3);
+                output[i] = noise * mod;
+            }
+        };
+        
+        const bandPass = audioContext.createBiquadFilter();
+        bandPass.type = "bandpass";
+        bandPass.frequency.value = 1100;
+        bandPass.Q.value = 1.8;
+        
+        chatterNode.connect(bandPass);
+        bandPass.connect(ambientGain);
+        return chatterNode;
+    }
+    
+    // Create low rumble (sub-bass stadium feeling)
+    function createLowRumble() {
+        if (!audioContext) return null;
+        const bufferSize = 4096;
+        const rumbleNode = audioContext.createScriptProcessor(bufferSize, 1, 1);
+        let val = 0;
+        
+        rumbleNode.onaudioprocess = (event) => {
+            const output = event.outputBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                val = val * 0.98 + (Math.random() * 2 - 1) * 0.06;
+                output[i] = val * 0.4;
+            }
+        };
+        
+        const subFilter = audioContext.createBiquadFilter();
+        subFilter.type = "lowpass";
+        subFilter.frequency.value = 180;
+        subFilter.Q.value = 1.0;
+        
+        rumbleNode.connect(subFilter);
+        subFilter.connect(ambientGain);
+        return rumbleNode;
+    }
+    
+    // Start all crowd layers
+    function startRealisticCrowd() {
+        if (!audioContext) {
+            initAudio();
+            if (!audioContext) return false;
+        }
+        
+        if (audioContext.state === "suspended") {
+            audioContext.resume().then(() => {
+                startCrowdInternal();
+            }).catch(e => console.log("resume failed", e));
+            return false;
+        } else {
+            startCrowdInternal();
+            return true;
+        }
+    }
+    
+    function startCrowdInternal() {
+        // Stop previous layers if any
+        if (crowdNoiseNode) {
+            try { crowdNoiseNode.disconnect(); } catch(e) {}
+        }
+        if (chatterNode) {
+            try { chatterNode.disconnect(); } catch(e) {}
+        }
+        if (lowRumbleNode) {
+            try { lowRumbleNode.disconnect(); } catch(e) {}
+        }
+        
+        // Create three layers for realism
+        crowdNoiseNode = createBrownNoiseLayer();
+        chatterNode = createChatterLayer();
+        lowRumbleNode = createLowRumble();
+        
+        isCrowdPlaying = true;
+        updateUICrowdState(true);
+        startVisualizerAnimation();
+    }
+    
+    function stopRealisticCrowd() {
+        if (crowdNoiseNode) {
+            try { crowdNoiseNode.disconnect(); } catch(e) {}
+            crowdNoiseNode = null;
+        }
+        if (chatterNode) {
+            try { chatterNode.disconnect(); } catch(e) {}
+            chatterNode = null;
+        }
+        if (lowRumbleNode) {
+            try { lowRumbleNode.disconnect(); } catch(e) {}
+            lowRumbleNode = null;
+        }
+        isCrowdPlaying = false;
+        updateUICrowdState(false);
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        resetVisualizerBars();
+    }
+    
+    function updateUICrowdState(active) {
+        if (active) {
+            toggleBtn.innerHTML = "🔇";
+            toggleBtn.style.background = "radial-gradient(circle at 35% 30%, #ea580c, #9a3412)";
+            statusTextSpan.innerHTML = "🔥 STADIUM ROARING • 85,000 FANS 🔥";
+            liveLed.style.animation = "ledPulse 1s infinite";
+            liveLed.style.background = "#facc15";
+        } else {
+            toggleBtn.innerHTML = "🔊";
+            toggleBtn.style.background = "radial-gradient(circle at 35% 30%, #dc2626, #991b1b)";
+            statusTextSpan.innerHTML = "⚪ CROWD SILENT • PRESS PLAY";
+            liveLed.style.animation = "none";
+            liveLed.style.background = "#22c55e";
+            liveLed.style.opacity = "0.5";
+        }
+    }
+    
+    // Volume control
+    volumeSlider.addEventListener("input", (e) => {
+        let val = parseInt(e.target.value);
+        volumePercent.innerText = val + "%";
+        if (masterGain) {
+            let mappedVal = val / 100 * 0.92;
+            masterGain.gain.value = mappedVal;
+        }
+    });
+    
+    // Toggle main crowd
+    function toggleCrowd() {
+        if (!audioContext) {
+            initAudio();
+            if (!audioContext) return;
+        }
+        
+        if (isCrowdPlaying) {
+            if (audioContext.state === "running") audioContext.suspend();
+            stopRealisticCrowd();
+        } else {
+            if (audioContext.state === "suspended") {
+                audioContext.resume().then(() => {
+                    startRealisticCrowd();
+                }).catch(e => console.log("resume err", e));
+            } else {
+                startRealisticCrowd();
+            }
+        }
+    }
+    
+    toggleBtn.addEventListener("click", toggleCrowd);
+    
+    // ========== ONE-SHOT REAL STADIUM EFFECTS ==========
+    function playStadiumEffect(type) {
+        if (!audioContext) {
+            initAudio();
+            if (!audioContext) return;
+        }
+        
+        if (audioContext.state === "suspended") {
+            audioContext.resume().then(() => {
+                executeEffect(type);
+            });
+        } else {
+            executeEffect(type);
+        }
+        
+        // Visual feedback: flash bars
+        freqBars.forEach(bar => {
+            bar.style.transition = "height 0.08s";
+            bar.style.height = "75px";
+            setTimeout(() => {
+                bar.style.transition = "";
+            }, 180);
+        });
+        
+        // temporary volume boost if crowd is active
+        if (isCrowdPlaying && masterGain) {
+            const original = masterGain.gain.value;
+            const boosted = Math.min(0.95, original + 0.18);
+            masterGain.gain.value = boosted;
+            setTimeout(() => {
+                if (masterGain && isCrowdPlaying) masterGain.gain.value = original;
+            }, 1500);
+        }
+    }
+    
+    function executeEffect(type) {
+        const ctx = audioContext;
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        
+        // helper: short noise burst
+        function noiseBurst(duration, volume, startDelay = 0) {
+            const bufSize = ctx.sampleRate * duration;
+            const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+            const src = ctx.createBufferSource();
+            src.buffer = buffer;
+            const gain = ctx.createGain();
+            src.connect(gain);
+            gain.connect(ctx.destination);
+            gain.gain.setValueAtTime(volume, now + startDelay);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + startDelay + duration);
+            src.start(now + startDelay);
+            return src;
+        }
+        
+        if (type === 'goal') {
+            // GOAL EXPLOSION: huge cheer + horn-like sounds
+            noiseBurst(1.4, 0.68);
+            for (let i = 0; i < 4; i++) {
+                const osc = ctx.createOscillator();
+                const oscGain = ctx.createGain();
+                osc.frequency.value = 660 + i * 120;
+                osc.connect(oscGain);
+                oscGain.connect(ctx.destination);
+                oscGain.gain.setValueAtTime(0.24, now + i * 0.08);
+                oscGain.gain.exponentialRampToValueAtTime(0.005, now + 1.2);
+                osc.start(now + i * 0.08);
+                osc.stop(now + 1.2);
+            }
+            // "OLE" chanting vibe
+            const chantOsc = ctx.createOscillator();
+            chantOsc.frequency.value = 440;
+            const chantGain = ctx.createGain();
+            chantOsc.connect(chantGain);
+            chantGain.connect(ctx.destination);
+            chantGain.gain.setValueAtTime(0.18, now);
+            chantGain.gain.exponentialRampToValueAtTime(0.01, now + 1.1);
+            chantOsc.start();
+            chantOsc.stop(now + 1.1);
+        }
+        else if (type === 'cheer') {
+            noiseBurst(0.9, 0.55);
+            const cheerOsc = ctx.createOscillator();
+            cheerOsc.frequency.value = 980;
+            const cGain = ctx.createGain();
+            cheerOsc.connect(cGain);
+            cGain.connect(ctx.destination);
+            cGain.gain.setValueAtTime(0.3, now);
+            cGain.gain.exponentialRampToValueAtTime(0.005, now + 0.9);
+            cheerOsc.start();
+            cheerOsc.stop(now + 0.9);
+        }
+        else if (type === 'clap') {
+            for (let i = 0; i < 8; i++) {
+                const delay = i * 0.07;
+                const clapNoise = ctx.createBufferSource();
+                const buf = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let j = 0; j < buf.length; j++) d[j] = Math.random() * 2 - 1;
+                clapNoise.buffer = buf;
+                const clapG = ctx.createGain();
+                clapNoise.connect(clapG);
+                clapG.connect(ctx.destination);
+                clapG.gain.setValueAtTime(0.32, now + delay);
+                clapG.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.15);
+                clapNoise.start(now + delay);
+            }
+        }
+        else if (type === 'whistle') {
+            const whistleOsc = ctx.createOscillator();
+            whistleOsc.frequency.value = 1850;
+            const wGain = ctx.createGain();
+            whistleOsc.connect(wGain);
+            wGain.connect(ctx.destination);
+            wGain.gain.setValueAtTime(0.38, now);
+            wGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+            whistleOsc.start();
+            whistleOsc.stop(now + 0.85);
+            noiseBurst(0.7, 0.45);
+        }
+        else if (type === 'roar') {
+            noiseBurst(1.6, 0.8);
+            const lowOsc = ctx.createOscillator();
+            lowOsc.frequency.value = 110;
+            const lowG = ctx.createGain();
+            lowOsc.connect(lowG);
+            lowG.connect(ctx.destination);
+            lowG.gain.setValueAtTime(0.42, now);
+            lowG.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+            lowOsc.start();
+            lowOsc.stop(now + 1.5);
+        }
+        else if (type === 'olé') {
+            // rhythmic olé chant
+            for (let i = 0; i < 6; i++) {
+                const delay = i * 0.32;
+                const oscOle = ctx.createOscillator();
+                oscOle.frequency.value = 520;
+                const oGain = ctx.createGain();
+                oscOle.connect(oGain);
+                oGain.connect(ctx.destination);
+                oGain.gain.setValueAtTime(0.22, now + delay);
+                oGain.gain.exponentialRampToValueAtTime(0.005, now + delay + 0.55);
+                oscOle.start(now + delay);
+                oscOle.stop(now + delay + 0.55);
+            }
+            noiseBurst(1.0, 0.48);
+        }
+    }
+    
+    // Visualizer animation using analyser or simulated intensity
+    let lastIntensity = 0;
+    function startVisualizerAnimation() {
+        if (animationId) cancelAnimationFrame(animationId);
+        
+        function animate() {
+            if (!isCrowdPlaying) {
+                resetVisualizerBars();
+                animationId = null;
+                return;
+            }
+            
+            // Simulate dynamic crowd intensity based on master volume + random "energy"
+            let intensity = 0.3;
+            if (masterGain) {
+                intensity = masterGain.gain.value / 0.92;
+            }
+            // add random spikes to mimic real crowd
+            const randomEnergy = Math.random() * 0.45;
+            let finalIntensity = Math.min(0.95, intensity * 0.7 + randomEnergy * 0.6);
+            finalIntensity = Math.max(0.15, finalIntensity);
+            
+            freqBars.forEach((bar, idx) => {
+                const variation = 0.5 + Math.random() * 0.9;
+                let height = 12 + (finalIntensity * 85) * variation;
+                height = Math.min(95, Math.max(10, height));
+                bar.style.height = height + "px";
+                const hue = 35 + finalIntensity * 25;
+                bar.style.background = `linear-gradient(to top, #facc15, #f97316)`;
+            });
+            animationId = requestAnimationFrame(animate);
+        }
+        animate();
+    }
+    
+    function resetVisualizerBars() {
+        freqBars.forEach(bar => {
+            bar.style.height = "8px";
+            bar.style.background = "linear-gradient(to top, #4b5563, #374151)";
+        });
+    }
+    
+    // attach effect handlers
+    document.querySelectorAll(".fx-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const fxType = btn.getAttribute("data-fx");
+            if (fxType) playStadiumEffect(fxType);
+            btn.style.transform = "scale(0.96)";
+            setTimeout(() => btn.style.transform = "", 120);
+        });
+    });
+    
+    // Auto-resume on first click anywhere (browser policy)
+    document.body.addEventListener("click", () => {
+        if (audioContext && audioContext.state === "suspended") {
+            audioContext.resume();
+        }
+    }, { once: false });
+    
+    // Set initial volume display
+    volumePercent.innerText = volumeSlider.value + "%";
+    resetVisualizerBars();
+    console.log("🏟️ REAL CROWD ENGINE READY — Press PLAY for authentic stadium atmosphere!");
+</script>
+</body>
+</html>
