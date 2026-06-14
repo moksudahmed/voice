@@ -32,6 +32,7 @@ from live_matches import get_live_matches
 from live_status import detect_match_event, get_event_string, EVENT_OUTPUT_MAP
 from run_events import detect_event, detect_event_advanced ,EVENT_MAP
 from events import detect_cricket_event
+from scorecard import load_scorecard
 # =========================================================
 # APP
 # =========================================================
@@ -104,48 +105,6 @@ def scene_logic(text):
 
 
 # =====================================================
-# 🎯 EVENT MAPS (FAST LOOKUP)
-# =====================================================
-RUN_EVENT_MAP = {
-    "0": "DOT",
-    "1": "SINGLE",
-    "2": "DOUBLE",
-    "3": "TRIPLE",
-    "4": "FOUR",
-    "6": "SIX",
-    "Wide": "WIDE",
-    "No Ball": "NO_BALL",
-    "Bye": "BYE",
-    "Wicket": "WICKET",
-    "Bowled": "WICKET",
-    "Caught Out":"WICKET",
-    "Run Out": "WICKET",
-    "Bowler Stopped":"",
-    "Run Out Check":"",
-    "Boundary Check":"",
-    "Over": "OVER_COMPLETE"
-}
-
-EXTRA_EVENT_MAP = {
-    "Ball":"BOWLER_RUNUP",
-    "Wide": "WIDE",
-    "No Ball": "NO_BALL",
-    "Bye": "BYE"
-}
-
-BREAK_EVENT_MAP = {
-    "Innings Break": "INNINGS_BREAK",
-    "Drinks Break": "DRINKS_BREAK",
-    "Tea Break": "TEA_BREAK",
-    "Lunch Break": "LUNCH_BREAK",
-    "Rain Break": "RAIN_BREAK",
-    "Rain Break (Delayed)": "RAIN_DELAY",
-    "Match stopped due to rain":"RAIN_BREAK",
-    "Time Out": "TIME_OUT",
-    "Strategic Timeout": "STRATEGIC_TIMEOUT"
-
-}
-# =====================================================
 # 🎯 EVENT DETECTION (FAST)
 # =====================================================
 
@@ -158,33 +117,6 @@ def generate_winning_message(team1, team2):
     template = random.choice(WINNING_COMMENTARY_TEMPLATES)
     return template.format(team1=team1, team2=team2)
 
-# =====================================================
-# 🎯 EVENT DETECTION (FAST + SAFE FALLBACK)
-# =====================================================
-
-def detect_event2(event):
-
-    # normalize input (helps avoid mismatch like "wide " or "WIDE")
-    if event is None:
-        return "UNKNOWN_EVENT"
-
-    key = str(event).strip()
-
-    # priority order: RUN → EXTRA → BREAK
-    return (
-        RUN_EVENT_MAP.get(key)
-        or EXTRA_EVENT_MAP.get(key)
-        #or BREAK_EVENT_MAP.get(key)
-        or "UNKNOWN_EVENT"
-    )
-def detect_run_event(event):
-    if event == "6":
-        return "SIX"
-    elif event == "4":
-        return "FOUR"
-    elif event == "Wicket":
-        return "WICKET"
-    else: return None
 
 # =========================================================
 # CLEANER
@@ -651,22 +583,7 @@ def determine_start_game(event):
         speak_bangla(commentary_text)  
 
 
-def process_event(res):    
-    event_key=""
-    result = res.lower()
-    event = detect_event(result)
-    print("Res", result)       
-    if event == "UNKNOWN_EVENT":
-        event = detect_event_advanced(result)        
-        print("Adv", event)
-        if event == "UNKNOWN_EVENT":
-           event_key = detect_match_event(result)  
-           print("Match Adv", event)                 
-           return event_key
-        return event    
-    else:
-        return event
-        
+       
 async def scraper222():
 
     playwright = await async_playwright().start()
@@ -862,9 +779,22 @@ async def scraper():
         "COMPLETED",
         "COMPLETED_WITH_RESULT",
         }
+    
+    OBS_SCENE_EVENTS = {
+    "INNINGS_BREAK",
+    "LUNCH_BREAK",
+    "TEA_BREAK",
+    "RAIN_BREAK",
+    "RAIN_DELAY",
+    "MATCH_STOPPED",
+    "MATCH_STOPPED_RAIN",
+    "COMPLETED",
+    "COMPLETED_WITH_RESULT",
+    "OVER_COMPLETE"
+    }
     match_event_list = set(COMMENTARY.keys())
     #print(match_event_list)
-
+    last_obs_event = None
     print("🚀 Scraper started")
     last_event_signature = None
     async def safe_speak2(text, lang="bn"):
@@ -930,15 +860,20 @@ async def scraper():
             # Over completed
             # ----------------------------------
             if event_key == "OVER_COMPLETE":
-
                 print("📺 OVER COMPLETE → CROWD")
-
                 switch_scene("CROWD")
                 await asyncio.sleep(30)  # show crowd for 15 seconds
-
                 switch_scene("LIVE")
                 last_scene = "LIVE"
                 return
+            if event_key == "INNINGS_BREAK" | "LUNCH_BREAK" |"TEA_BREAK" | "RAIN_BREAK":
+                print("📺 OVER COMPLETE → DRONE")
+                switch_scene("DRONE")
+                await asyncio.sleep(30)  # show crowd for 15 seconds
+                switch_scene("LIVE")
+                last_scene = "LIVE"
+                return
+
 
             
 
@@ -1093,13 +1028,15 @@ async def scraper():
                             STATE["data"]["commentary"] = commentary
 
                             await safe_speak(commentary)
-
-                            # runs ONLY after speech finished
-                            if event_key == "OVER_COMPLETE":
-                                await update_obs_scene(event_key)
-
                             print("🗣 COMMENTARY:", commentary)
                         
+                            # runs ONLY after speech finished
+                            # Scene changes only once
+                            if event_key in OBS_SCENE_EVENTS:
+                                await update_obs_scene(event_key)
+                                last_obs_scene_event = event_key
+                                print("Hello World")                         
+                            
 
                         if event_key == "INNINGS_BREAK":
                             swap_teams(STATE["flags"])
@@ -1621,12 +1558,13 @@ async def set_url(payload: dict):
     # =========================
     await ensure_flags_loaded()
     if STATE["url"]:        
-        data = await get_playing_xi(STATE["url"])
+        await get_playing_xi(STATE["url"])
     return {"ok": True}
 
 
 
 templates = Jinja2Templates(directory="templates")
+#templates = Jinja2Templates(directory="./templates")
 
 
 @app.get("/api/match-status")
@@ -1923,3 +1861,23 @@ async def get_team_state():
         "team_a_status": STATE.get("team_a_status", "Batting"),
         "team_b_status": STATE.get("team_b_status", "Fielding")
     })
+
+
+@app.get("/api/scoreboard", response_class=HTMLResponse)
+async def scoreboard(request: Request):
+
+    score_data = await load_scorecard(STATE["url"])
+    print("Hello Check")
+    print(score_data)
+    return templates.TemplateResponse(
+        "scoreboard.html",
+        {
+            "request": request,
+            "score": score_data.get("score", {}),
+            "batters": score_data.get("batters", []),
+            "bowlers": score_data.get("bowlers", []),
+            "fall_of_wickets": score_data.get("fall_of_wickets", []),
+            "extras": score_data.get("extras", {}),
+            "yet_to_bat": score_data.get("yet_to_bat", [])
+        }
+    )

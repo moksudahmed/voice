@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Live Cricket Scoreboard</title>
+
+<meta http-equiv="refresh" content="5">
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #081826;
+    color: white;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.header {
+    background: #0f2a44;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.score {
+    font-size: 40px;
+    font-weight: bold;
+}
+
+.small {
+    opacity: 0.8;
+}
+
+.section-title {
+    margin-top: 25px;
+    padding-left: 10px;
+    border-left: 5px solid #00d4ff;
+    font-size: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: #0f2a44;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #1c3b5a;
+}
+
+th {
+    background: #123a5c;
+    color: #00d4ff;
+}
+
+tr:hover {
+    background: #163b5a;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: #0f2a44;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    padding: 6px 0;
+    border-bottom: 1px solid #1c3b5a;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #123a5c;
+    border-radius: 20px;
+    margin: 3px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- SCORE HEADER -->
+    <div class="header">
+        <div class="score">
+            {{ score.runs }} / {{ score.wickets }}
+        </div>
+        <div class="small">
+            Overs: {{ score.overs }}
+        </div>
+    </div>
+
+    <!-- BATTERS -->
+    <div class="section-title">Batters</div>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>R</th>
+            <th>B</th>
+            <th>4s</th>
+            <th>6s</th>
+            <th>SR</th>
+        </tr>
+
+        {% for b in batters %}
+        <tr>
+            <td>{{ b.name }}</td>
+            <td>{{ b.runs }}</td>
+            <td>{{ b.balls }}</td>
+            <td>{{ b.fours }}</td>
+            <td>{{ b.sixes }}</td>
+            <td>{{ b.strike_rate }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <!-- BOWLERS -->
+    <div class="section-title">Bowlers</div>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>O</th>
+            <th>M</th>
+            <th>R</th>
+            <th>W</th>
+            <th>ECO</th>
+        </tr>
+
+        {% for bo in bowlers %}
+        <tr>
+            <td>{{ bo.name }}</td>
+            <td>{{ bo.overs }}</td>
+            <td>{{ bo.maidens }}</td>
+            <td>{{ bo.runs }}</td>
+            <td>{{ bo.wickets }}</td>
+            <td>{{ bo.economy }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <!-- LOWER GRID -->
+    <div class="grid">
+
+        <!-- FALL OF WICKETS -->
+        <div class="card">
+            <div class="section-title">Fall of Wickets</div>
+
+            {% for w in fall_of_wickets %}
+                <li>
+                    {{ w.score }} - {{ w.player }} ({{ w.over }} ov)
+                </li>
+            {% endfor %}
+        </div>
+
+        <!-- EXTRAS -->
+        <div class="card">
+            <div class="section-title">Extras</div>
+
+            <ul>
+                <li>Total: {{ extras.total }}</li>
+                <li>Byes: {{ extras.byes }}</li>
+                <li>Leg Byes: {{ extras.leg_byes }}</li>
+                <li>Wides: {{ extras.wides }}</li>
+                <li>No Balls: {{ extras.no_balls }}</li>
+                <li>Penalty: {{ extras.penalty }}</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- YET TO BAT -->
+    <div class="section-title">Yet to Bat</div>
+
+    <div class="card">
+        {% for p in yet_to_bat %}
+            <span class="badge">{{ p }}</span>
+        {% endfor %}
+    </div>
+
+</div>
+
+</body>
+</html>
