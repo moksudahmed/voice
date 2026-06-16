@@ -176,7 +176,8 @@ def format_from_api(api):
     # YET TO BAT
     # --------------------
     result["yet_to_bat"] = api.get("yet_to_bat", []) or []
-
+    print("Check")
+    print(result)
     return result
 
 

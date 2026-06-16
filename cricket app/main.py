@@ -33,6 +33,7 @@ from live_status import detect_match_event, get_event_string, EVENT_OUTPUT_MAP
 from run_events import detect_event, detect_event_advanced ,EVENT_MAP
 from events import detect_cricket_event
 from scorecard import load_scorecard
+from scoreboard import load_data
 # =========================================================
 # APP
 # =========================================================
@@ -1866,7 +1867,7 @@ async def get_team_state():
 @app.get("/api/scoreboard", response_class=HTMLResponse)
 async def scoreboard(request: Request):
 
-    score_data = await load_scorecard(STATE["url"])
+    score_data = await load_data(STATE["url"])
     print("Hello Check")
     print(score_data)
     return templates.TemplateResponse(
