@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import json
 
 
-#URL = "https://crex.com/cricket-live-score/msw-vs-rtw-21st-match-bengal-womens-t20-league-2026-match-updates-12RE/match-scorecard"
+URL = "https://crex.com/cricket-live-score/aus-vs-ban-1st-t20-australia-tour-of-bangladesh-2026-match-updates-11PR/match-scorecard"
 
 
 async def get_page_html(url: str):
@@ -85,7 +85,9 @@ def parse_scorecard(html: str):
 
     return data
 
+
 import re
+
 
 def safe_int(v, default=0):
     try:
@@ -112,19 +114,12 @@ def format_scorecard(scorecard):
         "yet_to_bat": []
     }
 
-    innings = scorecard.get("innings", [])
-
-    # ==========================
+    # =========================
     # SCORE
-    # ==========================
-    if scorecard["teams"]:
+    # =========================
+    for item in scorecard.get("teams", []):
 
-        score_text = scorecard["teams"][0]
-
-        m = re.search(
-            r"(\d+)-(\d+)\s+([\d.]+)",
-            score_text
-        )
+        m = re.search(r"(\d+)-(\d+)\s*\(?([\d.]+)\)?", item)
 
         if m:
             result["score"] = {
@@ -132,104 +127,166 @@ def format_scorecard(scorecard):
                 "wickets": safe_int(m.group(2)),
                 "overs": safe_float(m.group(3))
             }
+            break
 
-    # ==========================
-    # BATTING
-    # ==========================
-    if len(innings) >= 1:
+    # =========================
+    # TABLE DETECTION
+    # =========================
+    for table in scorecard.get("innings", []):
 
-        for row in innings[0]["rows"]:
+        headers = [h.lower() for h in table.get("headers", [])]
+        rows = table.get("rows", [])
 
-            if len(row) < 6:
-                continue
+        # =====================
+        # BATTERS
+        # =====================
+        if (
+            "batter" in headers
+            or ("r" in headers and "b" in headers and "sr" in headers)
+        ):
 
-            result["batters"].append({
-                "name": row[0],
-                "runs": safe_int(row[1]),
-                "balls": safe_int(row[2]),
-                "fours": safe_int(row[3]),
-                "sixes": safe_int(row[4]),
-                "strike_rate": safe_float(row[5])
-            })
+            for row in rows:
 
-    # ==========================
-    # BOWLING
-    # ==========================
-    if len(innings) >= 2:
+                if len(row) < 6:
+                    continue
 
-        for row in innings[1]["rows"]:
+                result["batters"].append({
+                    "name": row[0],
+                    "runs": safe_int(row[1]),
+                    "balls": safe_int(row[2]),
+                    "fours": safe_int(row[3]),
+                    "sixes": safe_int(row[4]),
+                    "strike_rate": safe_float(row[5])
+                })
 
-            if len(row) < 6:
-                continue
+        # =====================
+        # BOWLERS
+        # =====================
+        elif (
+            "bowler" in headers
+            or ("o" in headers and "w" in headers)
+        ):
 
-            result["bowlers"].append({
-                "name": row[0],
-                "overs": safe_float(row[1]),
-                "maidens": safe_int(row[2]),
-                "runs": safe_int(row[3]),
-                "wickets": safe_int(row[4]),
-                "economy": safe_float(row[5])
-            })
+            for row in rows:
 
-    # ==========================
-    # FALL OF WICKETS
-    # ==========================
-    if len(innings) >= 3:
+                if len(row) < 6:
+                    continue
 
-        for row in innings[2]["rows"]:
+                result["bowlers"].append({
+                    "name": row[0],
+                    "overs": safe_float(row[1]),
+                    "maidens": safe_int(row[2]),
+                    "runs": safe_int(row[3]),
+                    "wickets": safe_int(row[4]),
+                    "economy": safe_float(row[5])
+                })
 
-            if len(row) < 3:
-                continue
+        # =====================
+        # FALL OF WICKETS
+        # =====================
+        elif (
+            "score" in headers
+            and "overs" in headers
+        ):
 
-            result["fall_of_wickets"].append({
-                "player": row[0],
-                "score": row[1],
-                "over": safe_float(row[2])
-            })
+            for row in rows:
 
-    # ==========================
+                if len(row) < 3:
+                    continue
+
+                result["fall_of_wickets"].append({
+                    "player": row[0],
+                    "score": row[1],
+                    "over": safe_float(row[2])
+                })
+
+    # =========================
     # EXTRAS
-    # ==========================
-    for item in scorecard["teams"]:
+    # =========================
+    for item in scorecard.get("teams", []):
 
         extras_match = re.search(
             r"Extras:\s*(\d+)",
-            item
+            item,
+            re.IGNORECASE
         )
 
         if extras_match:
+
             result["extras"]["total"] = safe_int(
                 extras_match.group(1)
             )
 
-    # ==========================
+            breakdown = re.search(
+                r"b\s*(\d+).*?lb\s*(\d+).*?w\s*(\d+).*?nb\s*(\d+).*?p\s*(\d+)",
+                item,
+                re.IGNORECASE
+            )
+
+            if breakdown:
+
+                result["extras"].update({
+                    "byes": safe_int(breakdown.group(1)),
+                    "leg_byes": safe_int(breakdown.group(2)),
+                    "wides": safe_int(breakdown.group(3)),
+                    "no_balls": safe_int(breakdown.group(4)),
+                    "penalty": safe_int(breakdown.group(5))
+                })
+
+    # =========================
     # YET TO BAT
-    # ==========================
-    for item in scorecard["teams"]:
+    # =========================
+    for item in scorecard.get("teams", []):
 
-        if "Yet to bat" in item:
+        if "yet to bat" in item.lower():
 
-            text = item.replace(
-                "Yet to bat",
-                ""
+            text = re.sub(
+                r"Yet to bat",
+                "",
+                item,
+                flags=re.IGNORECASE
+            )
+
+            players = re.findall(
+                r"([A-Za-z.\s]+?)\s+Avg:",
+                text
             )
 
             result["yet_to_bat"] = [
                 p.strip()
-                for p in text.split(",")
+                for p in players
                 if p.strip()
             ]
 
+            break
+
     return result
+
+
+
 async def load_data(url):
 
-    html = await get_page_html(url)
+    html = await get_page_html(url+'/match-scorecard')
 
     scorecard = parse_scorecard(html)
-
+    print(url)
+    print(
+        json.dumps(
+            scorecard,
+            indent=2,
+            ensure_ascii=False
+        ))
     return format_scorecard(scorecard)
-    
-
+    """print(
+        json.dumps(
+            scorecard,
+            indent=2,
+            ensure_ascii=False
+        )
+        
+    )"""
 """
+    print(format_scorecard(scorecard))
+
 if __name__ == "__main__":
     asyncio.run(main())"""
