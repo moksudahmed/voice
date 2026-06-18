@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏏 WELCOME · CRICKET LIVE</title>
+  <style>
+    /* ----- RESET & BASE ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0b1a2b;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    /* ===== BACKGROUND VIDEO (shared) ===== */
+    .stadium-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+      filter: brightness(0.55) saturate(1.1);
+    }
+
+    /* ===== OVERLAY GRADIENT (depth) ===== */
+    .overlay-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      background: radial-gradient(circle at 30% 40%, rgba(0, 40, 80, 0.3) 0%, rgba(0, 10, 25, 0.7) 90%);
+      pointer-events: none;
+    }
+
+    /* ===== WELCOME CARD – glass / transparent ===== */
+    .welcome-card {
+      position: relative;
+      z-index: 20;
+      max-width: 820px;
+      width: 100%;
+      background: rgba(8, 24, 42, 0.35);
+      backdrop-filter: blur(16px) saturate(1.3);
+      -webkit-backdrop-filter: blur(16px) saturate(1.3);
+      border-radius: 80px;
+      padding: 50px 44px 56px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      text-align: center;
+      transition: all 0.3s ease;
+      animation: floatIn 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes floatIn {
+      0% { opacity: 0; transform: translateY(40px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ----- LOGO / CRICKET EMOJI ----- */
+    .cricket-icon {
+      font-size: 76px;
+      line-height: 1;
+      display: block;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 30px rgba(0, 180, 255, 0.25));
+      animation: pulseIcon 2.8s ease-in-out infinite;
+    }
+
+    @keyframes pulseIcon {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    .welcome-title {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 20%, #9ad0ff 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      text-shadow: 0 0 40px rgba(0, 150, 255, 0.15);
+    }
+
+    .welcome-sub {
+      font-size: 20px;
+      font-weight: 400;
+      color: #b8d6f0;
+      letter-spacing: 1.2px;
+      margin-bottom: 32px;
+      opacity: 0.8;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 16px;
+      display: inline-block;
+    }
+
+    /* ----- MATCH INFO (dynamic) ----- */
+    .match-teaser {
+      display: flex;
+      justify-content: center;
+      gap: 30px 50px;
+      flex-wrap: wrap;
+      margin: 16px 0 32px;
+      padding: 16px 20px;
+      background: rgba(0, 20, 40, 0.25);
+      border-radius: 60px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .match-teaser-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #cce2fa;
+      font-size: 18px;
+      font-weight: 450;
+    }
+
+    .match-teaser-item .label {
+      opacity: 0.5;
+      font-weight: 300;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .match-teaser-item .value {
+      font-weight: 600;
+      color: #e0f0ff;
+      background: rgba(0, 120, 200, 0.15);
+      padding: 2px 16px;
+      border-radius: 40px;
+      font-size: 19px;
+    }
+
+    /* ----- PRESS ANY KEY ----- */
+    .start-prompt {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .key-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(0, 180, 255, 0.08);
+      padding: 12px 32px;
+      border-radius: 60px;
+      border: 1px solid rgba(0, 180, 255, 0.15);
+      backdrop-filter: blur(4px);
+      transition: 0.2s;
+      cursor: pointer;
+    }
+
+    .key-hint:hover {
+      background: rgba(0, 180, 255, 0.15);
+      border-color: rgba(0, 200, 255, 0.3);
+      box-shadow: 0 0 30px rgba(0, 150, 255, 0.08);
+    }
+
+    .key-hint span {
+      font-size: 28px;
+      font-weight: 300;
+      color: #9ac8f0;
+      letter-spacing: 2px;
+    }
+
+    .key-hint .press-any {
+      font-size: 20px;
+      font-weight: 500;
+      color: #b8dcff;
+      letter-spacing: 0.5px;
+    }
+
+    .key-hint .icon-key {
+      font-size: 30px;
+      opacity: 0.7;
+    }
+
+    /* blink cursor effect */
+    .blink-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      background: #00ff88;
+      border-radius: 50%;
+      margin-left: 6px;
+      animation: pulse-dot 1.8s infinite;
+      box-shadow: 0 0 20px #00ff8866;
+    }
+
+    @keyframes pulse-dot {
+      0% { opacity: 1; transform: scale(0.9); }
+      50% { opacity: 0.2; transform: scale(1.3); }
+      100% { opacity: 1; transform: scale(0.9); }
+    }
+
+    /* ----- FOOTER (small) ----- */
+    .footer-note {
+      margin-top: 28px;
+      font-size: 14px;
+      color: rgba(180, 210, 240, 0.3);
+      letter-spacing: 1px;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      padding-top: 20px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 650px) {
+      .welcome-card { padding: 36px 24px 40px; border-radius: 48px; }
+      .welcome-title { font-size: 38px; }
+      .cricket-icon { font-size: 56px; }
+      .match-teaser { gap: 14px; flex-direction: column; align-items: center; padding: 14px; }
+      .key-hint { padding: 10px 22px; flex-wrap: wrap; justify-content: center; }
+      .key-hint span { font-size: 22px; }
+    }
+
+    @media (max-width: 420px) {
+      .welcome-title { font-size: 30px; }
+      .welcome-sub { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== BACKGROUND VIDEO (shared) ===== -->
+  <video class="stadium-bg" autoplay muted loop playsinline>
+    <source src="/static/stadium.mp4" type="video/mp4">
+    <!-- fallback: if video missing, gradient shows -->
+  </video>
+
+  <!-- ===== OVERLAY for depth ===== -->
+  <div class="overlay-gradient"></div>
+
+  <!-- ===== WELCOME CARD ===== -->
+  <div class="welcome-card" id="welcomeScreen">
+
+    <!-- icon -->
+    <span class="cricket-icon">🏏</span>
+
+    <!-- title -->
+    <h1 class="welcome-title">CRICKET SCOREBOARD</h1>
+    <div class="welcome-sub">✦ LIVE · PRO EDITION ✦</div>
+
+    <!-- match teaser – dynamic data (example) -->
+    <div class="match-teaser">
+      <div class="match-teaser-item">
+        <span class="label">Match</span>
+        <span class="value">T20 #42</span>
+      </div>
+      <div class="match-teaser-item">
+        <span class="label">Teams</span>
+        <span class="value">🇮🇳 v 🇦🇺</span>
+      </div>
+      <div class="match-teaser-item">
+        <span class="label">Status</span>
+        <span class="value" style="display:flex; align-items:center; gap:6px;">
+          <span class="blink-dot" style="width:10px; height:10px;"></span> Ready
+        </span>
+      </div>
+    </div>
+
+    <!-- PRESS ANY KEY -->
+    <div class="start-prompt">
+      <div class="key-hint" id="startTrigger">
+        <span class="icon-key">⌨️</span>
+        <span class="press-any">Match starting very soon</span>
+        <span class="blink-dot"></span>
+      </div>
+      <div style="font-size:14px; color:rgba(160,200,230,0.4); margin-top:4px; letter-spacing:0.3px;">
+        or click anywhere
+      </div>
+    </div>
+
+    <div class="footer-note">
+      ⚡ broadcast ready · auto‑refresh 30s
+    </div>
+  </div>
+
+  <!-- ===== SCRIPT – handle start ===== -->
+  <script>
+    (function() {
+      const welcome = document.getElementById('welcomeScreen');
+
+      // function to transition to scoreboard (replace with your actual logic)
+      function startGame() {
+        // fade out welcome
+        welcome.style.transition = 'opacity 0.5s ease, transform 0.4s ease';
+        welcome.style.opacity = '0';
+        welcome.style.transform = 'scale(0.96)';
+
+        // after fade, redirect or show scoreboard
+        setTimeout(() => {
+          // Option A: redirect to /scoreboard (or your main page)
+          // window.location.href = '/scoreboard';
+
+          // Option B: for demo, we reload with a param (simulate start)
+          // For demonstration, we just show an alert and reload
+          // In production, you would navigate to your scoreboard view.
+          // For now, we'll reload to show the scoreboard (remove this in real use)
+          // window.location.reload(); 
+
+          // Better: if you have a scoreboard container, show it.
+          // Since this is a standalone welcome, we'll replace content.
+          // For the purpose of this demo, we redirect to the scoreboard page.
+          // (Uncomment the line below to actually go to scoreboard)
+          // window.location.href = '/scoreboard';
+
+          // For demo inside this single file, we'll just show a message
+          // but we assume you'll link to your actual scoreboard route.
+          // We'll use a simple replace: show scoreboard placeholder.
+          // In real use, you would use window.location.href = "/scoreboard";
+          // or your framework's routing.
+
+          // Since the user asked for a "welcome screen which will load first before start",
+          // we assume they want to navigate to the scoreboard.
+          // For a working demo, we'll redirect to the same page with a 'started' param.
+          // This is a practical approach.
+          window.location.href = window.location.pathname + '?started=true';
+        }, 500);
+      }
+
+      // ----- event listeners -----
+      const trigger = document.getElementById('startTrigger');
+
+      // keydown on document
+      document.addEventListener('keydown', function(e) {
+        // ignore if typing in input (none)
+        startGame();
+      });
+
+      // click on the card or trigger
+      trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        startGame();
+      });
+
+      // also click anywhere on the card (but not on interactive children)
+      welcome.addEventListener('click', function(e) {
+        // if click is directly on card or background, trigger
+        if (e.target === welcome || e.target.closest('.start-prompt')) {
+          startGame();
+        }
+      });
+
+      // if the URL already has ?started=true, we skip welcome and show scoreboard.
+      // This simulates the transition. In real app, you'd have separate routes.
+      // For this demo, we'll check and if ?started=true we hide welcome and show scoreboard.
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('started') === 'true') {
+        // hide welcome immediately and show scoreboard (we'll just reload to clean)
+        // Actually we just hide and show a simple message.
+        welcome.style.display = 'none';
+        // show a quick scoreboard placeholder (or redirect)
+        document.body.innerHTML = `
+          <video class="stadium-bg" autoplay muted loop playsinline>
+            <source src="/static/stadium.mp4" type="video/mp4">
+          </video>
+          <div class="overlay-gradient"></div>
+          <div style="position:relative; z-index:20; color:#fff; text-align:center; padding:40px; background:rgba(0,20,40,0.5); backdrop-filter:blur(12px); border-radius:60px; max-width:900px; margin:auto;">
+            <h1 style="font-size:48px; font-weight:600; color:#9ad0ff;">🏏 LIVE SCOREBOARD</h1>
+            <p style="font-size:22px; margin-top:20px; color:#b8d6f0;">Match in progress ...</p>
+            <p style="margin-top:30px; font-size:18px; opacity:0.6;">(This is a placeholder — integrate your actual scoreboard view)</p>
+            <p style="margin-top:20px;"><a href="?" style="color:#7fcaff; text-decoration:underline;">← Back to welcome</a></p>
+          </div>
+        `;
+        // also re-add video and overlay styles (already there)
+        // fix z-index
+      }
+    })();
+  </script>
+
+</body>
+</html>

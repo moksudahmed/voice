@@ -70,6 +70,8 @@ STATE = {
     },
     "data": {}
 }
+SCORE_DATA = {}
+score_lock = asyncio.Lock()
 
 match_state = {
     "team_a": "",
@@ -791,7 +793,7 @@ async def scraper():
     "MATCH_STOPPED_RAIN",
     "COMPLETED",
     "COMPLETED_WITH_RESULT",
-    "OVER_COMPLETE"
+    "OVER_COMPLETE"    
     }
     match_event_list = set(COMMENTARY.keys())
     #print(match_event_list)
@@ -860,9 +862,11 @@ async def scraper():
             # ----------------------------------
             # Over completed
             # ----------------------------------
-            if event_key == "OVER_COMPLETE":
+            if event_key == "OVER_COMPLETE": 
+                SCORE_DATA = await load_data(STATE["url"])                
                 print("📺 OVER COMPLETE → CROWD")
-                switch_scene("CROWD")
+                await asyncio.sleep(30)  # show crowd for 15 seconds
+                switch_scene("SCOREBOARD")
                 await asyncio.sleep(30)  # show crowd for 15 seconds
                 switch_scene("LIVE")
                 last_scene = "LIVE"
@@ -1549,6 +1553,11 @@ def home():
 def overlay():
     return FileResponse("templates/overlay.html")
 
+
+@app.get("/welcome")
+def overlay():
+    return FileResponse("templates/welcome.html")
+
 @app.post("/set-url")
 async def set_url(payload: dict):
 
@@ -1557,6 +1566,9 @@ async def set_url(payload: dict):
     # =========================
     # LOAD FLAGS ONLY ONCE
     # =========================
+    obs_ready = init_obs()
+    if obs_ready:
+        switch_scene("WELCOME")
     await ensure_flags_loaded()
     if STATE["url"]:        
         await get_playing_xi(STATE["url"])
@@ -1863,22 +1875,21 @@ async def get_team_state():
         "team_b_status": STATE.get("team_b_status", "Fielding")
     })
 
-
 @app.get("/api/scoreboard", response_class=HTMLResponse)
 async def scoreboard(request: Request):
 
-    score_data = await load_data(STATE["url"])
+    
     print("Hello Check")
-    print(score_data)
+    print(SCORE_DATA)
     return templates.TemplateResponse(
         "scoreboard.html",
         {
             "request": request,
-            "score": score_data.get("score", {}),
-            "batters": score_data.get("batters", []),
-            "bowlers": score_data.get("bowlers", []),
-            "fall_of_wickets": score_data.get("fall_of_wickets", []),
-            "extras": score_data.get("extras", {}),
-            "yet_to_bat": score_data.get("yet_to_bat", [])
+            "score": SCORE_DATA.get("score", {}),
+            "batters": SCORE_DATA.get("batters", []),
+            "bowlers": SCORE_DATA.get("bowlers", []),
+            "fall_of_wickets": SCORE_DATA.get("fall_of_wickets", []),
+            "extras": SCORE_DATA.get("extras", {}),
+            "yet_to_bat": SCORE_DATA.get("yet_to_bat", [])
         }
     )
