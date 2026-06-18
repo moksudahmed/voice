@@ -1878,6 +1878,7 @@ async def get_team_state():
 @app.get("/api/scoreboard", response_class=HTMLResponse)
 async def scoreboard(request: Request):
 
+    SCORE_DATA = await load_data(STATE["url"])
     
     print("Hello Check")
     print(SCORE_DATA)

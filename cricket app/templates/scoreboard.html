@@ -417,6 +417,17 @@
                 </tr>
                 {% endfor %}
 
+                {% for player in yet_to_bat %}
+                <tr>
+                  <td class="batter-name">{{ player }}</td>
+                  <td><strong></strong></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                {% endfor %}
+
                 <!-- EXTRAS row – elegantly integrated -->
                 <tr class="extras-row" style="border-top:2px solid rgba(0, 200, 255, 0.25); background:rgba(0, 180, 255, 0.06);">
                   <td style="font-weight:600; color:#7fcaff; letter-spacing:0.3px;">
