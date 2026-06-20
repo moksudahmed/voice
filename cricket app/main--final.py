@@ -53,7 +53,7 @@ app.add_middleware(
 # =========================================================
 
 STATE = {
-    "url": None,
+    "url": "",
     "current_playing_xi": None,
     "connected": False,
     "flags": {
@@ -68,12 +68,20 @@ STATE = {
         "team_b_bangla_name":"",
 
     },
-    "data": {},    
-    "match_live": False,
+    "data": {}
 }
 SCORE_DATA = {}
+score_lock = asyncio.Lock()
 
+match_state = {
+    "team_a": "",
+    "team_b": "",
 
+    "batting_team": "",
+    "bowling_team": "",
+
+    "innings": 1
+}
 clients = set()
 # =========================
 # GLOBALS
@@ -81,8 +89,6 @@ clients = set()
 FLAGS_LOADED = False
 FLAGS_URL = None
 STOP_ENGINE = False
-PLAYWRIGHT = None
-BROWSER = None
 # =========================
 # OBS SETUP
 # =========================
@@ -580,107 +586,327 @@ def determine_start_game(event):
         speak_bangla(commentary_text)  
 
 
+       
+async def scraper222():
 
-# =========================
-# SAFE SPEAK
-# =========================
+    playwright = await async_playwright().start()
+    browser = await playwright.chromium.launch(headless=True)
+    page = await browser.new_page()    
+    last_state = None
+    last_event = ""    
+    current_status = "Live"
+    teamA = STATE["flags"].get("team_a_bangla_name") or STATE["flags"].get("team_a_full_name") or STATE["flags"].get("team_a_name") or "TEAM A"
+    teamB = STATE["flags"].get("team_b_bangla_name") or STATE["flags"].get("team_b_full_name") or STATE["flags"].get("team_b_name") or "TEAM B"                            
+    match_event_list = list(EVENT_OUTPUT_MAP.keys())
+    print("Start Scraping")
+    #if init_obs():
+    #    switch_scene("LIVE")
 
-async def safe_speak(text):
-    try:
-        await asyncio.to_thread(speak, text)
-    except Exception as e:
-        print("Speech error:", e)
+    while True:
 
-
-# =========================
-# BROADCAST
-# =========================
-
-async def broadcast(data):
-    dead = []
-
-    for ws in list(clients):
         try:
-            await ws.send_json(data)
-        except:
-            dead.append(ws)
 
-    for d in dead:
-        clients.remove(d)
+            if not STATE["url"]:
+                await asyncio.sleep(0.15)
+                continue
 
-# =========================
-# OBS CONTROL (FIXED)
-# =========================
+            # =====================================================
+            # FIRST LOAD ONLY
+            # =====================================================
+            if not STATE["connected"]:
 
-async def update_obs_scene(event_key):
+                await page.goto(
+                    STATE["url"],
+                    wait_until="domcontentloaded"
+                )
 
-    try:
-        print("OBS EVENT:", event_key)
+                await page.wait_for_timeout(2000)
 
-        if event_key == "OVER_COMPLETE":
-            print("📺 OVER COMPLETE")
-            await asyncio.sleep(30)
-            switch_scene("SCOREBOARD")
-            await asyncio.sleep(30)
-            switch_scene("LIVE")
-            return
+                # 🔥 fast mutation flag
+                await page.evaluate("""
+                    window.__dirty = true;
 
-        if event_key in {
-            "INNINGS_BREAK",
-            "LUNCH_BREAK",
-            "TEA_BREAK",
-            "RAIN_BREAK"
-        }:
-            switch_scene("DRONE")
-            await asyncio.sleep(20)
-            switch_scene("LIVE")
-            return
+                    const obs = new MutationObserver(() => {
+                        window.__dirty = true;
+                    });
 
-    except Exception as e:
-        print("❌ OBS ERROR:", e)
-# =========================
-# SCRAPER LOOP (MAIN WORKER)
-# =========================
+                    obs.observe(document.body, {
+                        childList: true,
+                        subtree: true,
+                        characterData: true
+                    });
+                """)
+
+                STATE["connected"] = True
+
+            # =====================================================
+            # SKIP IF NO CHANGE
+            # =====================================================
+            if not await page.evaluate("window.__dirty"):
+                await asyncio.sleep(0.12)
+                continue
+
+            await page.evaluate("window.__dirty = false")
+
+            # =====================================================
+            # 🔥 FULL HYBRID DOM + TEXT ENGINE
+            # =====================================================
+            # =====================================================
+            # 🔥 FULL HYBRID DOM + TEXT ENGINE (REWRITTEN)
+            # =====================================================
+
+            parsed = await scrap_page(page)
+            # =====================================================
+            # SEND ONLY IF CHANGED (FAST HASH STYLE OPTIONAL)
+            # =====================================================
+          
+            # Extract match data for live matches
+            event_key = None
+            commentary_text =None
+            result=""
+            if "Live" in current_status:
+                # parse result
+                result = parsed["result_boxes"][0]
+                event_key = detect_cricket_event(result) #process_event(result)
+                print("Event:", event_key)                         
+                if event_key in match_event_list:
+                        if event_key in ["TOSS_WON_BAT_FIRST", "TOSS_COMPLETED", "TOSS_WON_BOWL_FIRST"]:                            
+                            commentary_text = generate_welcome_message(teamA, teamB)
+                            print(commentary_text)
+                            #speak_bangla(commentary_text)
+                            speak(commentary_text, "bn")
+                            event_key=None 
+                        else:
+                            commentary_text = random.choice(EXTRA_COMMENTARY[event_key])
+                            print("Match Event",commentary_text)
+                            speak(commentary_text, "bn")
+                            #speak_bangla(commentary_text)
+                            event_key=None 
+
+                if event_key:                 
+                    if parsed != last_state:
+                        last_state = parsed
+                        STATE["data"] = parsed
+                       
+                        batsman = parse_batsmen(parsed)
+                        
+                        bowler = parse_bowler(parsed["live_players"]['bowler'])                          
+                        
+                        full_over = int(parsed["overs"].split(".")[0])
+                        #STATE["data"]["result_boxes"] = "4"
+                        if event_key != last_event:                                                       
+                            
+                            commentary = generate_continuous_commentary(event_key, batsman, bowler, parsed["score"], 
+                                                                            full_over, teamA, 
+                                                                            teamB, event_key)
+                            
+                            
+                            if commentary:
+                                
+                                STATE["data"]["commentary"] = commentary
+                                
+                                speak_bangla(commentary) 
+                                print(commentary)
+                            
+                                
+                            if event_key == "INNINGS_BREAK":
+                                swap_teams(STATE["flags"])
+                            
+                            last_event = event_key
+                            event_key=None 
+                        dead = []
+                        
+                        
+                        for ws in list(clients):
+                            try:
+                            # await ws.send_json(parsed)
+                                await ws.send_json({
+                                    **STATE["data"],
+                                    "flags": STATE["flags"]
+                                })
+                            except:
+                                dead.append(ws)
+
+                        for d in dead:
+                            clients.remove(d)
+                
+                    #print("📡 UPDATE:", parsed["score"], parsed["overs"])
+                
+            # 9. Unknown status
+            #if "Unknown" in current_status:
+            #    print("⚠️ Could not determine match status. Exiting.")
+                
+            await asyncio.sleep(0.12)
+        
+        except KeyboardInterrupt:
+                print("\n👋 Manual stop requested. Exiting gracefully...")                
+        except Exception as e:
+            print("❌ SCRAPER ERROR:", e)
+            STATE["connected"] = False
+            await asyncio.sleep(2)
+
 
 async def scraper():
 
-    page = await BROWSER.new_page()
+    playwright = await async_playwright().start()
+    browser = await playwright.chromium.launch(headless=True)
+    page = await browser.new_page()
 
     last_hash = None
+    last_event = None
+
+    current_status = "Live"
+    last_scene = "LIVE"
+    teamA = (
+        STATE["flags"].get("team_a_bangla_name")
+        or STATE["flags"].get("team_a_full_name")
+        or STATE["flags"].get("team_a_name")
+        or "TEAM A"
+    )
+
+    teamB = (
+        STATE["flags"].get("team_b_bangla_name")
+        or STATE["flags"].get("team_b_full_name")
+        or STATE["flags"].get("team_b_name")
+        or "TEAM B"
+    )
+    REPEATABLE_EVENTS = {
+        "INNINGS_BREAK",
+        "DRINKS_BREAK",
+        "LUNCH_BREAK",
+        "TEA_BREAK",
+        "RAIN_BREAK",
+        "RAIN_DELAY",
+        "MATCH_STOPPED",
+        "MATCH_STOPPED_RAIN",
+        "COMPLETED",
+        "COMPLETED_WITH_RESULT",
+        }
+    
+    OBS_SCENE_EVENTS = {
+    "INNINGS_BREAK",
+    "LUNCH_BREAK",
+    "TEA_BREAK",
+    "RAIN_BREAK",
+    "RAIN_DELAY",
+    "MATCH_STOPPED",
+    "MATCH_STOPPED_RAIN",
+    "COMPLETED",
+    "COMPLETED_WITH_RESULT",
+    "OVER_COMPLETE"    
+    }
+    match_event_list = set(COMMENTARY.keys())
+    #print(match_event_list)
+    last_obs_event = None
+    print("🚀 Scraper started")
     last_event_signature = None
+    async def safe_speak2(text, lang="bn"):
+        try:
+            asyncio.create_task(asyncio.to_thread(speak, text, lang))
+        except Exception as e:
+            print("Speech error:", e)
 
-    print("🚀 SCRAPER STARTED")
+    async def safe_speak(text, lang="bn"):
+        try:
+            await asyncio.to_thread(speak, text, lang)
+        except Exception as e:
+            print("Speech error:", e)
 
+    async def broadcast(data):
+        dead = []
+        for ws in list(clients):
+            try:
+                await ws.send_json({
+                    **STATE["data"],
+                    "flags": STATE["flags"]
+                })
+            except:
+                dead.append(ws)
+
+        for d in dead:
+            clients.remove(d)
+
+    def make_hash(data):
+        try:
+            return hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()
+        except:
+            return None
+
+    # =========================
+    # OBS INIT
+    # =========================
     obs_ready = init_obs()
     if obs_ready:
         switch_scene("LIVE")
+    
+    def normalize_event(event_key):
+        if not event_key:
+            return None
+        return str(event_key).strip().upper()
+   
+        
+    async def update_obs_scene(event_key):
+        """
+        OBS Scene Control
+        """
+
+        nonlocal last_scene
+
+        if not obs_ready or not event_key:
+            return
+
+        #event_key = str(event_key).strip().upper()
+
+        try:
+            print("check",event_key)
+            # ----------------------------------
+            # Over completed
+            # ----------------------------------
+            if event_key == "OVER_COMPLETE": 
+                SCORE_DATA = await load_data(STATE["url"])                
+                print("📺 OVER COMPLETE → CROWD")
+                await asyncio.sleep(30)  # show crowd for 15 seconds
+                switch_scene("SCOREBOARD")
+                await asyncio.sleep(30)  # show crowd for 15 seconds
+                switch_scene("LIVE")
+                last_scene = "LIVE"
+                return
+            if event_key == "INNINGS_BREAK" | "LUNCH_BREAK" |"TEA_BREAK" | "RAIN_BREAK":
+                print("📺 OVER COMPLETE → DRONE")
+                switch_scene("DRONE")
+                await asyncio.sleep(30)  # show crowd for 15 seconds
+                switch_scene("LIVE")
+                last_scene = "LIVE"
+                return
+
+
+            
+
+        except Exception as e:
+            print("❌ OBS Scene Error:", e)
 
     while True:
         try:
 
-            # =========================
-            # WAIT UNTIL MATCH LIVE
-            # =========================
-            if not STATE.get("match_live"):
-                await asyncio.sleep(1)
-                continue
-
-            url = STATE.get("url")
-            if not url:
-                await asyncio.sleep(1)
+            if not STATE["url"]:
+                await asyncio.sleep(0.2)
                 continue
 
             # =========================
-            # CONNECT IF NEEDED
+            # INITIAL CONNECT / RECOVER
             # =========================
             if not STATE.get("connected"):
-                await page.goto(url, wait_until="domcontentloaded")
+
+                await page.goto(STATE["url"], wait_until="domcontentloaded")
+                await page.wait_for_timeout(1500)
 
                 await page.evaluate("""
                     window.__dirty = true;
+
                     const obs = new MutationObserver(() => {
                         window.__dirty = true;
                     });
+
                     obs.observe(document.body, {
                         childList: true,
                         subtree: true
@@ -695,26 +921,27 @@ async def scraper():
             is_dirty = await page.evaluate("window.__dirty")
 
             if not is_dirty:
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.15)
                 continue
 
             await page.evaluate("window.__dirty = false")
 
             # =========================
-            # SCRAPE PAGE
+            # SCRAPE
             # =========================
             parsed = await scrap_page(page)
 
             if not parsed:
+                await asyncio.sleep(0.2)
                 continue
 
             STATE["data"] = parsed
 
-            data_hash = hashlib.md5(
-                json.dumps(parsed, sort_keys=True).encode()
-            ).hexdigest()
+            data_hash = make_hash(parsed)
 
+            # skip duplicate state
             if data_hash == last_hash:
+                await asyncio.sleep(0.1)
                 continue
 
             last_hash = data_hash
@@ -722,58 +949,112 @@ async def scraper():
             # =========================
             # EVENT DETECTION
             # =========================
-            result = parsed.get("result_boxes", [""])[0]
+            result = ""
+            event_key = None
+            commentary_text = None
 
-            event_key = detect_cricket_event(result)
+            try:
+                result = parsed.get("result_boxes", [""])[0]
+                print(result)
+            except:
+                result = ""
 
-            if event_key:
+            if "Live" in current_status:
 
-                event_signature = event_key
+                event_key = detect_cricket_event(result)
+                print("EVENT", event_key)
 
-                if event_signature != last_event_signature:
+                if event_key and event_key in match_event_list:
 
                     score = parsed.get("score", "")
                     overs = parsed.get("overs", "")
 
-                    batsman = parse_batsmen(parsed)
-                    bowler = parse_bowler(
-                        parsed.get("live_players", {}).get("bowler")
-                    )
+                    # 🔥 REAL UNIQUE IDENTIFIER (CRITICAL FIX)
+                    event_signature = event_key
 
-                    full_over = int(str(overs).split(".")[0]) if "." in str(overs) else 0
+                    should_speak = False
 
-                    commentary = generate_continuous_commentary(
-                        event_key,
-                        batsman,
-                        bowler,
-                        score,
-                        full_over,
-                        STATE["flags"].get("team_a_name", "TEAM A"),
-                        STATE["flags"].get("team_b_name", "TEAM B"),
-                        event_key
-                    )
+                    # repeatable events (breaks etc.)
+                    if event_key in REPEATABLE_EVENTS:
+                        if event_signature != last_event_signature:
+                            should_speak = True
 
-                    if commentary:
-                        STATE["data"]["commentary"] = commentary
-                        await safe_speak(commentary)
-                        print("🗣", commentary)
+                    # normal cricket events (SIX, FOUR, WICKET)
+                    else:
+                        if event_signature != last_event_signature:
+                            should_speak = True
 
-                    # OBS CONTROL
-                    if event_key in {
-                        "INNINGS_BREAK",
-                        "LUNCH_BREAK",
-                        "TEA_BREAK",
-                        "RAIN_BREAK",
-                        "OVER_COMPLETE",
-                        "COMPLETED"
-                    }:
-                        await update_obs_scene(event_key)
+                    if should_speak:
+                        
+                        # =========================
+                        # SPECIAL EVENTS
+                        # =========================
+                        if event_key in {
+                            "TOSS_WON_BAT_FIRST",
+                            "TOSS_COMPLETED",
+                            "TOSS_WON_BOWL_FIRST"
+                        }:
+                            commentary_text = generate_welcome_message(teamA, teamB)
+                        else:
+                            commentary_text = random.choice(
+                                COMMENTARY.get(event_key, [""])
+                            )
 
-                    last_event_signature = event_signature
+                        if commentary_text:
+                            await safe_speak(commentary_text)
+
+                        print("🎯 EVENT:", event_key, commentary_text)
+                        
+                        # =========================
+                        # DETAILED COMMENTARY
+                        # =========================
+
+                        batsman = parse_batsmen(parsed)
+                        bowler = parse_bowler(
+                            parsed.get("live_players", {}).get("bowler")
+                        )
+
+                        try:
+                            full_over = int(str(overs).split(".")[0])
+                        except:
+                            full_over = 0
+
+                        commentary = generate_continuous_commentary(
+                            event_key,
+                            batsman,
+                            bowler,
+                            score,
+                            full_over,
+                            teamA,
+                            teamB,
+                            event_key
+                        )
+                        if commentary:
+                            STATE["data"]["commentary"] = commentary
+
+                            await safe_speak(commentary)
+                            print("🗣 COMMENTARY:", commentary)
+                        
+                            # runs ONLY after speech finished
+                            # Scene changes only once
+                            if event_key in OBS_SCENE_EVENTS:
+                                await update_obs_scene(event_key)
+                                last_obs_scene_event = event_key
+                                print("Hello World")                         
+                            
+
+                        if event_key == "INNINGS_BREAK":
+                            swap_teams(STATE["flags"])
+                        
+                       
+
+                        # 🔥 IMPORTANT UPDATE
+                        last_event_signature = event_signature
 
             # =========================
-            # BROADCAST
+            # BROADCAST UPDATE
             # =========================
+            STATE["data"] = parsed
             await broadcast({
                 **STATE["data"],
                 "flags": STATE["flags"]
@@ -783,16 +1064,16 @@ async def scraper():
 
         except Exception as e:
             print("❌ SCRAPER ERROR:", e)
+
             STATE["connected"] = False
 
             try:
                 await page.close()
-                page = await BROWSER.new_page()
+                page = await browser.new_page()
             except:
                 pass
 
             await asyncio.sleep(2)
-
 # =========================================
 # 🧠 AI ENGINE WRAPPER (THREAD SAFE FIX)
 # =========================================
@@ -835,40 +1116,150 @@ def api_response(
         "data": data or {}
     }
 
-# =========================
-# AI ENGINE (NO SCRAPER CALL!)
-# =========================
-
 async def run_ai_engine():
+    """
+    Scrape match page and return status information
+    suitable for frontend consumption.
+    """
+
+    playwright = None
+    browser = None
+
     url = STATE.get("url")
 
     if not url:
-        return
+        return api_response(
+            success=False,
+            status="Invalid URL",
+            message="No match URL found."
+        )
 
     try:
-        page = await BROWSER.new_page()
+        playwright = await async_playwright().start()
+
+        browser = await playwright.chromium.launch(
+            headless=True
+        )
+
+        page = await browser.new_page()
+
+        print(f"🌐 Opening: {url}")
+
         await page.goto(url, timeout=60000)
         await page.wait_for_load_state("networkidle")
+        await page.wait_for_timeout(3000)
+
+        print("🚀 SYSTEM STARTED...")
 
         text = await page.inner_text("body")
         lines = text.splitlines()
 
         status = detect_game_status(lines)
 
-        print("📊 STATUS:", status)
+        print(f"📊 Current Status: {status}")
 
-        # ONLY UPDATE STATE (NO LOOP CALLS)
+        # ==================================================
+        # LIVE / BREAK
+        # ==================================================
+       
+               
         if "LIVE" in status or "BREAK" in status:
-            STATE["match_live"] = True
-        else:
-            STATE["match_live"] = False
 
-        await page.close()
+            print("🎬 MATCH IS LIVE")
+            # Run scraper in background
+            #asyncio.create_task(scraper())
+            await scraper()
+
+        else:
+            
+            if "Today at" in status:
+                time_match = re.search(
+                    r'(\d{1,2}:\d{2}\s*(?:AM|PM))',
+                    status
+                )
+
+                if time_match:
+
+                    match_time_str = time_match.group(1)
+
+                    now = datetime.now()
+
+                    match_time = datetime.strptime(
+                        match_time_str,
+                        "%I:%M %p"
+                    )
+
+                    match_time = now.replace(
+                        hour=match_time.hour,
+                        minute=match_time.minute,
+                        second=0,
+                        microsecond=0
+                    )
+
+                    if now > match_time:
+
+                        await page.reload()
+                        await page.wait_for_timeout(2000)
+
+                        text = await page.inner_text("body")
+                        lines = text.splitlines()
+
+                        updated_status = detect_game_status(lines)
+
+                        return api_response(
+                            status=updated_status,
+                            message=f"Status updated: {updated_status}",
+                            action="REFRESH"
+                        )
+
+                    wait_seconds = (
+                        match_time - now
+                    ).total_seconds()
+
+                    return api_response(
+                        status=status,
+                        message=f"Match starts at {match_time_str}",
+                        action="WAIT",
+                        data={
+                            "wait_seconds": int(wait_seconds)
+                        }
+                    )
+            else:
+                commentary_text = random.choice(EXTRA_COMMENTARY[status])
+                print("Match Event",commentary_text)
+                speak_bangla(commentary_text)
+            if init_obs():
+                switch_scene("CROWD")
+                #
+#        switch_scene("LIVE")
+        #switch_scene("REPLAY")
+        # 
+        # switch_scene("DRONE")"""   
+
+        # ==================================================
+        # UNKNOWN
+        # ==================================================
+
+      
 
     except Exception as e:
-        print("❌ run_ai_engine error:", e)
 
+        print(f"❌ ERROR in run_ai_engine: {e}")
 
+        return api_response(
+            success=False,
+            status="Error",
+            message=str(e),
+            action="ERROR"
+        )
+
+    finally:
+
+        if browser:
+            await browser.close()
+
+        if playwright:
+            await playwright.stop()
 
 async def get_match_status():
     """
@@ -1103,20 +1494,20 @@ async def get_match_status():
         if playwright:
             await playwright.stop()
 
+
+ 
 async def engine_loop():
+    """
+    Safe continuous engine for FastAPI
+    """
+
     global STOP_ENGINE
 
     while not STOP_ENGINE:
-        try:
-            await run_ai_engine()
-        except Exception as e:
-            print("❌ Engine error:", e)
-
+        await run_ai_engine()
         await asyncio.sleep(5)
 
-    print("🛑 Engine stopped safely")
-
-
+    print("🛑 Engine loop stopped safely.")
 
 def stop_engine(reason: str):
     global STOP_ENGINE
@@ -1142,20 +1533,14 @@ app.mount(
 # =========================
 
 
-# =========================
+# =========================================================
 # STARTUP
-# =========================
+# =========================================================
+
 
 @app.on_event("startup")
 async def startup():
-    global PLAYWRIGHT, BROWSER
-
-    PLAYWRIGHT = await async_playwright().start()
-    BROWSER = await PLAYWRIGHT.chromium.launch(headless=True)
-
     asyncio.create_task(engine_loop())
-    asyncio.create_task(scraper())
-    asyncio.create_task(scoreboard_updater())
 # =========================================================
 # ROUTES
 # =========================================================
@@ -1489,58 +1874,23 @@ async def get_team_state():
         "team_a_status": STATE.get("team_a_status", "Batting"),
         "team_b_status": STATE.get("team_b_status", "Fielding")
     })
-# FastAPI Scoreboard API
 
+@app.get("/api/scoreboard", response_class=HTMLResponse)
+async def scoreboard(request: Request):
 
-# ==========================================
-# BACKGROUND CACHE UPDATER
-# ==========================================
-
-async def scoreboard_updater():
-    while True:
-        try:
-            if STATE.get("url"):
-                data = await load_data(STATE["url"])
-
-                if isinstance(data, dict):
-                    STATE["current_scoreboard"] = data
-
-        except Exception as e:
-            print("Scoreboard update error:", e)
-
-        await asyncio.sleep(3)
-
-
-# ==========================================
-# SCOREBOARD PAGE
-# ==========================================
-
-@app.get("/scoreboard", response_class=HTMLResponse)
-async def scoreboard_page(request: Request):
+    SCORE_DATA = await load_data(STATE["url"])
+    
+    print("Hello Check")
+    print(SCORE_DATA)
     return templates.TemplateResponse(
-        request=request,
-        name="scoreboard.html",
-        context={}
+        "scoreboard.html",
+        {
+            "request": request,
+            "score": SCORE_DATA.get("score", {}),
+            "batters": SCORE_DATA.get("batters", []),
+            "bowlers": SCORE_DATA.get("bowlers", []),
+            "fall_of_wickets": SCORE_DATA.get("fall_of_wickets", []),
+            "extras": SCORE_DATA.get("extras", {}),
+            "yet_to_bat": SCORE_DATA.get("yet_to_bat", [])
+        }
     )
-
-# ==========================================
-# SCOREBOARD API
-# ==========================================
-
-@app.get("/api/scoreboard")
-async def get_scoreboard_api():
-
-    if "current_scoreboard" not in STATE:
-        STATE["current_scoreboard"] = {}
-
-    cached = STATE.get("current_scoreboard") or {}
-
-    return {
-        "success": True,
-        "score": cached.get("score", {}),
-        "batters": cached.get("batters", []),
-        "bowlers": cached.get("bowlers", []),
-        "fall_of_wickets": cached.get("fall_of_wickets", []),
-        "extras": cached.get("extras", {}),
-        "yet_to_bat": cached.get("yet_to_bat", [])
-    }

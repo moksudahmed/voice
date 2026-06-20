@@ -5,9 +5,9 @@ from obsws_python import ReqClient
 # =========================
 OBS_HOST = "127.0.0.1"
 OBS_PORT = 4455
-OBS_PASSWORD = "Wl1CueV8045rDXyV"
+OBS_PASSWORD = "pRdJ5tnqyxPz1JNO"
 
-OBS_SCENES = {"WELCOME","LIVE", "REPLAY", "CROWD", "DRONE", "SCOREBOARD"}
+OBS_SCENES = {"WELCOME","LIVE", "REPLAY", "CROWD", "DRONE", "SCOREBOARD", "PLAYERSXI"}
 
 # =========================
 # GLOBAL STATE
