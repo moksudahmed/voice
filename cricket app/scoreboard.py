@@ -276,6 +276,7 @@ async def load_data(url):
             indent=2,
             ensure_ascii=False
         ))
+    print("Finisihed")
     return format_scorecard(scorecard)
     """print(
         json.dumps(
