@@ -146,7 +146,6 @@
     .scorecard-table tr.even { background: rgba(255,255,255,0.02); }
     .scorecard-table tr.odd  { background: rgba(0,0,0,0.08); }
 
-    /* ── BATTING HIGHLIGHT ────────────────────────────────── */
     .scorecard-table tr.batting {
       background: #e8c800 !important;
       background: linear-gradient(90deg, #f0d000 0%, #d4b800 100%) !important;
@@ -216,7 +215,6 @@
       width: 80px;
     }
 
-    /* ── batting row text colors ──────────────────────────── */
     .batting .col-name {
       color: #1a1a1a;
       text-shadow: 0 1px 4px rgba(255, 215, 0, 0.2);
@@ -240,6 +238,26 @@
     }
     .not-out .col-runs {
       color: #8fcba0;
+    }
+
+    /* ── YET TO BAT ROW ───────────────────────────────────── */
+    .yet-to-bat td {
+      color: #6a8aaa;
+      font-style: italic;
+    }
+    .yet-to-bat .col-name {
+      color: #8aacd0;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-style: normal;
+    }
+    .yet-to-bat .col-dismissal {
+      color: #5a7a9a;
+      font-style: italic;
+    }
+    .yet-to-bat .col-runs,
+    .yet-to-bat .col-balls {
+      color: #4a6a8a;
     }
 
     .footer {
@@ -462,11 +480,15 @@
         const batters = data.batters || [];
         const score = data.score || {};
         const extras = data.extras || {};
+        const yetToBat = data.yet_to_bat || [];
 
         let html = '';
-        if (batters.length === 0) {
+
+        // ── If no batters, show message ──
+        if (batters.length === 0 && yetToBat.length === 0) {
           html = `<tr><td colspan="4" style="text-align:center; color:#a0d8b0; padding:24px; font-family:'Barlow Condensed',sans-serif; font-size:20px;">No batting data</td></tr>`;
         } else {
+          // ── Render batters ──
           batters.forEach((b, idx) => {
             const isBatting = (b.status && b.status.toLowerCase() === 'batting') ||
                               (b.dismissal && b.dismissal.toLowerCase() === 'batting') ||
@@ -493,6 +515,21 @@
               </tr>
             `;
           });
+
+          // ── Render "Yet to Bat" players at the end ──
+          if (yetToBat.length > 0) {
+            yetToBat.forEach((player) => {
+              const name = escapeHtml(player);
+              html += `
+                <tr class="yet-to-bat">
+                  <td class="col-name">${name}</td>
+                  <td class="col-dismissal"></td>
+                  <td class="col-runs"></td>
+                  <td class="col-balls"></td>
+                </tr>
+              `;
+            });
+          }
         }
 
         tbody.innerHTML = html;
