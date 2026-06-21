@@ -30,6 +30,49 @@ async def get_page_html(url: str):
 
         return html
 
+import re
+
+def parse_batter(row):
+    """
+    row example:
+    ['Aziz Mohammad Babakrkhail c Silva b Fernando', '21', '26', '2', '0', '80.77']
+    """
+
+    batter_text = row[0]
+
+    # Different dismissal patterns
+    patterns = [
+        r'^(.*?)\s+(c\s+.+?\s+b\s+.+)$',      # c Silva b Fernando
+        r'^(.*?)\s+(lbw\s+b\s+.+)$',          # lbw b Khadka
+        r'^(.*?)\s+(b\s+.+)$',                # b Fernando
+        r'^(.*?)\s+(run out.*)$',             # run out
+        r'^(.*?)\s+(st\s+.+?\s+b\s+.+)$',     # st Keeper b Bowler
+        r'^(.*?)\s+(retired.*)$',             # retired hurt
+        r'^(.*?)\s+(Batting)$',               # Batting
+    ]
+
+    for pattern in patterns:
+        match = re.match(pattern, batter_text, re.IGNORECASE)
+        if match:
+            return {
+                "name": match.group(1).strip(),
+                "dismissal": match.group(2).strip(),
+                "runs": row[1],
+                "balls": row[2],
+                "fours": row[3],
+                "sixes": row[4],
+                "sr": row[5]
+            }
+
+    return {
+        "name": batter_text,
+        "dismissal": "",
+        "runs": row[1],
+        "balls": row[2],
+        "fours": row[3],
+        "sixes": row[4],
+        "sr": row[5]
+    }
 
 def parse_scorecard(html: str):
 
@@ -73,7 +116,7 @@ def parse_scorecard(html: str):
                 td.get_text(" ", strip=True)
                 for td in tr.find_all("td")
             ]
-
+            
             if cols:
                 rows.append(cols)
 
@@ -102,6 +145,8 @@ def safe_float(v, default=0.0):
     except:
         return default
 
+import re
+
 
 def format_scorecard(scorecard):
 
@@ -114,27 +159,51 @@ def format_scorecard(scorecard):
         "yet_to_bat": []
     }
 
+    dismissal_patterns = [
+        r"^(.*?)\s+(c\s+.+?\s+b\s+.+)$",
+        r"^(.*?)\s+(lbw\s+b\s+.+)$",
+        r"^(.*?)\s+(st\s+.+?\s+b\s+.+)$",
+        r"^(.*?)\s+(run out.*)$",
+        r"^(.*?)\s+(c\s*&\s*b\s+.+)$",
+        r"^(.*?)\s+(hit wicket\s+b\s+.+)$",
+        r"^(.*?)\s+(retired.*)$",
+        r"^(.*?)\s+(not out)$",
+        r"^(.*?)\s+(batting)$",
+        r"^(.*?)\s+(b\s+.+)$",
+    ]
+
     # =========================
     # SCORE
     # =========================
     for item in scorecard.get("teams", []):
 
-        m = re.search(r"(\d+)-(\d+)\s*\(?([\d.]+)\)?", item)
+        if not isinstance(item, str):
+            continue
 
-        if m:
+        match = re.search(
+            r"(\d+)-(\d+)\s*\(?([\d.]+)\)?",
+            item
+        )
+
+        if match:
             result["score"] = {
-                "runs": safe_int(m.group(1)),
-                "wickets": safe_int(m.group(2)),
-                "overs": safe_float(m.group(3))
+                "runs": safe_int(match.group(1)),
+                "wickets": safe_int(match.group(2)),
+                "overs": safe_float(match.group(3))
             }
             break
 
     # =========================
-    # TABLE DETECTION
+    # TABLES
     # =========================
     for table in scorecard.get("innings", []):
 
-        headers = [h.lower() for h in table.get("headers", [])]
+        headers = [
+            str(h).strip().lower()
+            for h in table.get("headers", [])
+            if h is not None
+        ]
+
         rows = table.get("rows", [])
 
         # =====================
@@ -147,11 +216,30 @@ def format_scorecard(scorecard):
 
             for row in rows:
 
-                if len(row) < 6:
+                if not isinstance(row, list) or len(row) < 6:
                     continue
 
+                batter_text = str(row[0]).strip()
+
+                name = batter_text
+                dismissal = ""
+
+                for pattern in dismissal_patterns:
+
+                    match = re.match(
+                        pattern,
+                        batter_text,
+                        re.IGNORECASE
+                    )
+
+                    if match:
+                        name = match.group(1).strip()
+                        dismissal = match.group(2).strip()
+                        break
+
                 result["batters"].append({
-                    "name": row[0],
+                    "name": name,
+                    "dismissal": dismissal,
                     "runs": safe_int(row[1]),
                     "balls": safe_int(row[2]),
                     "fours": safe_int(row[3]),
@@ -169,12 +257,12 @@ def format_scorecard(scorecard):
 
             for row in rows:
 
-                if len(row) < 6:
+                if not isinstance(row, list) or len(row) < 6:
                     continue
 
                 result["bowlers"].append({
-                    "name": row[0],
-                    "overs": safe_float(row[1]),
+                    "name": str(row[0]).strip(),
+                    "overs": row[1],
                     "maidens": safe_int(row[2]),
                     "runs": safe_int(row[3]),
                     "wickets": safe_int(row[4]),
@@ -191,12 +279,12 @@ def format_scorecard(scorecard):
 
             for row in rows:
 
-                if len(row) < 3:
+                if not isinstance(row, list) or len(row) < 3:
                     continue
 
                 result["fall_of_wickets"].append({
-                    "player": row[0],
-                    "score": row[1],
+                    "player": str(row[0]).strip(),
+                    "score": str(row[1]).strip(),
                     "over": safe_float(row[2])
                 })
 
@@ -204,6 +292,9 @@ def format_scorecard(scorecard):
     # EXTRAS
     # =========================
     for item in scorecard.get("teams", []):
+
+        if not isinstance(item, str):
+            continue
 
         extras_match = re.search(
             r"Extras:\s*(\d+)",
@@ -224,7 +315,6 @@ def format_scorecard(scorecard):
             )
 
             if breakdown:
-
                 result["extras"].update({
                     "byes": safe_int(breakdown.group(1)),
                     "leg_byes": safe_int(breakdown.group(2)),
@@ -238,17 +328,20 @@ def format_scorecard(scorecard):
     # =========================
     for item in scorecard.get("teams", []):
 
+        if not isinstance(item, str):
+            continue
+
         if "yet to bat" in item.lower():
 
             text = re.sub(
-                r"Yet to bat",
+                r"yet to bat",
                 "",
                 item,
                 flags=re.IGNORECASE
             )
 
             players = re.findall(
-                r"([A-Za-z.\s]+?)\s+Avg:",
+                r"([A-Za-z().'\-\s]+?)\s+Avg:",
                 text
             )
 
@@ -263,20 +356,19 @@ def format_scorecard(scorecard):
     return result
 
 
-
 async def load_data(url):
 
     html = await get_page_html(url+'/match-scorecard')
 
     scorecard = parse_scorecard(html)
     print(url)
-    print(
+    """print(
         json.dumps(
             scorecard,
             indent=2,
             ensure_ascii=False
-        ))
-    print("Finisihed")
+        ))"""
+    print("Finisihed", format_scorecard(scorecard))
     return format_scorecard(scorecard)
     """print(
         json.dumps(
