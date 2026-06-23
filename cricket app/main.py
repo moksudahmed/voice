@@ -856,12 +856,18 @@ async def run_ai_engine():
         status = detect_game_status(lines)
 
         print("📊 STATUS:", status)
-
+        
         # ONLY UPDATE STATE (NO LOOP CALLS)
         if "LIVE" in status or "BREAK" in status:
             STATE["match_live"] = True
-        else:
-            STATE["match_live"] = False
+            obs_ready = init_obs()
+            if obs_ready:
+                switch_scene("LIVE")
+
+        else:            
+            STATE["match_live"] = False            
+            switch_scene("PLAYERSXI")
+            await asyncio.sleep(10)
 
         await page.close()
 
@@ -1105,7 +1111,7 @@ async def get_match_status():
 
 async def engine_loop():
     global STOP_ENGINE
-
+    
     while not STOP_ENGINE:
         try:
             await run_ai_engine()
@@ -1153,7 +1159,7 @@ async def startup():
     PLAYWRIGHT = await async_playwright().start()
     BROWSER = await PLAYWRIGHT.chromium.launch(headless=True)
 
-    asyncio.create_task(engine_loop())
+    asyncio.create_task(engine_loop())   
     asyncio.create_task(scraper())
     asyncio.create_task(scoreboard_updater())
 # =========================================================
@@ -1182,11 +1188,16 @@ async def set_url(payload: dict):
     # LOAD FLAGS ONLY ONCE
     # =========================
     obs_ready = init_obs()
-    if obs_ready:
+    if obs_ready:        
         switch_scene("WELCOME")
+        await asyncio.sleep(10)
+        switch_scene("PLAYERSXI")
+        await asyncio.sleep(10)
     await ensure_flags_loaded()
-    if STATE["url"]:        
-        await get_playing_xi(STATE["url"])
+    if STATE["url"]:                
+        data = await get_playing_xi(STATE["url"])
+        STATE["current_playing_xi"] = data
+        
     return {"ok": True}
 
 
@@ -1257,87 +1268,139 @@ async def ws(websocket: WebSocket):
 # =========================================================
 @app.get("/players", response_class=HTMLResponse)
 async def get_players_page(request: Request):
-    """Serve the playing XI HTML page with team data"""
-    
-    team_a_html = ""
-    team_b_html = ""
-    has_data = False
-    
-    if STATE["url"]:
-        try:
-            data = await get_playing_xi(STATE["url"])
-            STATE["current_playing_xi"] = data
-            
+    """Serve the Playing XI HTML page with cached team data."""
+
+    html_file_path = Path("templates/players.html")
+
+    if not html_file_path.exists():
+        return HTMLResponse(
+            content="<h1>players.html file not found!</h1>",
+            status_code=404
+        )
+
+    with open(html_file_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+
+    default_team_a = (
+        '<div class="team-container">'
+        '<div class="team-header team-a">No Data</div>'
+        '<div class="players-grid">Waiting for data...</div>'
+        '</div>'
+    )
+
+    default_team_b = (
+        '<div class="team-container">'
+        '<div class="team-header team-b">No Data</div>'
+        '<div class="players-grid">Waiting for data...</div>'
+        '</div>'
+    )
+
+    team_a_html = default_team_a
+    team_b_html = default_team_b
+    data_available = "false"
+
+    try:
+        data = STATE.get("current_playing_xi", {})
+
+        if data:
             team_a_html = generate_team_html(
                 data.get("team_a", {}),
                 "team-a"
             )
-            
+
             team_b_html = generate_team_html(
                 data.get("team_b", {}),
                 "team-b"
             )
-            
-            has_data = True
-            
-        except Exception as e:
-            print(f"Error fetching playing XI: {e}")
-            team_a_html = '<div class="team-container"><div class="team-header team-a">Error Loading</div><div class="players-grid">Failed to load team data</div></div>'
-            team_b_html = '<div class="team-container"><div class="team-header team-b">Error Loading</div><div class="players-grid">Failed to load team data</div></div>'
-    
-    # Read the HTML template
-    html_file_path = Path("templates/players.html")
-    
-    if not html_file_path.exists():
-        return HTMLResponse(content="<h1>players.html file not found!</h1>", status_code=404)
-    
-    with open(html_file_path, "r", encoding="utf-8") as f:
-        html_content = f.read()
-    
-    # Replace placeholders with actual data
-    if has_data:
-        html_content = html_content.replace("{{ TEAM_A_HTML }}", team_a_html)
-        html_content = html_content.replace("{{ TEAM_B_HTML }}", team_b_html)
-        html_content = html_content.replace("{{ DATA_AVAILABLE }}", "true")
-    else:
-        html_content = html_content.replace("{{ TEAM_A_HTML }}", '<div class="team-container"><div class="team-header team-a">No Data</div><div class="players-grid">Waiting for data...</div></div>')
-        html_content = html_content.replace("{{ TEAM_B_HTML }}", '<div class="team-container"><div class="team-header team-b">No Data</div><div class="players-grid">Waiting for data...</div></div>')
-        html_content = html_content.replace("{{ DATA_AVAILABLE }}", "false")
-    
+
+            data_available = "true"
+
+    except Exception as e:
+        print(f"Error rendering Playing XI: {e}")
+
+        team_a_html = (
+            '<div class="team-container">'
+            '<div class="team-header team-a">Error Loading</div>'
+            '<div class="players-grid">Failed to load team data</div>'
+            '</div>'
+        )
+
+        team_b_html = (
+            '<div class="team-container">'
+            '<div class="team-header team-b">Error Loading</div>'
+            '<div class="players-grid">Failed to load team data</div>'
+            '</div>'
+        )
+
+    html_content = (
+        html_content
+        .replace("{{ TEAM_A_HTML }}", team_a_html)
+        .replace("{{ TEAM_B_HTML }}", team_b_html)
+        .replace("{{ DATA_AVAILABLE }}", data_available)
+    )
+
     return HTMLResponse(content=html_content)
 
 @app.get("/api/playing-xi")
 async def get_playing_xi_api():
-    """API endpoint to get playing XI data as JSON"""
-    # Initialize STATE["current_playing_xi"] if it doesn't exist
-    if "current_playing_xi" not in STATE:
-        STATE["current_playing_xi"] = None
-    
-    if STATE.get("url"):
-        try:
-            data = await get_playing_xi(STATE["url"])
-            STATE["current_playing_xi"] = data
-            return {
-                "success": True,
-                "team_a": data.get("team_a", {}),
-                "team_b": data.get("team_b", {})
-            }
-        except Exception as e:
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": str(e), "team_a": {}, "team_b": {}}
-            )
-    
-    # Safe check using .get() to avoid KeyError
-    if STATE.get("current_playing_xi"):
+    """
+    Returns Playing XI data.
+
+    Logic:
+    1. Return cached data if available.
+    2. Otherwise fetch from source.
+    3. Save to cache.
+    4. Return response.
+    """
+
+    # Ensure cache key exists
+    STATE.setdefault("current_playing_xi", {})
+
+    cached_data = STATE["current_playing_xi"]
+
+    # Return cached data immediately
+    if cached_data:
+        print("Check cashed data")
         return {
             "success": True,
-            "team_a": STATE["current_playing_xi"].get("team_a", {}),
-            "team_b": STATE["current_playing_xi"].get("team_b", {})
+            "team_a": cached_data.get("team_a", {}),
+            "team_b": cached_data.get("team_b", {}),
+            "cached": True,
         }
-    
-    return {"success": False, "team_a": {}, "team_b": {}}
 
+    url = STATE.get("url")
+    if not url:
+        return {
+            "success": False,
+            "error": "No match URL available",
+            "team_a": {},
+            "team_b": {},
+        }
+
+    try:
+        data = await get_playing_xi(url)
+
+        # Store only if valid data returned
+        if data:
+            STATE["current_playing_xi"] = data
+
+        return {
+            "success": True,
+            "team_a": data.get("team_a", {}),
+            "team_b": data.get("team_b", {}),
+            "cached": False,
+        }
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e),
+                "team_a": {},
+                "team_b": {},
+            },
+        )
 
 # =========================================================
 # JSON API
@@ -1537,6 +1600,7 @@ async def get_scoreboard_api():
 
     return {
         "success": True,
+        "teams": STATE["flags"],
         "score": cached.get("score", {}),
         "batters": cached.get("batters", []),
         "bowlers": cached.get("bowlers", []),

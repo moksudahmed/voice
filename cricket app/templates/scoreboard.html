@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Live Scorecard – ICC Champions Trophy 2025</title>
+  <title>Live Scorecard – Asia Pacific Champions Trophy 2026</title>
   <meta http-equiv="refresh" content="300" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -65,52 +65,126 @@
       margin: 0 auto;
     }
 
+    /* ── HEADER (single team dynamic) ──────────────────────── */
     .header {
       display: flex;
       align-items: center;
-      gap: 24px;
-      padding: 24px 32px 20px;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 32px 14px;
       background: rgba(0, 20, 40, 0.10);
       border-bottom: 1px solid rgba(255, 255, 255, 0.03);
       backdrop-filter: blur(2px);
+      flex-wrap: wrap;
+      min-height: 80px;
     }
 
-    .badge-ring {
-      flex-shrink: 0;
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 3px solid rgba(255, 215, 0, 0.3);
-      box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.08), 0 4px 16px rgba(0,0,0,0.3);
+    .team-display {
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 14px;
+      flex: 0 1 auto;
+      min-width: 140px;
+      transition: opacity 0.4s ease;
+    }
+
+    .team-display.hidden {
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      width: 0;
       overflow: hidden;
+      margin: 0;
+      padding: 0;
+      flex: 0 0 0;
+      gap: 0;
+      min-width: 0;
     }
 
-    .badge-ring svg { width: 70px; height: 70px; }
+    .team-display .team-flag {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      padding: 2px;
+      border: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
 
-    .header-title h1 {
+    .team-display .team-name {
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 48px;
-      font-weight: 900;
+      font-size: 28px;
+      font-weight: 800;
       color: #fff;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      line-height: 1;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      letter-spacing: 1.5px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      white-space: nowrap;
     }
 
-    .header-title p {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 16px;
+    .team-display .team-label {
+      font-size: 12px;
       font-weight: 600;
-      color: #a0d8b0;
-      letter-spacing: 2.5px;
       text-transform: uppercase;
-      margin-top: 4px;
-      text-shadow: 0 1px 8px rgba(0,0,0,0.2);
+      letter-spacing: 1.5px;
+      color: #a0d8b0;
+      background: rgba(0,0,0,0.2);
+      padding: 2px 12px;
+      border-radius: 20px;
+      margin-left: 4px;
+      white-space: nowrap;
+    }
+
+    .team-display .team-full {
+      font-size: 13px;
+      font-weight: 400;
+      color: #8aacd0;
+      letter-spacing: 0.3px;
+      margin-top: -2px;
+    }
+
+    .team-display .team-info-group {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .match-info {
+      text-align: center;
+      flex: 1 1 auto;
+      padding: 0 8px;
+    }
+
+    .match-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffd966;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      line-height: 1.2;
+    }
+
+    .match-sub {
+      font-size: 14px;
+      font-weight: 400;
+      color: #a0d8b0;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .slide-indicator-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.05);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* ── SLIDES WRAPPER ────────────────────────────────────── */
@@ -165,7 +239,7 @@
     }
 
     .labels-batting {
-      grid-template-columns: 1.2fr 1.5fr 80px 80px;
+      grid-template-columns: 1.2fr 1.5fr 100px 100px;
     }
 
     .labels-bowling {
@@ -239,9 +313,11 @@
       font-weight: 900;
       color: #fff;
       text-align: right;
-      width: 80px;
+      width: 100px;
+      min-width: 100px;
       letter-spacing: 0.5px;
       text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+      white-space: nowrap;
     }
 
     .col-balls {
@@ -250,7 +326,9 @@
       font-weight: 600;
       color: #b0d0b8;
       text-align: right;
-      width: 80px;
+      width: 100px;
+      min-width: 100px;
+      white-space: nowrap;
     }
 
     .batting .col-name {
@@ -315,6 +393,7 @@
       font-weight: 600;
       color: #b0d0b8;
       text-align: right;
+      white-space: nowrap;
     }
 
     .col-wickets { color: #ffd966; font-weight: 700; }
@@ -399,20 +478,25 @@
     /* ── RESPONSIVE ─────────────────────────────────────────── */
     @media (max-width: 768px) {
       .card { max-width: 100%; border-radius: 20px; }
-      .header { padding: 18px 20px; gap: 16px; }
-      .badge-ring { width: 60px; height: 60px; }
-      .badge-ring svg { width: 50px; height: 50px; }
-      .header-title h1 { font-size: 32px; letter-spacing: 2px; }
-      .header-title p { font-size: 13px; }
+      .header { padding: 14px 20px; gap: 8px; flex-wrap: wrap; min-height: 70px; }
+      .team-display .team-flag { width: 36px; height: 36px; }
+      .team-display .team-name { font-size: 20px; }
+      .team-display .team-label { font-size: 10px; padding: 1px 10px; }
+      .team-display .team-full { font-size: 11px; }
+      .team-display { min-width: 100px; gap: 10px; }
+      .match-title { font-size: 16px; }
+      .match-sub { font-size: 12px; }
+      .slide-indicator-label { font-size: 9px; padding: 2px 10px; }
       .col-labels { padding: 8px 16px; gap: 6px; }
-      .labels-batting { grid-template-columns: 1fr 1.2fr 60px 60px; }
+      .labels-batting { grid-template-columns: 1fr 1.2fr 70px 70px; }
       .labels-bowling { grid-template-columns: 1.2fr 55px 55px 55px 55px 55px; }
       .col-labels span { font-size: 11px; }
       .scorecard-table td { padding: 10px 16px; }
       .col-name, .col-bowler { font-size: 16px; }
       .col-dismissal { font-size: 13px; }
-      .col-runs { font-size: 22px; }
-      .col-balls, .col-overs, .col-maidens, .col-bowling-runs, .col-wickets, .col-economy { font-size: 16px; }
+      .col-runs { font-size: 22px; width: 70px; min-width: 70px; }
+      .col-balls { font-size: 16px; width: 70px; min-width: 70px; }
+      .col-overs, .col-maidens, .col-bowling-runs, .col-wickets, .col-economy { font-size: 16px; }
       .footer { padding: 12px 16px; gap: 6px; }
       .footer-label { font-size: 13px; }
       .footer-value { font-size: 16px; }
@@ -420,18 +504,22 @@
     }
 
     @media (max-width: 480px) {
-      .header { flex-wrap: wrap; gap: 10px; padding: 14px 16px; }
-      .header-title h1 { font-size: 24px; }
-      .badge-ring { width: 48px; height: 48px; }
-      .badge-ring svg { width: 38px; height: 38px; }
-      .labels-batting { grid-template-columns: 1fr 1fr 45px 45px; }
+      .header { flex-direction: column; align-items: center; padding: 12px 16px; gap: 6px; min-height: 60px; }
+      .team-display { width: 100%; justify-content: center; min-width: 0; }
+      .team-display .team-name { font-size: 18px; }
+      .team-display .team-flag { width: 32px; height: 32px; }
+      .match-title { font-size: 14px; }
+      .match-sub { font-size: 11px; }
+      .slide-indicator-label { display: none; }
+      .labels-batting { grid-template-columns: 1fr 1fr 55px 55px; }
       .labels-bowling { grid-template-columns: 1fr 40px 40px 40px 40px 40px; }
       .col-labels span { font-size: 9px; letter-spacing: 0.5px; }
       .scorecard-table td { padding: 8px 12px; }
       .col-name, .col-bowler { font-size: 13px; }
       .col-dismissal { font-size: 11px; }
-      .col-runs { font-size: 18px; }
-      .col-balls, .col-overs, .col-maidens, .col-bowling-runs, .col-wickets, .col-economy { font-size: 13px; }
+      .col-runs { font-size: 18px; width: 55px; min-width: 55px; }
+      .col-balls { font-size: 13px; width: 55px; min-width: 55px; }
+      .col-overs, .col-maidens, .col-bowling-runs, .col-wickets, .col-economy { font-size: 13px; }
       .footer { padding: 10px 12px; gap: 4px; }
       .footer-label { font-size: 11px; }
       .footer-value { font-size: 13px; }
@@ -453,25 +541,26 @@
 
   <div class="card">
 
-    <!-- HEADER -->
-    <div class="header">
-      <div class="badge-ring">
-        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="30" cy="30" r="30" fill="#007A4D"/>
-          <polygon points="0,15 60,15 60,0 0,0" fill="#DE3831"/>
-          <polygon points="0,45 60,45 60,60 0,60" fill="#002395"/>
-          <polygon points="0,0 0,60 20,30" fill="#FFB612"/>
-          <polygon points="0,0 0,60 22,30" fill="#000" opacity="0.18"/>
-          <ellipse cx="30" cy="30" r="10" fill="#007A4D" opacity="0.6"/>
-          <rect x="28" y="20" width="4" height="14" rx="2" fill="#FFB612"/>
-          <ellipse cx="30" cy="35" rx="5" ry="4" fill="#FFB612"/>
-          <circle cx="30" cy="30" r="28" fill="none" stroke="#FFB612" stroke-width="1.5"/>
-        </svg>
+    <!-- HEADER (single team dynamic) -->
+    <div class="header" id="header">
+      <!-- Team display: only one shown at a time -->
+      <div class="team-display" id="teamDisplay">
+        <img src="" alt="flag" class="team-flag" id="teamFlag" />
+        <div class="team-info-group">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="team-name" id="teamName">—</span>
+            <span class="team-label" id="teamLabel">BATTING</span>
+          </div>
+          <span class="team-full" id="teamFull">—</span>
+        </div>
       </div>
-      <div class="header-title">
-        <h1>South Africa</h1>
-        <p>ICC Champions Trophy 2025</p>
+
+      <div class="match-info">
+        <div class="match-title" id="matchTitle">Loading match...</div>
+        <div class="match-sub" id="matchSub">—</div>
       </div>
+
+      <div class="slide-indicator-label" id="slideLabel">🏏 BATTING</div>
     </div>
 
     <!-- SLIDES WRAPPER -->
@@ -542,10 +631,21 @@
       const oversEl = document.getElementById('oversValue');
       const totalEl = document.getElementById('totalValue');
 
+      const teamFlag = document.getElementById('teamFlag');
+      const teamName = document.getElementById('teamName');
+      const teamFull = document.getElementById('teamFull');
+      const teamLabel = document.getElementById('teamLabel');
+      const slideLabel = document.getElementById('slideLabel');
+      const matchTitle = document.getElementById('matchTitle');
+      const matchSub = document.getElementById('matchSub');
+
       const slides = document.querySelectorAll('.slide');
       const dots = document.querySelectorAll('.dot');
       let currentSlide = 0;
       let slideInterval;
+
+      // Store team data
+      let teamsData = {};
 
       // ── SLIDE NAVIGATION ──────────────────────────────────
       function goToSlide(index) {
@@ -555,6 +655,37 @@
         currentSlide = index;
         slides[currentSlide].classList.add('active');
         dots[currentSlide].classList.add('active');
+
+        // Update header based on active slide
+        updateHeaderForSlide(index);
+      }
+
+      function updateHeaderForSlide(index) {
+        const isBatting = index === 0;
+        const label = isBatting ? '🏏 BATTING' : '🎯 BOWLING';
+        slideLabel.textContent = label;
+
+        if (!teamsData || !teamsData.team_a_name) {
+          teamName.textContent = isBatting ? (teamsData.team_a_name || '—') : (teamsData.team_b_name || '—');
+          teamLabel.textContent = isBatting ? 'BATTING' : 'BOWLING';
+          return;
+        }
+
+        if (isBatting) {
+          teamName.textContent = teamsData.team_a_name || '—';
+          teamFull.textContent = teamsData.team_a_full_name || '';
+          teamLabel.textContent = 'BATTING';
+          if (teamsData.team_a_flag) {
+            teamFlag.src = teamsData.team_a_flag;
+          }
+        } else {
+          teamName.textContent = teamsData.team_b_name || '—';
+          teamFull.textContent = teamsData.team_b_full_name || '';
+          teamLabel.textContent = 'BOWLING';
+          if (teamsData.team_b_flag) {
+            teamFlag.src = teamsData.team_b_flag;
+          }
+        }
       }
 
       dots.forEach((dot, idx) => {
@@ -649,9 +780,9 @@
               html += `
                 <tr class="yet-to-bat">
                   <td class="col-name">${name}</td>
-                  <td class="col-dismissal">Yet to bat</td>
-                  <td class="col-runs">—</td>
-                  <td class="col-balls">—</td>
+                  <td class="col-dismissal"></td>
+                  <td class="col-runs"></td>
+                  <td class="col-balls"></td>
                 </tr>
               `;
             });
@@ -690,6 +821,26 @@
         bowlingBody.innerHTML = html;
       }
 
+      // ── UPDATE HEADER WITH TEAM DATA ─────────────────────
+      function updateHeader(teams) {
+        if (!teams) return;
+        teamsData = teams;
+
+        const aName = teams.team_a_name || '—';
+        const bName = teams.team_b_name || '—';
+        const aFull = teams.team_a_full_name || '';
+        const bFull = teams.team_b_full_name || '';
+        const aFlag = teams.team_a_flag || '';
+        const bFlag = teams.team_b_flag || '';
+        const match = teams.match_info || 'Match';
+
+        matchTitle.textContent = match;
+        matchSub.textContent = `${aFull} vs ${bFull}`;
+
+        // Update current slide's team display
+        updateHeaderForSlide(currentSlide);
+      }
+
       // ── RENDER SCORECARD ──────────────────────────────────
       function renderScorecard(data) {
         const batters = data.batters || [];
@@ -697,6 +848,10 @@
         const bowlers = data.bowlers || [];
         const score = data.score || {};
         const extras = data.extras || {};
+        const teams = data.teams || {};
+
+        // Update header
+        updateHeader(teams);
 
         renderBatting(batters, yetToBat);
         renderBowling(bowlers);
