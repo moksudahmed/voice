@@ -24,7 +24,7 @@ from commentry_dic import COMMENTARY, EXTRA_COMMENTARY
 from fastapi.templating import Jinja2Templates
 from utill import number_to_bangla_words
 import re
-from obs_config import switch_scene, init_obs
+from obs_config import switch_scene, init_obs, update_obs_scene
 from pydantic import BaseModel
 from voice import speak_bangla, speak
 from scraper import scrap_page
@@ -612,7 +612,7 @@ async def broadcast(data):
 # OBS CONTROL (FIXED)
 # =========================
 
-async def update_obs_scene(event_key):
+async def update_obs_scene2(event_key):
 
     try:
         print("OBS EVENT:", event_key)

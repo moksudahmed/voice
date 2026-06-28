@@ -1,88 +1,207 @@
 from obsws_python import ReqClient
+import asyncio
 
-# =========================
-# CONFIGURATION
-# =========================
+# ==========================================================
+# OBS CONFIGURATION
+# ==========================================================
+
 OBS_HOST = "127.0.0.1"
 OBS_PORT = 4455
 OBS_PASSWORD = "Wl1CueV8045rDXyV"
 
-OBS_SCENES = {"WELCOME","LIVE", "REPLAY", "CROWD", "DRONE", "SCOREBOARD", "PLAYERSXI","MATCH_STATUS"}
+OBS_SCENES = {
+    "WELCOME",
+    "LIVE",
+    "REPLAY",
+    "CROWD",
+    "DRONE",
+    "SCOREBOARD",
+    "PLAYERSXI",
+    "MATCH_STATUS",
+}
 
-# =========================
-# GLOBAL STATE
-# =========================
+# ==========================================================
+# GLOBALS
+# ==========================================================
+
 obs = None
 last_scene = None
+current_scene_task = None
 
+# ==========================================================
+# SCENE DEFINITIONS
+# ==========================================================
 
-# =========================
-# INIT OBS CONNECTION
-# =========================
-def init_obs() -> bool:
-    """
-    Initialize connection to OBS WebSocket.
-    Returns True if connected successfully.
-    """
+SCENE_SEQUENCES = {
+
+    "OVER_COMPLETE": [
+        ("SCOREBOARD", 120),
+        ("LIVE", 120),
+    ],
+
+    "INNINGS_BREAK": [
+        ("DRONE", 20),
+        ("LIVE", 0),
+    ],
+
+    "LUNCH_BREAK": [
+        ("DRONE", 20),
+        ("LIVE", 0),
+    ],
+
+    "TEA_BREAK": [
+        ("DRONE", 20),
+        ("LIVE", 0),
+    ],
+
+    "RAIN_BREAK": [
+        ("DRONE", 20),
+        ("LIVE", 0),
+    ],
+
+    "WICKET": [
+        ("REPLAY", 12),
+        ("SCOREBOARD", 15),
+        ("LIVE", 0),
+    ],
+
+    "FOUR": [
+        ("REPLAY", 8),
+        ("LIVE", 0),
+    ],
+
+    "SIX": [
+        ("REPLAY", 8),
+        ("LIVE", 0),
+    ],
+}
+
+# ==========================================================
+# OBS CONNECTION
+# ==========================================================
+
+def init_obs():
     global obs
 
     try:
         obs = ReqClient(
             host=OBS_HOST,
             port=OBS_PORT,
-            password=OBS_PASSWORD
+            password=OBS_PASSWORD,
         )
-        print("✅ OBS CONNECTED SUCCESSFULLY")
+
+        print("✅ OBS Connected")
         return True
 
     except Exception as e:
-        print(f"❌ OBS CONNECTION FAILED: {e}")
         obs = None
+        print(e)
         return False
 
 
-# =========================
-# SWITCH SCENE FUNCTION
-# =========================
-def switch_scene(scene_name: str) -> bool:
-    """
-    Switch OBS scene safely with validation and duplicate prevention.
-    """
+def reconnect_obs():
 
-    global obs, last_scene
+    global obs
 
-    # Validate OBS connection
     if obs is None:
-        print("⚠ OBS is not connected")
+        print("🔄 Reconnecting OBS...")
+        init_obs()
+
+
+# ==========================================================
+# SCENE SWITCH
+# ==========================================================
+
+def switch_scene(scene):
+
+    global obs
+    global last_scene
+
+    reconnect_obs()
+
+    if obs is None:
         return False
 
-    # Validate scene name
-    if scene_name not in OBS_SCENES:
-        print(f"⚠ Invalid scene: {scene_name}")
+    if scene not in OBS_SCENES:
+        print(f"Unknown scene : {scene}")
         return False
 
-    # Prevent duplicate switching
-    if scene_name == last_scene:
+    if scene == last_scene:
         return True
 
     try:
-        obs.set_current_program_scene(scene_name)
-        last_scene = scene_name
-        print(f"🎬 SCENE SWITCHED → {scene_name}")
+
+        obs.set_current_program_scene(scene)
+
+        last_scene = scene
+
+        print(f"🎬 {scene}")
+
         return True
 
     except Exception as e:
-        print(f"❌ OBS SWITCH ERROR: {e}")
+
+        print(e)
+
+        obs = None
+
         return False
 
 
-# =========================
-# QUICK TEST RUN
-# =========================
-"""if __name__ == "__main__":
+# ==========================================================
+# PLAY SEQUENCE
+# ==========================================================
 
-    if init_obs():
-        #switch_scene("LIVE")
-        #switch_scene("REPLAY")
-         switch_scene("CROWD")
-        # switch_scene("DRONE")"""
+async def play_scene_sequence(sequence):
+
+    try:
+
+        for scene, duration in sequence:
+
+            if not switch_scene(scene):
+                return
+
+            if duration > 0:
+                await asyncio.sleep(duration)
+
+    except asyncio.CancelledError:
+
+        print("🛑 Scene sequence cancelled")
+
+        raise
+
+
+# ==========================================================
+# PUBLIC API
+# ==========================================================
+
+async def update_obs_scene(event_key):
+
+    global current_scene_task
+
+    sequence = SCENE_SEQUENCES.get(event_key)
+
+    if sequence is None:
+
+        print(f"No scene configured for {event_key}")
+
+        return
+
+    print(f"🎯 EVENT : {event_key}")
+
+    # Cancel previous sequence
+
+    if current_scene_task and not current_scene_task.done():
+
+        current_scene_task.cancel()
+
+        try:
+            await current_scene_task
+        except asyncio.CancelledError:
+            pass
+
+    # Start new sequence immediately
+
+    current_scene_task = asyncio.create_task(
+        play_scene_sequence(sequence)
+    )

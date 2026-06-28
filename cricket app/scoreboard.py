@@ -361,13 +361,13 @@ async def load_data(url):
     html = await get_page_html(url+'/match-scorecard')
 
     scorecard = parse_scorecard(html)
-    print(url)
+    """print(url)
     print(
         json.dumps(
             format_scorecard(scorecard),
             indent=2,
             ensure_ascii=False
-    ))
+    ))"""
     #print("Finisihed", format_scorecard(scorecard))
     return format_scorecard(scorecard)
     """print(
