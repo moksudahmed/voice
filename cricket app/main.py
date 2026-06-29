@@ -954,10 +954,11 @@ async def startup():
 
     PLAYWRIGHT = await async_playwright().start()
     BROWSER = await PLAYWRIGHT.chromium.launch(headless=True)
-
-    asyncio.create_task(engine_loop())
-    asyncio.create_task(scraper())
-    asyncio.create_task(scoreboard_updater())    
+    url = STATE.get("url")
+    if url:
+        asyncio.create_task(engine_loop())    
+        asyncio.create_task(scraper())
+        asyncio.create_task(scoreboard_updater())    
    
 # =========================================================
 # ROUTES
