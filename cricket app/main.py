@@ -16,7 +16,7 @@ import sys
 import re
 import hashlib
 from player_list import get_playing_xi, generate_team_html
-from commentry import generate_continuous_commentary, bangla_commentary, generate_full_commentary
+from commentry import generate_continuous_commentary, bangla_commentary, generate_full_commentary, generate_welcome_message, generate_winning_message
 from bangla_commentry import generate_current_match_status
 from game_status import detect_game_status, handle_break_period
 from commentry_dic import WELCOME_COMMENTARY_TEMPLATES, WINNING_COMMENTARY_TEMPLATES
@@ -81,6 +81,7 @@ clients = set()
 FLAGS_LOADED = False
 FLAGS_URL = None
 STOP_ENGINE = False
+START_ENGINE =False
 PLAYWRIGHT = None
 BROWSER = None
 # =========================
@@ -101,18 +102,6 @@ def scene_logic(text):
     return "LIVE"
 
 
-# =====================================================
-# 🎯 EVENT DETECTION (FAST)
-# =====================================================
-
-
-def generate_welcome_message(team1, team2):
-    template = random.choice(WELCOME_COMMENTARY_TEMPLATES)
-    return template.format(team1=team1, team2=team2)
-
-def generate_winning_message(team1, team2):
-    template = random.choice(WINNING_COMMENTARY_TEMPLATES)
-    return template.format(team1=team1, team2=team2)
 
 
 # =========================================================
@@ -954,11 +943,12 @@ async def startup():
 
     PLAYWRIGHT = await async_playwright().start()
     BROWSER = await PLAYWRIGHT.chromium.launch(headless=True)
-    url = STATE.get("url")
-    if url:
-        asyncio.create_task(engine_loop())    
-        asyncio.create_task(scraper())
-        asyncio.create_task(scoreboard_updater())    
+    print("Engine : ",START_ENGINE)
+    if START_ENGINE:        
+        print("Testst")
+    asyncio.create_task(engine_loop())    
+    asyncio.create_task(scraper())
+    asyncio.create_task(scoreboard_updater())    
    
 # =========================================================
 # ROUTES
@@ -979,7 +969,7 @@ def overlay():
 
 @app.post("/set-url")
 async def set_url(payload: dict):
-
+    START_ENGINE = True
     STATE["url"] = payload.get("url", "")
     STATE["connected"] = False
     # =========================
@@ -1156,7 +1146,7 @@ async def get_playing_xi_api():
 
     # Return cached data immediately
     if cached_data:
-        print("Check cashed data")
+        
         return {
             "success": True,
             "team_a": cached_data.get("team_a", {}),
@@ -1355,7 +1345,7 @@ async def get_team_state():
 # BACKGROUND CACHE UPDATER
 # ==========================================
 
-async def scoreboard_updater():
+async def scoreboard_updater():       
     while True:
         try:
             if STATE.get("url"):

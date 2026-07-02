@@ -1,6 +1,7 @@
 import random
 import re
 from commentry_dic import COMMENTARY, WINNING_COMMENTARY_TEMPLATES, EXTRA_COMMENTARY
+from commentry_dic import WELCOME_COMMENTARY_TEMPLATES, WINNING_COMMENTARY_TEMPLATES
 from run_events import detect_event, detect_event_advanced ,EVENT_MAP, WICKET_EVENT_MAP, RUN_EVENT_MAP, MATCH_EVENT_MAP, EXTRA_EVENT_MAP
 from utill import number_to_bangla_words
 from live_status import detect_match_event, get_event_string
@@ -47,6 +48,19 @@ def bangla_commentary(data) -> str:
         )
 
     return "📢 ম্যাচের ফলাফল পাওয়া গেছে, তবে বিশ্লেষণ করা সম্ভব হয়নি।"
+# =====================================================
+# 🎯 EVENT DETECTION (FAST)
+# =====================================================
+
+
+def generate_welcome_message(team1, team2):
+    template = random.choice(WELCOME_COMMENTARY_TEMPLATES)
+    return template.format(team1=team1, team2=team2)
+
+def generate_winning_message(team1, team2):
+    template = random.choice(WINNING_COMMENTARY_TEMPLATES)
+    return template.format(team1=team1, team2=team2)
+
 # -----------------------------
 # MAIN FUNCTION
 # -----------------------------
